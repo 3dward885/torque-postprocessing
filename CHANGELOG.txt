@@ -1,0 +1,20 @@
+Torque Postprocessing GUI v1.0 | 2 October 2026
+
+- Added Tkinter/ttk desktop application and one shared raw-only CLI/core.
+- Preserved verified Q6 inputs, nominal-angle degree-6 scaled fit, subtraction,
+  selected centering, binary64 Q8 D and exact Decimal E from exported D.
+- Replaced research hash admission and line-number exceptions with strict
+  content-based schemas, explicit profiles, acquisition-structure grouping,
+  visible gaps/trajectories and fingerprint-bound saved overrides.
+- Added independent per-input molar controls, background choice, saved sessions,
+  complete row ledgers, atomic run directories and source/output integrity hashes.
+- Added saved-output validation and scientific Gill Sans MT PDF/PNG exports.
+- Preserved all real-data regression results, including previous Rot1 limitations.
+- Added focused admission/failure checks, isolated real CLI checks, real Tk event
+  loop tests and desktop screenshots. Fixed the Gill Sans minus-sign redraw
+  issue and Tcl/Tk startup-path discovery found during actual desktop testing.
+- Reserved status-bar space so processing/error messages remain visible.
+
+No numerical retuning, automatic mixed selector, source modification, web
+deployment, database or installer was introduced.
+

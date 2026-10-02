@@ -1,0 +1,2 @@
+# Preserve verified source bytes and hashes; do not rewrite line endings.
+* -text

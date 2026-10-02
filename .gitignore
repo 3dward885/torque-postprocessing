@@ -1,0 +1,36 @@
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Original research data, generated results and personal sessions remain local.
+evidence/
+validation/
+runs/
+User_session.json
+*.dat
+!fixtures/SYNTHETIC_software_fixture.dat
+*.zip
+*.zip.sha256
+*.package_verification.json
+
+# These describe the complete delivered archive, rather than this source checkout.
+FILE_MANIFEST.json
+SHA256SUMS.txt
+source_verification.json
+Torque_GUI_project_state_v1.0.json
+
+# Supplied proprietary font stays in the local scientific application package.
+fonts/*.TTF
+fonts/*.ttf
+
+# Local credentials and editor state
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

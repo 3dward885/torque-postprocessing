@@ -1,0 +1,39 @@
+{
+  "files": [
+    {
+      "path": "..\\evidence\\Torque_Ho2thd4Pc_pipeline_comparison_v1.2\\inputs\\Rot1rawHo2thd4Pc.dat",
+      "settings": {
+        "centering": "midrange",
+        "centering_source": "Explicit regression test setting",
+        "export_format": "new_rot1",
+        "input_sha256": "365bb171e70b6c2ff1fdfde84cc7aa5c74d4620941826ee7cff185813286c2ce",
+        "molar": {
+          "factor": "1575.45",
+          "mode": "multiplier",
+          "source": "New Rot1 reference: 1575.45 mol^-1; documented export multiplier; physical basis unverified"
+        },
+        "note": "Deliberately selected New Rot1 reference: 1575.45 mol^-1",
+        "overrides": {},
+        "profile": {
+          "allow_background_gaps": true,
+          "allow_signal_gaps": true,
+          "angle_reset_deg": "100",
+          "angle_step_deg": "5",
+          "angle_tolerance_deg": "0.05",
+          "background_threshold_Oe": "1",
+          "field_step_T": "0.01",
+          "max_extrapolation_deg": "0",
+          "name": "fractional",
+          "provenance": "Fractional-field DAT profile; observed ordered gaps and monotonic field trajectories allowed.",
+          "stable_field_tolerance_Oe": "1",
+          "temperature_step_K": "1",
+          "temperature_tolerance_K": "0.2",
+          "trajectory": "monotonic"
+        },
+        "support_exceptions": [],
+        "version": "1.0"
+      }
+    }
+  ],
+  "session_version": "1.0"
+}

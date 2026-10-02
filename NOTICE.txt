@@ -1,0 +1,41 @@
+NUMERICAL SOURCE ATTRIBUTION
+
+The fixed recipe and arithmetic in pipeline.py were adapted from the supplied
+torque_pipeline.py v1.2 and previous/torque_dat_postprocess_v1.0.py.
+Original files and their evidence are preserved unchanged under:
+  evidence/Torque_Ho2thd4Pc_pipeline_comparison_v1.2/
+
+Verified original source SHA-256:
+  torque_pipeline.py
+  8d20c98799b15aa58df50088cb9c4084f900aff8582c0b838bbbd38bc6b2d4a4
+  recipe_v1.2.json
+  859af9f6863b9805a8909cf4128bc73b7c752882f76ed536a25bc7b82ba38cda
+  previous/torque_dat_postprocess_v1.0.py
+  de2e3738abaabb020d81134b1f55b57fadcecf2a45257cc15b4705538faf147e
+
+Generalized application parsing, explicit profiles, configuration, GUI and
+transactional export are new. Normal processing imports no investigation or
+treated-reference code. presets.py holds deliberately selected export settings
+and one fingerprint-bound support permission, never an admission whitelist.
+The old Rot1 reference-selected choices occur only in labelled tests/examples.
+
+SUPPLIED FONT
+
+fonts/GIL_____.TTF is copied byte-for-byte from previous/fonts/GIL_____.TTF in
+the supplied package. Its existing origin notice is retained in
+fonts/provenance.txt. SHA-256:
+  f6664b244192ab4cf3a58bb6a653700d1f345d03bb8879888bcea1b6f8f3f97c
+
+Its OS/2 fsType value is 8 (editable embedding permitted by that font flag).
+The private application package reuses the user-supplied asset as requested.
+This does not create a general third-party font redistribution license.
+The font is not silently replaced for scientific exports.
+
+CLAIM LIMITS
+
+Exact retrospective digital reproduction is distinct from experimental
+validation, physical molar normalization, an autonomous mixed-centering selector,
+and identification of a unique historical algorithm. The latter claims remain
+unestablished. No calibration gain, sample composition or instrumental drift
+mechanism is inferred.
+

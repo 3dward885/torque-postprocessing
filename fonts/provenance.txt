@@ -1,0 +1,2 @@
+Gill Sans MT Regular, supplied previously by the user. Copied unchanged from the preceding workbook package font asset only; no earlier numerical code or data were imported.
+SHA-256: f6664b244192ab4cf3a58bb6a653700d1f345d03bb8879888bcea1b6f8f3f97c

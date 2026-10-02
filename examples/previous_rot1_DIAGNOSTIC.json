@@ -1,0 +1,155 @@
+{
+  "files": [
+    {
+      "path": "..\\evidence\\Torque_Ho2thd4Pc_pipeline_comparison_v1.2\\previous\\inputs\\Rot1raw.dat",
+      "settings": {
+        "centering": "midrange",
+        "centering_source": "Explicit regression test setting",
+        "export_format": "previous",
+        "input_sha256": "b2e6d6a872200825d5a9076494b52bbf8864a3e083608ce3bfcb7816a8ed79a7",
+        "molar": {
+          "factor": "911.63",
+          "mode": "multiplier",
+          "source": "Previous references: 911.63 mol^-1; documented export multiplier; physical basis unverified"
+        },
+        "note": "DIAGNOSTIC ONLY: reference-selected 15 mean/8 midrange choices; autonomous selector unresolved.",
+        "overrides": {
+          "P001": {
+            "centering": "midrange",
+            "identity": "3762058e4f4ebfcee25b0a0e83ca7d509b0d4874ded26175b02328763c22ba0f",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P002": {
+            "centering": "midrange",
+            "identity": "cdf95457a5c5a975f9f9d5719654fb2cdb33867e7e3fc996066cb15f7748aa08",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P003": {
+            "centering": "midrange",
+            "identity": "022bd0666180b9fa2188bec6f0be6ac02226acdae29662e19508fed0c5a7d829",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P006": {
+            "centering": "midrange",
+            "identity": "65c8263f6efc7d086eb621846d57651e6965e33341120d214723b016817f467b",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P007": {
+            "centering": "midrange",
+            "identity": "92a2ad627bde655a89f616bb1d92db65cef8533d9dbaec21eba8983455970b76",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P008": {
+            "centering": "midrange",
+            "identity": "6fac20b94ea94464e45401739f037d5d6ed7325c768e7fbe1fa12446ecb20f38",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P009": {
+            "centering": "mean",
+            "identity": "4999505e1a5a7782939ef57735857b942acf6f89ac0d3596ffab933685539182",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P010": {
+            "centering": "midrange",
+            "identity": "a8370c642038a53e047b3c8ea89644ebf76f4010b9ab275ae52aa32674a32c9a",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P013": {
+            "centering": "mean",
+            "identity": "d87bf6e66c5a720263e1661512a4b723a007012d397c92114c1a9dbc0e68e551",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P014": {
+            "centering": "midrange",
+            "identity": "f9345a1c2b09302c56c268cf1b5f220b5fc5189d06f4772e401eeb4a9607b185",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P015": {
+            "centering": "mean",
+            "identity": "26cb4cf6997131edec914fa3dd607c178f5ad0e7992feac03cc5e020575569d4",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P016": {
+            "centering": "mean",
+            "identity": "42f2a67ed78418d2925e4e422648c062bd0fff24f74e91eee66a10b1567db2c0",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P017": {
+            "centering": "mean",
+            "identity": "a329cae58949bbb6d19768d0a60020f89122c335d424ca108b8df36350de5308",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P020": {
+            "centering": "mean",
+            "identity": "7bf682a75b4a2530d7b9caf67cfcde8b4c68f82168053d0ee8c328e258be95b0",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P021": {
+            "centering": "mean",
+            "identity": "dff12bcbff8d6199f8c20c8b3a256b732ed133d14fc23db3d66817dbca8b69e9",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P022": {
+            "centering": "mean",
+            "identity": "1a8e7e5a6c4002babd1ea82596da5dac380b42413b6eb0caa48701358c78c84e",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P023": {
+            "centering": "mean",
+            "identity": "ded065ba7f750f62fd4a6844ca4b88b1bf75a070a9e3fe272f587f5378aad2f7",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P024": {
+            "centering": "mean",
+            "identity": "e6f8ac3032af2009f0bcc7fa889eda5f6ed64dfb55ada09ce713ee9fb7b51d43",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P027": {
+            "centering": "mean",
+            "identity": "121b0f689e10f9cdac79570f8eb08a6c229d24647bf1dbd34a4cfbeed96e6032",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P028": {
+            "centering": "mean",
+            "identity": "3ef383825221c9f1ca41b6d387e1a32dbef1bc33864d687cda8df61d87d20e33",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P029": {
+            "centering": "mean",
+            "identity": "b2ac82b922c9fc1551b4e4b28989d2537469580ab02eb98440aabbaa311acecc",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P030": {
+            "centering": "mean",
+            "identity": "f71ad5fa0ac0057ec5929c82ef7c770850eb4656e8d01f1f4d4a6c22fac64c7a",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          },
+          "P031": {
+            "centering": "mean",
+            "identity": "5cbada6d6c78c51b9e7617300fb98281f454007d9e1b8f2edee1a617948bf891",
+            "source": "DIAGNOSTIC reference-selected table centering_choices_DIAGNOSTIC.csv; sha256 bc0d3cfcc180d06567af2b7f692c961114d6b88655e4f349f3903634033228d8"
+          }
+        },
+        "profile": {
+          "allow_background_gaps": true,
+          "allow_signal_gaps": false,
+          "angle_reset_deg": "100",
+          "angle_step_deg": "5",
+          "angle_tolerance_deg": "0.05",
+          "background_threshold_Oe": "1",
+          "field_step_T": "1",
+          "max_extrapolation_deg": "0",
+          "name": "previous",
+          "provenance": "Previous DAT profile: full signal grids, integer tesla; interior background gaps allowed.",
+          "stable_field_tolerance_Oe": "1",
+          "temperature_step_K": "1",
+          "temperature_tolerance_K": "0.2",
+          "trajectory": "stable"
+        },
+        "support_exceptions": [],
+        "version": "1.0"
+      }
+    }
+  ],
+  "session_version": "1.0"
+}

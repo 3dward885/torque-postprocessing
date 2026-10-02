@@ -1,0 +1,39 @@
+{
+  "files": [
+    {
+      "path": "..\\evidence\\Torque_Ho2thd4Pc_pipeline_comparison_v1.2\\previous\\inputs\\Rot2raw.dat",
+      "settings": {
+        "centering": "midrange",
+        "centering_source": "Explicit regression test setting",
+        "export_format": "previous",
+        "input_sha256": "d08fab7998547b31838b8a6f05e50e052a432e9626184c0fe719d6bd93cf4a88",
+        "molar": {
+          "factor": "911.63",
+          "mode": "multiplier",
+          "source": "Previous references: 911.63 mol^-1; documented export multiplier; physical basis unverified"
+        },
+        "note": "Deliberately selected Previous references: 911.63 mol^-1",
+        "overrides": {},
+        "profile": {
+          "allow_background_gaps": true,
+          "allow_signal_gaps": false,
+          "angle_reset_deg": "100",
+          "angle_step_deg": "5",
+          "angle_tolerance_deg": "0.05",
+          "background_threshold_Oe": "1",
+          "field_step_T": "1",
+          "max_extrapolation_deg": "0",
+          "name": "previous",
+          "provenance": "Previous DAT profile: full signal grids, integer tesla; interior background gaps allowed.",
+          "stable_field_tolerance_Oe": "1",
+          "temperature_step_K": "1",
+          "temperature_tolerance_K": "0.2",
+          "trajectory": "stable"
+        },
+        "support_exceptions": [],
+        "version": "1.0"
+      }
+    }
+  ],
+  "session_version": "1.0"
+}

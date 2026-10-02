@@ -1,0 +1,16 @@
+{
+  "allow_background_gaps": true,
+  "allow_signal_gaps": true,
+  "angle_reset_deg": "100",
+  "angle_step_deg": "5",
+  "angle_tolerance_deg": "0.05",
+  "background_threshold_Oe": "1",
+  "field_step_T": "0.01",
+  "max_extrapolation_deg": "0",
+  "name": "fractional",
+  "provenance": "Fractional-field DAT profile; observed ordered gaps and monotonic field trajectories allowed.",
+  "stable_field_tolerance_Oe": "1",
+  "temperature_step_K": "1",
+  "temperature_tolerance_K": "0.2",
+  "trajectory": "monotonic"
+}

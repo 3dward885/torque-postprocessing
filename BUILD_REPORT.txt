@@ -1,0 +1,128 @@
+TORQUE POSTPROCESSING GUI v1.0 - OBSERVED BUILD REPORT
+2 October 2026
+
+Delivered a local Tkinter application with a shared raw-only core and CLI.
+Launch by double-clicking Launch_GUI.cmd. Equivalent command from this folder:
+  .\.venv\Scripts\python.exe app.py
+The installed local environment is ready. Source-ZIP users run Setup_Windows.cmd.
+
+TESTED ENVIRONMENT
+Python 3.12.14; NumPy 2.3.5; Matplotlib 3.10.8; Tk 8.6.12; Windows 11.
+The actual .cmd/pythonw launcher opened the final app on the desktop.
+App startup supplies missing/empty Tcl/Tk paths for the bundled Python runtime.
+macOS/Linux and alternative numerical environments were not tested.
+
+REGRESSION AFTER EXPORT AND RE-READING
+Case                        Centering     Exact rows     Exact passes
+New Rot1                    Midrange       818/818        20/20
+New Rot2                    Midrange       938/938        23/23
+Previous Rot2               Midrange       820/820        20/20
+Previous Rot1               Midrange       328/943         8/23
+Previous Rot1               Mean           615/943        15/23
+Previous Rot1               DIAGNOSTIC     943/943        23/23
+
+All 4869 raw rows accounted for; 3519 unique reference rows covered.
+Fixed midrange matches 71/86 reference passes; this is not a universal rule.
+The DIAGNOSTIC configuration deliberately uses the reference-selected
+15 mean/8 midrange choices. The autonomous historical selector remains unresolved.
+
+A-C cells are exact for every row in every run. D/E exact cell counts equal
+the exact-row counts above. All reference header/unit/formula-row checks passed.
+Numeric equality is distinct from byte identity: original reference byte hashes
+differ. GUI and CLI DATs generated with identical settings ARE byte-identical.
+
+RESIDUALS: SAVED OUTPUT MINUS REFERENCE
+D units: N m. E units: N m/mol. For the four all-exact rows in the table,
+maximum absolute error, RMSE, mean residual and relative-to-pass-range error
+are all zero for both D and E.
+
+Previous Rot1, fixed midrange:
+  D max_abs 3.242307e-7; RMSE 8.723548769276536e-8;
+    mean residual 2.7816090621420995e-8;
+    max error / own reference pass range 0.035728646278756944.
+  E max_abs 0.000295578433041; RMSE 7.952648764535569e-5;
+    mean residual 2.5357982693206022e-5;
+    max error / own reference pass range 0.035728646278756944.
+Previous Rot1, fixed mean:
+  D max_abs 3.010934e-7; RMSE 9.880132706717752e-8;
+    mean residual -5.102083880254506e-8;
+    max error / own reference pass range 0.032624489659278604.
+  E max_abs 0.000274485776242; RMSE 9.007025379425103e-5;
+    mean residual -4.6512127277564164e-5;
+    max error / own reference pass range 0.0326244896592786.
+
+The relative metric is maximized across passes, using each pass's own range.
+No noise tolerance replaces exact digital equality. Complete per-pass metrics
+and pointwise residuals are in validation/regression/<case>/validation.json.
+All six saved runs contain raw snapshots, ledgers, settings, provenance and hashes.
+
+STRUCTURE, ADMISSION AND FAILURE PATHS
+17 focused unittest methods passed: 0 failures/errors, 0.560 seconds observed.
+See validation/core_test_results.json for method names and the test-source hash.
+Covered different-hash synthetic admission, renamed real input, Q6 ties-even,
+inclusive tolerances, metadata/trailing columns, independent same-label passes,
+changing fields, gaps, wrong schemas/units, duplicate angles, ambiguous resets,
+missing/ambiguous backgrounds, rank/support, explicit extrapolation, invalid
+molar settings, mg/g conversion, fingerprint mismatch, collision/atomic failure,
+individual CLI batch errors and read-only reference validation.
+Synthetic admission is a software test, not experimental transfer validation.
+
+New Rot1 physical lines 85-125 remain one 41-point changing-field pass.
+All seven absent signal observations stay absent. Previous Rot2 100 K background
+uses its 39 actual samples. The documented New Rot2 case passes ordinary all-row
+regression. No source samples were changed, cropped, repaired or invented.
+
+REFERENCE INDEPENDENCE
+Five actual CLI runs completed while an audit hook denied external data access
+except copied raw/settings and produced outputs. A deliberate reference read
+was denied in every run. Comparison after completion retained the expected
+exact counts. Original raw hashes remained unchanged.
+The diagnostic previous Rot1 configuration is excluded from autonomous claims.
+No production module imports the evidence investigation scripts.
+
+ACTUAL GUI, NATIVE DESKTOP AND PREVIEWS
+The final actual Tk widget/event-loop test passed add/settings/pass inspection,
+process/preview/export/session reload/validation, plus explicit centering and
+background selection. Settings changes cleared results, preview, export links
+and validation. Wrong units produced a useful individual batch failure.
+The UI event loop continued for 10 scheduled ticks during the artificially
+delayed test processing job. The worker runs separately from widget updates.
+GUI and CLI exports for the same session were byte-identical.
+
+Native file-picker paths were mocked in the deterministic widget test.
+Separate Windows desktop interaction exercised native controls/dialogs and the
+actual supplied launcher. Screenshots show the final live preview, changing-field
+stages, background fit and saved-output validation with all 818 rows exact.
+Final evidence is validation/gui/gui_test_results.json and gui_release_*.txt.
+Earlier local debug captures and repeated runs are superseded and excluded.
+
+The user-selected instrument input processed 1146 raw -> 818 signal rows in
+torque-only mode. Its preview is visible in the final launched application.
+This additional live input was not compared with a treated reference.
+User_session.json preserves its settings locally and is excluded from the ZIP.
+
+SCIENTIFIC PLOTS
+Four vector PDF / 300 dpi PNG pairs passed embedded-font, dimension and clipping
+checks. Every PDF was rendered with Poppler and visually inspected.
+Gill Sans MT is embedded. Standard size 8x6 inches; background fit 8x6.1 inches.
+The supplied font and origin notice are retained; see NOTICE.txt for reuse scope.
+The minus-sign redraw issue found during live testing is fixed in the final build.
+
+SOURCE AND PACKAGE INTEGRITY
+All 191 supplied manifest entries pass SHA-256 verification. The original ZIP
+and exact build prompt remain unchanged. Core source hashes match regression;
+final app/plot hashes match GUI acceptance. Every saved run manifest is checked.
+FILE_MANIFEST.json and SHA256SUMS.txt list delivered source/output identities.
+Packaging checks every ZIP member against its source SHA-256 and checks CRCs.
+The adjacent .package_verification.json records the archive digest and result.
+The standalone ZIP includes the complete preserved evidence, all six regression
+runs, final GUI/CLI evidence, screenshots, plots, profiles, configs and tests.
+It excludes .venv, caches, the personal session and obsolete debug runs.
+Historical absolute paths remain in provenance; replay sessions use relative paths.
+
+REMAINING SCIENTIFIC LIMITS
+The previous Rot1 automatic selector remains unresolved. Multipliers 911.63
+and 1575.45 reproduce exports but have an unverified physical basis.
+An offset change is not established instrumental drift. No unique historical
+algorithm, calibration, sample composition or absolute background is inferred.
+No implementation work remains for the requested version 1.0 scope.

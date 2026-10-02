@@ -1,0 +1,67 @@
+{
+  "fixtures": [
+    {
+      "explicit_preset": "new_rot1",
+      "id": "new_rot1",
+      "kind": "supplied experimental regression fixture",
+      "profile": "fractional",
+      "raw": "evidence\\Torque_Ho2thd4Pc_pipeline_comparison_v1.2\\inputs\\Rot1rawHo2thd4Pc.dat",
+      "raw_rows": 1146,
+      "raw_sha256": "365bb171e70b6c2ff1fdfde84cc7aa5c74d4620941826ee7cff185813286c2ce",
+      "reference": "evidence\\Torque_Ho2thd4Pc_pipeline_comparison_v1.2\\inputs\\Rot1treatedHo2thd4Pc.dat",
+      "reference_sha256": "6d395fb50cd1a1ad15198c99085fba7f570b1eab7951f11b5194838333a349c0",
+      "signal_passes": 20,
+      "signal_rows": 818
+    },
+    {
+      "explicit_preset": "new_rot2",
+      "id": "new_rot2",
+      "kind": "supplied experimental regression fixture",
+      "profile": "fractional",
+      "raw": "evidence\\Torque_Ho2thd4Pc_pipeline_comparison_v1.2\\inputs\\Rot2rawHo2thd4Pc_1.dat",
+      "raw_rows": 1306,
+      "raw_sha256": "d7fe022a8d117006f26b5739e85ee90b3c6015a6e332e5ef8561e2eee3718933",
+      "reference": "evidence\\Torque_Ho2thd4Pc_pipeline_comparison_v1.2\\inputs\\Rot2treatedHo2thd4Pc.dat",
+      "reference_sha256": "0b37d65e170b357bf8720e2ea69b65403dc289d702dc4fe67cc3ccdec7928ac6",
+      "signal_passes": 23,
+      "signal_rows": 938
+    },
+    {
+      "explicit_preset": "previous",
+      "id": "previous_rot2",
+      "kind": "supplied experimental regression fixture",
+      "profile": "previous",
+      "raw": "evidence\\Torque_Ho2thd4Pc_pipeline_comparison_v1.2\\previous\\inputs\\Rot2raw.dat",
+      "raw_rows": 1105,
+      "raw_sha256": "d08fab7998547b31838b8a6f05e50e052a432e9626184c0fe719d6bd93cf4a88",
+      "reference": "evidence\\Torque_Ho2thd4Pc_pipeline_comparison_v1.2\\previous\\inputs\\Rot2treated.dat",
+      "reference_sha256": "582ed124985ff40b92a42019fb570f30105b14c04975970554162c7dd1897b7b",
+      "signal_passes": 20,
+      "signal_rows": 820
+    },
+    {
+      "explicit_preset": "previous",
+      "id": "previous_rot1",
+      "kind": "supplied experimental regression fixture",
+      "profile": "previous",
+      "raw": "evidence\\Torque_Ho2thd4Pc_pipeline_comparison_v1.2\\previous\\inputs\\Rot1raw.dat",
+      "raw_rows": 1312,
+      "raw_sha256": "b2e6d6a872200825d5a9076494b52bbf8864a3e083608ce3bfcb7816a8ed79a7",
+      "reference": "evidence\\Torque_Ho2thd4Pc_pipeline_comparison_v1.2\\previous\\inputs\\Rot1treated.dat",
+      "reference_sha256": "09b9b58664f51885d039b357d279e5a7cfae166d8fd72e80f862ad1c7e5176ab",
+      "signal_passes": 23,
+      "signal_rows": 943
+    },
+    {
+      "generator": "tests/test_core.py:synthetic",
+      "id": "SYNTHETIC_software_fixture",
+      "kind": "software admission only, not a measurement",
+      "profile": "fractional",
+      "raw": "fixtures\\SYNTHETIC_software_fixture.dat",
+      "raw_rows": 82,
+      "raw_sha256": "8e8649f7da62d744bc75c75a55538683af247094e71bbdb1d72f50b8dccf3725",
+      "signal_rows": 41
+    }
+  ],
+  "paths_relative_to": "application root"
+}
