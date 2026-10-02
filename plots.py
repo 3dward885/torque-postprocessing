@@ -12,21 +12,25 @@ from io_profiles import InputError
 # Tick formatters run again on Tk redraw, after the figure's local style context.
 mpl.rcParams["axes.unicode_minus"] = False
 
-FONT = Path(__file__).resolve().parent / "fonts/GIL_____.TTF"
-FONT_SHA = "f6664b244192ab4cf3a58bb6a653700d1f345d03bb8879888bcea1b6f8f3f97c"
+try:
+    FONT = Path(font_manager.findfont(font_manager.FontProperties(
+        family="Arial", style="normal", weight="normal"), fallback_to_default=False))
+except ValueError:
+    FONT = None
+FONT_SHA = hashlib.sha256(FONT.read_bytes()).hexdigest() if FONT else None
 
 
 def font_status():
-    if not FONT.exists():
-        return "Gill Sans MT missing: preview uses fallback; scientific export is unavailable."
-    if hashlib.sha256(FONT.read_bytes()).hexdigest() != FONT_SHA:
-        return "Supplied font hash differs: scientific export is unavailable."
-    font_manager.fontManager.addfont(str(FONT))
-    return "Gill Sans MT (supplied font verified)"
+    if FONT is None or not FONT.is_file():
+        return "NONCOMPLIANT preview: Arial Regular unavailable; scientific export disabled."
+    name = font_manager.FontProperties(fname=str(FONT)).get_name()
+    if name != "Arial":
+        return "NONCOMPLIANT preview: resolved font is not Arial; scientific export disabled."
+    return "Arial Regular verified: " + str(FONT)
 
 
 def style(preview=False):
-    good = font_status().startswith("Gill Sans MT (")
+    good = font_status().startswith("Arial Regular verified:")
     return {
         "font.family": font_manager.FontProperties(fname=str(FONT)).get_name() if good else "sans-serif",
         "font.size": 12 if preview else 18, "axes.labelsize": 14 if preview else 22,
@@ -44,6 +48,9 @@ def make_figure(result, pass_id, view="stages", reference=None, preview=False):
     pred = next((p for p in result["passes"] if p["pass_id"] == pass_id), None)
     if pred is None:
         raise InputError("Select a processed signal pass for preview.")
+    if view in ("baseline_uncentered", "baseline_corrected"):
+        return baseline_figure(pred["angles_deg"], pred["subtracted_Nm"], pred["centering_constant_Nm"],
+                               corrected=view == "baseline_corrected", preview=preview)
     with mpl.rc_context(style(preview)):
         fig = Figure(figsize=(8, 6.1 if view == "background" else 6), dpi=100)
         ax = fig.add_subplot()
@@ -95,9 +102,28 @@ def make_figure(result, pass_id, view="stages", reference=None, preview=False):
         return fig
 
 
+def baseline_figure(angles, uncentered, offset, corrected=False, preview=False):
+    with mpl.rc_context(style(preview)):
+        fig = Figure(figsize=(8, 6), dpi=100)
+        ax = fig.add_subplot()
+        fig.subplots_adjust(left=.19, bottom=.18, right=.96, top=.94)
+        values = np.asarray(uncentered)
+        ax.plot(angles, values-offset if corrected else values, "o", color="black",
+                markersize=3.5, linestyle="none", label="Corrected" if corrected else "Uncentered")
+        ax.axhline(0 if corrected else offset, color="#0072B2", linewidth=1.2,
+                   label="Fixed zero" if corrected else "Baseline")
+        ax.set(xlabel="Sample position (deg)", ylabel="Torque (N m)", xlim=(-5, 205))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.legend(frameon=False, loc="best")
+        return fig
+
+
 def export_figure(result, pass_id, folder, view="stages", reference=None):
-    if not font_status().startswith("Gill Sans MT ("):
+    if not font_status().startswith("Arial Regular verified:"):
         raise InputError(font_status())
+    from pipeline import verify_export
+    verify_export(result)
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     paths = [folder / f"{pass_id}_{view}.{extension}" for extension in ("pdf", "png")]

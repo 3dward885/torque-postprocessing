@@ -12,7 +12,9 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from io_profiles import InputError, PROFILES, read_raw, profile_from, sha256
-from pipeline import default_config, molar_settings, select_background, validate_config
+from pipeline import default_config, molar_settings, select_background, validate_config, refinalize
+from baseline import empty_review
+from baseline_editor import BaselineEditor
 from cli import run_entry
 from presets import PRESET_LABELS, apply_preset
 from storage import atomic_json, export_run, load_config, load_session, save_session, json_text
@@ -37,7 +39,7 @@ configure_tk()
 class App:
     def __init__(self, root):
         self.root = root
-        root.title("Torque Postprocessing 1.0")
+        root.title("Torque Postprocessing 1.1")
         root.geometry("1240x750")
         root.minsize(1000, 680)
         self.records = {}
@@ -48,6 +50,8 @@ class App:
         self.closed = False
         self.pulse_count = 0
         self.canvas = None
+        self.editor = None
+        self.baseline_enabled = tk.BooleanVar(value=False)
         self.last_error = ""
         self.output = tk.StringVar(value=str(ROOT / "runs"))
         self.status = tk.StringVar(value="Add raw files. Each new input starts with Midrange and Torque only.")
@@ -128,6 +132,11 @@ class App:
         self.passes.bind("<Double-1>", lambda e: self.pass_settings())
         self.buttons["Pass settings / Background..."] = ttk.Button(left, text="Pass settings / Background...", command=self.pass_settings)
         self.buttons["Pass settings / Background..."].pack(fill="x", pady=3)
+        self.baseline_check = ttk.Checkbutton(left, text="Interactive baseline adjustment",
+                                              variable=self.baseline_enabled, command=self.toggle_baseline)
+        self.baseline_check.pack(anchor="w", pady=4)
+        self.buttons["Review baseline..."] = ttk.Button(left, text="Review baseline...", command=self.review_baseline)
+        self.buttons["Review baseline..."].pack(fill="x", pady=3)
         ttk.Label(left, textvariable=self.details, wraplength=420, justify="left").pack(fill="x", pady=6)
         self.tabs = ttk.Notebook(right)
         self.tabs.pack(fill="both", expand=True, padx=(8, 0))
@@ -141,15 +150,15 @@ class App:
         choices.pack(fill="x", padx=4, pady=4)
         ttk.Label(choices, text="View").pack(side="left")
         combo = ttk.Combobox(choices, textvariable=self.view, state="readonly", width=16,
-                             values=("stages", "background", "centered", "comparison", "residual"))
+                             values=("stages", "background", "centered", "baseline_uncentered", "baseline_corrected", "comparison", "residual"))
         combo.pack(side="left", padx=6)
         combo.bind("<<ComboboxSelected>>", self.select_pass)
         ttk.Button(choices, text="Export PDF + PNG...", command=self.save_plot).pack(side="left", padx=4)
         self.plot_area = ttk.Frame(preview)
+        ttk.Label(preview, text=font_status(), wraplength=650).pack(side="bottom", fill="x", padx=4)
         self.plot_area.pack(fill="both", expand=True)
         self.plot_message = ttk.Label(self.plot_area, text="Process the selected input to preview its results.", anchor="center")
         self.plot_message.pack(fill="both", expand=True)
-        ttk.Label(preview, text=font_status(), wraplength=650).pack(fill="x", padx=4)
         self.advanced = tk.Text(advanced, wrap="word", font=("Consolas", 10), state="disabled")
         self.advanced.pack(fill="both", expand=True)
         ttk.Button(validation, text="Compare saved output with reference...", command=self.validate_saved).pack(anchor="w", padx=8, pady=8)
@@ -237,6 +246,8 @@ class App:
                         obj.profile.name if obj else "unresolved", (cfg or {}).get("centering", "midrange"), label, record["state"]))
 
     def add_files(self, paths=None):
+        if not self.guard_baseline(close=True):
+            return
         if self.busy:
             return
         paths = paths or filedialog.askopenfilenames(parent=self.root, title="Add raw DAT files",
@@ -260,6 +271,8 @@ class App:
         self.submit("Reading raw files...", job, done)
 
     def remove_selected(self):
+        if not self.guard_baseline(close=True):
+            return
         if self.busy:
             return
         for key in self.files.selection():
@@ -288,6 +301,10 @@ class App:
         self.refresh_buttons()
 
     def refresh_selected(self, event=None):
+        if self.editor and self.selected() is not self.editor.record:
+            if not self.guard_baseline(close=True):
+                self.files.selection_set(self.editor.record["key"])
+                return
         old_pass = self.passes.selection()
         self.passes.delete(*self.passes.get_children())
         self.clear_plot()
@@ -306,10 +323,14 @@ class App:
             self.set_text(self.advanced, record["error"])
             return
         cfg = record["cfg"]
+        self.baseline_enabled.set(cfg.get("baseline_review", empty_review())["enabled"])
         self.case.set(f"{Path(record['path']).name}  |  {obj.schema}  |  Input: K, Oe, deg, N m  |  Profile: {obj.profile.name}  |  {len(obj.rows)} observed rows")
         for p in obj.passes:
             override = cfg.get("overrides", {}).get(p.id, {})
             mode = "" if p.zero else override.get("centering", cfg["centering"]) + (" *" if "centering" in override else "")
+            if record.get("result") and not p.zero:
+                pred = next(v for v in record["result"]["passes"] if v["pass_id"] == p.id)
+                mode = pred["centering"]
             self.passes.insert("", "end", iid=p.id, text=p.id, values=(str(p.T), p.field_label, len(p.rows), "background" if p.zero else "signal", mode))
         selected_id = old_pass[0] if old_pass and self.passes.exists(old_pass[0]) else obj.passes[0].id
         self.passes.selection_set(selected_id)
@@ -331,6 +352,10 @@ class App:
         record, p = self.selected(), self.selected_pass()
         if not record or not p:
             return
+        if self.editor and p.id != self.editor.main_pass_id:
+            if not self.guard_baseline(close=True):
+                self.passes.selection_set(self.editor.main_pass_id)
+                return
         text = f"Acquisition {p.order}; physical lines {p.rows[0].line}-{p.rows[-1].line}.\nMissing angles: {p.missing or 'none'}."
         if p.trajectory:
             text += "\nChanging field: one pass; row-specific B retained."
@@ -343,7 +368,10 @@ class App:
                 text += "\n" + str(exc)
             if record.get("result"):
                 pred = next(x for x in record["result"]["passes"] if x["pass_id"] == p.id)
-                text += f"\n{pred['centering'].capitalize()} constant: {pred['centering_constant_Nm']:.9g} N m."
+                text += f"\nExport: {pred['centering']}; offset {pred['centering_constant_Nm']:.11g} N m."
+                text += f"\nOrdinary policy: {pred['ordinary_centering']}. Baseline review: {pred['baseline_review']['status']}."
+                if pred["baseline_review"]["reason"]:
+                    text += "\n" + pred["baseline_review"]["reason"]
         self.details.set(text)
         self.clear_plot()
         if p.zero:
@@ -359,6 +387,8 @@ class App:
                 self.plot_message.configure(text=str(exc))
 
     def process_all(self):
+        if not self.guard_baseline(close=True):
+            return
         if self.busy or not self.records:
             return
         snapshots = [(key, r["path"], copy.deepcopy(r["cfg"])) for key, r in self.records.items()]
@@ -372,25 +402,30 @@ class App:
                 try:
                     if cfg is None:
                         raise InputError("Resolve the import error in File settings first.")
-                    results.append((key, run_entry(path, cfg), ""))
+                    results.append((key, run_entry(path, cfg, allow_stale_review=True), ""))
                 except Exception as exc:
                     results.append((key, None, str(exc)))
             return results
         def done(results):
             for key, result, error in results:
                 r = self.records[key]
-                r.update(result=result, error=error, state=f"Processed {result['rows']} rows" if result else "FAILED: " + error)
+                r.update(result=result, error=error, state=(f"Processed {result['rows']} rows" if result["exportable"] else "STALE BASELINE: export blocked") if result else "FAILED: " + error)
                 self.update_file(r)
             self.refresh_selected()
             self.status.set(f"Processing complete: {sum(v is not None for _, v, _ in results)} succeeded; {sum(bool(e) for _, _, e in results)} failed. Select a file for details.")
         self.submit("Processing all inputs with one worker...", job, done)
 
     def export_all(self):
+        if not self.guard_baseline(close=True):
+            return
         if self.busy:
             return
         ready = [(key, r["result"]) for key, r in self.records.items() if r.get("result")]
         if not ready:
             self.show_error("Process current settings before export.")
+            return
+        if any(not r["exportable"] for _, r in ready):
+            self.show_error("Stale active baseline overrides block export. Review and Apply, Remove override, or disable the checkbox.")
             return
         output = self.output.get()
         if not output.strip():
@@ -419,6 +454,8 @@ class App:
         self.submit("Writing complete run directories and verifying raw hashes...", job, done)
 
     def save_configuration(self, path=None):
+        if not self.guard_baseline(close=True):
+            return
         if self.busy or not self.records:
             return
         path = path or filedialog.asksaveasfilename(parent=self.root, title="Save session configuration", defaultextension=".json", filetypes=[("JSON", "*.json")])
@@ -434,6 +471,8 @@ class App:
                 self.show_error(exc)
 
     def load_configuration(self, path=None):
+        if not self.guard_baseline(close=True):
+            return
         if self.busy:
             return
         path = path or filedialog.askopenfilename(parent=self.root, title="Load session configuration", filetypes=[("JSON", "*.json")])
@@ -499,6 +538,8 @@ class App:
         self.submit("Comparing saved values without changing processing...", job, done)
 
     def save_plot(self):
+        if not self.guard_baseline(close=True):
+            return
         record, p = self.selected(), self.selected_pass()
         if self.busy:
             return
@@ -514,6 +555,8 @@ class App:
                         lambda: export_figure(record["result"], p.id, folder, view, record.get("reference")), done)
 
     def file_settings(self):
+        if not self.guard_baseline(close=True):
+            return
         record = self.selected()
         if self.busy or not record:
             return
@@ -625,6 +668,8 @@ class App:
         ttk.Button(footer, text="Cancel", command=dialog.destroy).pack(side="left")
 
     def pass_settings(self):
+        if not self.guard_baseline(close=True):
+            return
         record, selected = self.selected(), self.selected_pass()
         if self.busy or not record or not selected:
             return
@@ -674,7 +719,57 @@ class App:
                 messagebox.showerror("Pass settings", str(exc), parent=dialog)
         ttk.Button(panel, text="Apply pass settings", command=apply).pack(anchor="e", pady=(14, 0))
 
+    def guard_baseline(self, close=False):
+        if self.editor:
+            if not self.editor.require_clean():
+                return False
+            if close:
+                self.editor.close(force=True)
+        return True
+
+    def commit_baseline(self, record, cfg):
+        result = refinalize(record["result"], cfg, allow_stale_review=True) if record.get("result") else None
+        record.update(cfg=cfg, result=result, saved=None, reference=None, validation=None,
+                      state=("Processed: accepted settings updated" if result["exportable"] else "STALE BASELINE: export blocked")
+                            if result else "Settings changed: process again", error="")
+        self.update_file(record)
+        self.refresh_selected()
+
+    def toggle_baseline(self):
+        record = self.selected()
+        if not record or not record.get("cfg"):
+            self.baseline_enabled.set(False)
+            return
+        if self.busy or not self.guard_baseline(close=True):
+            self.baseline_enabled.set(record["cfg"].get("baseline_review", empty_review())["enabled"])
+            return
+        cfg = copy.deepcopy(record["cfg"])
+        cfg.setdefault("baseline_review", empty_review())["enabled"] = self.baseline_enabled.get()
+        try:
+            self.commit_baseline(record, cfg)
+            self.status.set("Interactive baseline adjustment enabled. Unreviewed passes keep their ordinary policy."
+                            if self.baseline_enabled.get() else "Interactive adjustments inactive; ordinary policies restored. Accepted records retained.")
+        except InputError as exc:
+            self.baseline_enabled.set(record["cfg"].get("baseline_review", empty_review())["enabled"])
+            self.show_error(exc)
+
+    def review_baseline(self):
+        record, p = self.selected(), self.selected_pass()
+        if self.busy or not record or not p:
+            return
+        if not record.get("result") or p.zero:
+            self.show_error("Process the input, then select an acquired signal pass.")
+            return
+        if not record["cfg"].get("baseline_review", empty_review())["enabled"]:
+            self.show_error("Enable Interactive baseline adjustment to review a pass.")
+            return
+        if not self.guard_baseline(close=True):
+            return
+        self.editor = BaselineEditor(self, record, p.id)
+
     def close(self):
+        if not self.guard_baseline(close=True):
+            return
         self.closed = True
         self.executor.shutdown(wait=False, cancel_futures=True)
         self.root.destroy()

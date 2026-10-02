@@ -1,0 +1,112 @@
+TORQUE POSTPROCESSING 1.1 — OPTIONAL BASELINE REVIEW
+Implemented and validated: 2026-10-02T15:47:47.933034+00:00
+
+Target: D:\OneDrive - Florida State University\FSU\Github\torque-postprocessing
+Base Git commit: 266ff17d1b3d5c18b97d924b204d2264ff875082 (main); initially clean.
+No commit, push, deployment, background-model discovery or raw/reference modification.
+One agent. Existing Tkinter/ttk application extended; no replacement application.
+
+INTEGRATION AND OBSERVED RESULT
+pipeline.prepare_signal preserves Q6 signal/background subtraction. Both profiles
+already use this shared core; neither delegates early to the archived processor.
+baseline.finalize_pass performs the ordinary arithmetic or one accepted-offset
+subtraction, followed by unchanged .8g D and Decimal E serialization.
+baseline_editor caches immutable little-endian u bytes, angles and background
+binding. App draft guards protect navigation/save/load/process/export/close.
+Inactive records remain stored; stale active records visibly block export.
+baseline_review schema 1 stores canonical float.hex offsets and checked redundant
+decimal values. Its fingerprint excludes display settings, molar factor, ordinary
+centering, timestamps and the offset itself. It covers source/pass/background,
+profile, recipe, relevant upstream functions and Python/NumPy/platform identity.
+u digest: SHA-256 of unsigned little-endian uint64 length then ordered <f8 bytes.
+Default-off DAT bytes are unchanged; provenance and row ledgers gain review fields.
+
+GATE TABLE (observed, not planned)
+A PASS  Six old/default-off/inactive ordinary cases match v1.0 DAT bytes.
+B PASS  Accepted Delta=0: 3519/3519 exact D and E versus ordinary midrange.
+C PASS  Signed manual shifts, extrema and range respect the fixed arithmetic bound.
+D PASS  Apply/Cancel/Reset/Remove/navigation/off/on/save/load/export; no accumulation.
+E PASS  Same-label acquisition isolation, hex replay, stale source/background/recipe/u
+        rejection, independent molar change; unknown versions/pass keys fail.
+F PASS  Actual CLI and GUI exports identical; guarded CLI allows raw/config and
+        generated outputs only, denies reference probe; separate comparison 818/818.
+G PASS  Real Windows Tk widget/event loop; drag, numeric entry, invalid input,
+        pan/zoom and responsive worker. Native window visually inspected/captured.
+        Final widget run used withdrawn windows after user requested background work.
+H PASS  Constant/zero/subnormal and invalid vectors; real gaps, changing-field pass
+        and all 4869 raw rows preserved. No endpoint investigation.
+I PASS  Installed Arial Regular verified; 3 vector PDF/300-dpi PNG pairs, correct
+        dimensions/styles/embedded font; programmatic and rendered visual checks.
+
+26 focused unit tests passed. No test gate remains blocked or failed.
+Tests are automated widget/events plus agent visual inspection, not human manual
+interaction. Native file dialogs receive deterministic paths in the GUI test.
+
+EXACT REFERENCE RESULTS (D and E independently, saved and re-read)
+case / policy | rows | exact D | exact E | max |D error| (N m) | max |E error| (N m/mol)
+new_rot1 / midrange | 818 | 818 | 818 | 0 | 0
+new_rot2 / midrange | 938 | 938 | 938 | 0 | 0
+previous_rot2 / midrange | 820 | 820 | 820 | 0 | 0
+previous_rot1 / midrange | 943 | 328 | 328 | 3.242307e-07 | 0.000295578433041
+previous_rot1 / mean | 943 | 615 | 615 | 3.010934e-07 | 0.000274485776242
+previous_rot1 / DIAGNOSTIC | 943 | 943 | 943 | 0 | 0
+
+Previous Rot1 fixed-mode discrepancies are preserved evidence, not regressions.
+Diagnostic 943/943 uses established reference-selected 15 mean/8 midrange choices.
+Complete D/E RMSE and signed mean errors are in numerical_final/baseline_regression.json.
+All other exact cases have zero maximum error, RMSE and mean error in both units.
+
+ARITHMETIC BOUND
+B = 16*epsilon*S + 8*eta, with eta the smallest positive binary64 subnormal and
+S = max(max(abs(u)), abs(c_mid), abs(c_final), abs(delta)). No fitted tolerance.
+For finite nonoverflowing values, one rounded add/subtract at magnitude <=2S
+has error <=epsilon*S+eta/2. Halving is exact except possible subnormal rounding.
+The implemented comparison chains (rounded midpoint, final addition, point
+subtractions, shift/range/imbalance differences) conservatively require less
+than 11*epsilon*S+5*eta by magnitude bounds through those operations. The fixed
+16/8 bound therefore covers them. Zero is checked exactly; no range division.
+Maximum observed real-fixture error/B: 0.10577906479272349
+This bound never replaces exact Decimal comparison of exported D and E.
+
+PROVENANCE / FORMATTING / PRESERVATION
+Current environment: {"matplotlib": "3.10.8", "numpy": "2.3.5", "platform": "Windows-11-10.0.26200-SP0", "python": "3.12.14"}
+Arial: C:/Windows/Fonts/arial.ttf; SHA-256 b3658eadae55e682b5f69eb64c439c1ecc8f196c0bb8d4756d145d13bc86476a
+Embedded PDF subset: ArialMT. Baseline figures 8x6; background figure 8x6.1 inches.
+Labels 22 pt, ticks 18 pt, legends 12 pt, axes 1.2 pt, outward ticks 6/3 pt.
+Background actual samples: black filled 7.5 pt circles; red #FF0000 0.5 pt model.
+191 evidence entries verified; both supplied research ZIP and v1.0 release ZIP
+unchanged; all 12 pre-change DAT/settings fixtures checked against frozen v1.0 ZIP.
+CRLF introduced by the editing script was restored to original LF on three
+source files only. Normalized logical source is identical to tested code;
+before/after hashes are recorded in line_endings.json. No numerical change.
+
+DELIVERABLES AND REPLAY
+README.md: tested setup, launch, process/replay and background-only test commands.
+Example: examples/baseline_review_accepted.json. The example Delta is an automated
+software-test choice, not a physical correction or recommendation.
+Representative export: validation/baseline_v1.1/example_export/
+GUI result: validation/baseline_v1.1/gui_background/gui_baseline_results.json
+Live screenshot: validation/baseline_v1.1/gui/baseline_editor_native.png
+Figures: validation/baseline_v1.1/figures/
+Exact requested execution prompt and original byte-identical plan included.
+Package builder verifies recorded gates and all included member hashes/ZIP CRC.
+
+LIMITS
+Only the existing strict supported schemas/profiles are claimed; macOS/Linux
+and other numerical environments are untested and may require reacceptance.
+Unresolved: autonomous previous-Rot1 selector, physical molar normalization,
+uniqueness of the historical algorithm and experimental transfer to new samples.
+Manual offsets do not establish calibration or solve these scientific questions.
+
+CORE SOURCE HASHES
+app.py  0b4a0285709a0c7b02499e4b57b7fedf2d3464c44e0bcbf8066986c4d35dd30b
+baseline.py  b8695ccea03a5f76cd2a357869f4f72cf3f71977afc3a6394fb8f1c3434787e2
+baseline_editor.py  dab0985a88bb6b4b30ae729fc42b97a857bf6172db6d66a7921d762ec2b876c2
+cli.py  3f950b9f2597e7e38c6c5820f31b2e37e8cfd941a02ec2a98d6a8c60373d3f08
+io_profiles.py  77b9b14c521bf066ccb2b61987ac3116aa66cf745dedf68a86cec7d9bd13bc26
+pipeline.py  7012b1a07fb195639db0180d60a792aa6b53c66db24139b578bc69401b3896d2
+plots.py  5b0b1351a07fe62b7ba1626c070075ae9614f11f7ccc193fe7edd47853212735
+presets.py  9ee51f73ccc1f0a557b78b694b13afa464ea673658cdbcd0a4f9ef5a7ac1cee2
+setup_environment.py  f6f8e9fd48b345b5b2c833744b6bf3070c51871bd2a8a572a35b03488dcde6d3
+storage.py  b64a3649afb57e305641ab0a1fc5daeb8d4eda45347be05403ece11129ce7a7e
+validate.py  416c8d822068a9e8a7942bdf39a9263490e998b92dd7ec613b5e16194a679660

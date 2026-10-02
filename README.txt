@@ -1,4 +1,4 @@
-TORQUE POSTPROCESSING GUI v1.0
+TORQUE POSTPROCESSING GUI v1.1
 
 Start the application
 ---------------------
@@ -56,9 +56,21 @@ Normal workflow
    Comparison and Residual views become available. Validation cannot choose
    centering or change any calculation.
 
-Changing settings clears that input's results, plots, saved-output link and
-validation. Reprocess to see current previews. An asterisk in the pass list
-marks an explicit centering override. Process uses one background worker.
+Changing upstream/file settings clears that input's results and requires processing.
+Baseline changes refinalize cached u and clear saved-output/validation links. The pass list shows the effective centering policy. Process uses one background worker.
+
+
+Optional baseline review (1.1)
+------------------------------
+README.md documents the complete workflow, state rules and current test commands.
+Enable Interactive baseline adjustment only when review is desired. Process and
+select a signal pass, then Review baseline. New reviews preview midrange without
+committing. Apply accepts only that pass; Cancel discards its draft; Reset makes
+a zero-Delta draft requiring Apply; Remove override restores ordinary centering.
+Unchecking retains settings inactive. Dirty edits must be applied or discarded.
+Positive Delta raises c_final and lowers corrected torque. Off never disables
+ordinary centering. Only committed settings are exported. Stale active bindings
+block export until reaccepted, removed or disabled. No read/refit occurs on drag.
 
 Scientific recipe and units
 ---------------------------
@@ -69,6 +81,7 @@ For each observed signal pass:
        background angle, domain [0,200] degrees mapped to [-1,1]
   u  = r6 - p(nominal signal angles)
   c  = (min(u)+max(u))/2 for midrange, or arithmetic mean(u) for mean
+       OR an explicitly accepted c_final when interactive review is active
   D  = binary64 format(u-c, '.8g')
   E  = exact Decimal(D) * Decimal(k), only when explicitly enabled
 
@@ -113,7 +126,7 @@ It is not silently inherited by new files.
 
 Load explicit profile JSON for legitimate changed tolerances/field steps/gap
 policies or a documented max_extrapolation_deg. Include a meaningful provenance
-note. Version 1.0 retains the 5-degree grid and fixed [0,200] fitted domain.
+note. Version 1.1 retains the 5-degree grid and fixed [0,200] fitted domain.
 It does not validate the physical applicability of a custom policy.
 
 Schemas:
@@ -153,10 +166,9 @@ Validate a delivered saved output:
   .\.venv\Scripts\python.exe cli.py validate --output validation/regression/new_rot1_midrange/treated.dat --reference evidence/Torque_Ho2thd4Pc_pipeline_comparison_v1.2/inputs/Rot1treatedHo2thd4Pc.dat
 
 Replay regressions in a NEW folder (existing named runs are protected):
-  .\.venv\Scripts\python.exe tests/regression.py --output validation/replay_new
-  .\.venv\Scripts\python.exe tests/test_core.py
-  .\.venv\Scripts\python.exe tests/isolation.py
-  .\.venv\Scripts\python.exe tests/gui_smoke.py
+  .\.venv\Scripts\python.exe tests/baseline_regression.py --output validation/replay_new
+  .\.venv\Scripts\python.exe -m unittest discover -s tests -v
+  .\.venv\Scripts\python.exe tests/baseline_gui.py --background --output validation/replay_gui
 
 The GUI smoke test uses actual Tk widgets and event loop, with deterministic
 paths supplied instead of interacting with native file pickers. Separate desktop
@@ -167,7 +179,7 @@ processing dependency.
 
 Verified scope and limits
 -------------------------
-Read BUILD_REPORT.txt and Torque_GUI_project_state_v1.0.json for measured results.
+Read BASELINE_IMPLEMENTATION_REPORT_v1.1.txt and Torque_GUI_project_state_v1.0.json for current results. BUILD_REPORT.txt is historical v1.0.
 All 4869 raw rows and 3519 unique reference rows are covered by the regression.
 New Rot1 818/818, New Rot2 938/938 and Previous Rot2 820/820: fixed midrange exact.
 Previous Rot1: fixed mean 615/943; fixed midrange 328/943.
@@ -179,11 +191,12 @@ Software admission of synthetic data is not experimental validation of transfer.
 
 Plots
 -----
-Scientific exports use the supplied Gill Sans MT (verified hash); PDFs embed it.
+Scientific exports use installed Arial Regular (resolved font checked); PDFs embed it.
 8x6 inches (background fit 8x6.1), white; 22 pt labels, 18 pt ticks, 12 pt legends;
 black left/bottom axes 1.2 pt, outward major/minor ticks 6/3 pt, no grid/title.
 Background samples: 7.5 pt black circles with no joining lines; red 0.5 pt fit.
 300 dpi PNG and vector PDF; existing filenames are protected. Missing font does
 not block processing, but the app explicitly disables compliant scientific
-export and identifies the preview fallback. See fonts/provenance.txt and NOTICE.txt.
+export and identifies the preview fallback. See NOTICE.txt. fonts/provenance.txt
+describes the unused historical Gill Sans asset, not the current Arial font.
 

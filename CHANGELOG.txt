@@ -1,3 +1,17 @@
+Torque Postprocessing GUI v1.1 | 2 October 2026
+
+- Added optional per-acquisition baseline editor with immutable cached u,
+  numeric/drag controls, corrected view, explicit Apply/Cancel/Reset/Remove,
+  dirty-state guards, inactive retention and stale-export blocking.
+- Shared finalization preserves ordinary .8g D / exact Decimal E arithmetic;
+  both profiles honor lossless accepted hexadecimal offsets.
+- Added source/background/recipe/u binding, CLI replay and existing-ledger
+  provenance. Molar-only changes do not invalidate N m baselines.
+- Arial Regular supersedes Gill Sans for current plots; historical assets stay intact.
+- Verified A-I: 26 tests, six unchanged ordinary DAT outputs, 3519 zero-Delta
+  midrange rows, real GUI plus hidden-window tests, isolated CLI and 3 figure pairs.
+- No parser generalization, model search, scientific retuning, commit or push.
+
 Torque Postprocessing GUI v1.0 | 2 October 2026
 
 - Added Tkinter/ttk desktop application and one shared raw-only CLI/core.

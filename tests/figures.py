@@ -1,4 +1,5 @@
 """Generate representative saved-stage plots and verify PDF/PNG properties."""
+import argparse
 import json
 from pathlib import Path
 import subprocess
@@ -6,21 +7,24 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from plots import export_figure, make_figure, FONT_SHA
+from plots import export_figure, make_figure, FONT_SHA, FONT, font_status
+from cli import run_entry
+from storage import load_session
+from matplotlib import font_manager
 from storage import load_config, atomic_json
 from validate import read_treated
 
 
-def main():
+def main(session, output):
     from PIL import Image
     from pypdf import PdfReader
-    result = load_config(ROOT/"validation/regression/new_rot1_midrange/provenance.json")
-    reference, _ = read_treated(ROOT/"evidence/Torque_Ho2thd4Pc_pipeline_comparison_v1.2/inputs/Rot1treatedHo2thd4Pc.dat")
-    folder = ROOT/"validation/plots"
+    raw, cfg = load_session(session)[0]
+    result = run_entry(raw, cfg)
+    folder = Path(output)
+    reference = None
     reports = []
-    for view in ("stages", "background", "comparison", "residual"):
-        existing = [folder / f"P003_{view}.{ext}" for ext in ("pdf", "png")]
-        pdf, png = existing if all(p.exists() for p in existing) else export_figure(result, "P003", folder, view, reference)
+    for view in ("baseline_uncentered", "baseline_corrected", "background"):
+        pdf, png = export_figure(result, "P003", folder, view, reference)
         reader = PdfReader(pdf)
         page = reader.pages[0]
         names, embedded = [], []
@@ -32,7 +36,7 @@ def main():
                 desc = descendant.get_object().get("/FontDescriptor")
                 if desc:
                     embedded.append(any(k in desc.get_object() for k in ("/FontFile", "/FontFile2", "/FontFile3")))
-        assert names and all("GillSans" in n.replace("-", "") for n in names), names
+        assert names and all("ArialMT" in n for n in names), names
         assert embedded and all(embedded)
         image = Image.open(png)
         expected = (2400, 1830 if view == "background" else 1800)
@@ -52,6 +56,25 @@ def main():
             labels.extend(t for t in ax.get_yticklabels() if ax.get_ylim()[0] <= t.get_position()[1] <= ax.get_ylim()[1])
             if ax.get_legend():
                 labels.append(ax.get_legend())
+        for ax in fig.axes:
+            assert not ax.spines["top"].get_visible() and not ax.spines["right"].get_visible()
+            assert ax.spines["left"].get_linewidth() == 1.2
+            assert ax.xaxis.label.get_fontsize() == 22
+            assert ax.yaxis.label.get_fontsize() == 22
+            assert not ax.get_title()
+            assert not any(line.get_visible() for line in ax.get_xgridlines()+ax.get_ygridlines())
+            assert ax.xaxis.get_major_ticks()[0].tick1line.get_markersize() == 6
+            assert ax.xaxis.get_minor_ticks()[0].tick1line.get_markersize() == 3
+            assert all(t.label1.get_fontsize() == 18 for t in ax.xaxis.get_major_ticks())
+            if ax.get_legend():
+                assert all(t.get_fontsize() == 12 for t in ax.get_legend().get_texts())
+            if view == "background":
+                samples, curve = ax.lines
+                assert samples.get_markersize() == 7.5 and samples.get_linestyle() == "None"
+                assert samples.get_markerfacecolor() == "black"
+                assert curve.get_color() == "#FF0000" and curve.get_linewidth() == .5
+            for text in [ax.xaxis.label,ax.yaxis.label,*ax.get_xticklabels(),*ax.get_yticklabels()]:
+                assert Path(font_manager.findfont(text.get_fontproperties())).resolve() == FONT.resolve()
         clipped = []
         for label in labels:
             box = label.get_window_extent(renderer)
@@ -61,11 +84,15 @@ def main():
         reports.append({"view": view, "PDF": str(Path(pdf).relative_to(ROOT)), "PNG": str(Path(png).relative_to(ROOT)),
                         "fonts": names, "all_fonts_embedded": True, "PNG_pixels": image.size,
                         "PNG_dpi": image.info.get("dpi"), "text_or_legend_clipping": clipped,
-                        "font_sha256": FONT_SHA})
+                        "font_sha256": FONT_SHA, "font_resolution": font_status()})
     atomic_json(folder/"figure_checks.json", reports)
     print(json.dumps(reports, indent=2))
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--session", default=str(ROOT/"validation/baseline_v1.1/gui_background/accepted_session.json"))
+    parser.add_argument("--output", default=str(ROOT/"validation/baseline_v1.1/figures"))
+    args = parser.parse_args()
+    main(args.session, args.output)
 

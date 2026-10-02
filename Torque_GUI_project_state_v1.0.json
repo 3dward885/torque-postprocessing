@@ -1,0 +1,144 @@
+{
+  "assumptions": [
+    "One input represents its own acquisition/rotation; no physical rotation name inferred",
+    "Background is same input and nominal temperature, acquired before or after",
+    "Supported schemas/profiles and scientific applicability remain explicit",
+    "Molar sample metadata are provided and physically unverified"
+  ],
+  "authoritative_inputs": {
+    "baseline_plan_sha256": "983481f23a0945564e6d2b06f247d4373157c53dd8f1a23a16c7e3d4cb0c437f",
+    "evidence_directory": "evidence/Torque_Ho2thd4Pc_pipeline_comparison_v1.2",
+    "evidence_zip_sha256": "71b5c9bd246648fd52ad6cdaf48626ce6b9051facbbb31bea35347fcdffdc605",
+    "execution_prompt_sha256": "15be2d3bdc029a14b4d9d5159beb9581bb56687c4ce653fdf5e9e377020d8112",
+    "immutable_evidence_entries_verified": 191
+  },
+  "base_commit": "266ff17d1b3d5c18b97d924b204d2264ff875082",
+  "baseline_contract": {
+    "digest": "uint64 little-endian length plus ordered little-endian float64 u",
+    "drag": "immutable cache; no refit/reread",
+    "inactive": "retained, no effect",
+    "lossless_replay": "binary64 float.hex",
+    "midpoint_samples": "complete retained pass, never zoom window",
+    "new_session_enabled": false,
+    "schema_version": 1,
+    "stale_active": "export blocked pending reaccept/remove/disable",
+    "upstream_implementation_sha256": "4b7619fd4cefa34b5c679e1c9bbec7d7292bb4f76057d565cc524c6182287e09"
+  },
+  "current_core_sha256": {
+    "app.py": "0b4a0285709a0c7b02499e4b57b7fedf2d3464c44e0bcbf8066986c4d35dd30b",
+    "baseline.py": "b8695ccea03a5f76cd2a357869f4f72cf3f71977afc3a6394fb8f1c3434787e2",
+    "baseline_editor.py": "dab0985a88bb6b4b30ae729fc42b97a857bf6172db6d66a7921d762ec2b876c2",
+    "cli.py": "3f950b9f2597e7e38c6c5820f31b2e37e8cfd941a02ec2a98d6a8c60373d3f08",
+    "io_profiles.py": "77b9b14c521bf066ccb2b61987ac3116aa66cf745dedf68a86cec7d9bd13bc26",
+    "pipeline.py": "7012b1a07fb195639db0180d60a792aa6b53c66db24139b578bc69401b3896d2",
+    "plots.py": "5b0b1351a07fe62b7ba1626c070075ae9614f11f7ccc193fe7edd47853212735",
+    "presets.py": "9ee51f73ccc1f0a557b78b694b13afa464ea673658cdbcd0a4f9ef5a7ac1cee2",
+    "setup_environment.py": "f6f8e9fd48b345b5b2c833744b6bf3070c51871bd2a8a572a35b03488dcde6d3",
+    "storage.py": "b64a3649afb57e305641ab0a1fc5daeb8d4eda45347be05403ece11129ce7a7e",
+    "validate.py": "416c8d822068a9e8a7942bdf39a9263490e998b92dd7ec613b5e16194a679660"
+  },
+  "decisions": [
+    "Extend existing Tkinter architecture; one shared finalization for both profiles",
+    "Keep ordinary arithmetic/serialization exact",
+    "Use Arial Regular for current figures",
+    "After user's request, all remaining GUI checks run with withdrawn windows and no desktop input",
+    "Track this current compact state; preserve historical state under validation/baseline_v1.1/before_project_state.json"
+  ],
+  "delivery": {
+    "archive_manifest": "Torque_Postprocessing_GUI_v1.1/FILE_MANIFEST.json",
+    "source_archive": "../Torque_Postprocessing_GUI_v1.1.zip",
+    "verification": "../Torque_Postprocessing_GUI_v1.1.package_verification.json"
+  },
+  "derived_quantities": [
+    "u = Q6 raw signal minus evaluated background",
+    "c_mid from actual retained u extrema",
+    "c_final = c_mid + explicit delta",
+    "D .8g",
+    "E exact Decimal(exported D)*factor"
+  ],
+  "environment": {
+    "matplotlib": "3.10.8",
+    "numpy": "2.3.5",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.14"
+  },
+  "fitted_parameters": [
+    "Seven unweighted degree-six background coefficients per actual selected background"
+  ],
+  "fixed_recipe": {
+    "D_export": "binary64 format .8g",
+    "E_export": "exact Decimal(exported D) * k",
+    "angles": "nominal",
+    "basis": "scaled power",
+    "degree": 6,
+    "domain_deg": [
+      0,
+      200
+    ],
+    "input_rounding": "Decimal nearest, ties to even, then binary64",
+    "input_significant_digits": 6,
+    "intermediate_rounding": null,
+    "order": "subtract_then_center",
+    "version": "verified-1.2/gui-1.0",
+    "weights": "unweighted",
+    "window": [
+      -1,
+      1
+    ]
+  },
+  "git_policy": "User will review, commit and push manually; no commit or push performed.",
+  "next_step": "User reviews and commits the local changes; no further scientific study requested.",
+  "objective": "Implement and validate optional per-acquisition interactive baseline review in the existing local torque GUI and shared CLI.",
+  "provided_settings": [
+    "ordinary mean/midrange policy",
+    "explicit per-pass baseline choices",
+    "background association if ambiguous",
+    "molar factor or sample metadata and provenance"
+  ],
+  "rejected_or_superseded": [
+    "Archived PLAN ONLY/Stop here limitations superseded by exact execution authorization",
+    "Research no-GUI observation does not apply to current Git checkout",
+    "Historical Gill Sans requirement superseded by Arial",
+    "No model discovery, hidden selector, smoothing, regridding, fabricated samples or reference-derived baseline"
+  ],
+  "repository": "D:\\OneDrive - Florida State University\\FSU\\Github\\torque-postprocessing",
+  "state_filename_retained_for_continuity": "Torque_GUI_project_state_v1.0.json",
+  "status": "implementation and all required A-I acceptance gates complete",
+  "units": {
+    "D": "N m",
+    "E": "N m/mol",
+    "angles": "deg",
+    "delta_and_offsets": "N m",
+    "output_field": "T",
+    "raw_field": "Oe"
+  },
+  "unresolved": [
+    "Autonomous previous-Rot1 centering selection; diagnostic choices remain reference-selected",
+    "Physical basis of 911.63 and 1575.45 mol^-1",
+    "Historical algorithm uniqueness and experimental transfer claims",
+    "macOS/Linux and other numerical environments untested"
+  ],
+  "updated_utc": "2026-10-02T15:47:47.933034+00:00",
+  "verified_results": {
+    "GUI_CLI_DAT_byte_identical": true,
+    "accepted_zero_D_and_E_exact_rows": 3519,
+    "distinct_raw_rows": 4869,
+    "figure_pairs_with_Arial": 3,
+    "gates": {
+      "A": "PASS",
+      "B": "PASS",
+      "C": "PASS",
+      "D": "PASS",
+      "E": "PASS",
+      "F": "PASS",
+      "G": "PASS",
+      "H": "PASS",
+      "I": "PASS"
+    },
+    "old_DAT_cases_byte_identical": 6,
+    "reference_denied_CLI": true,
+    "reports_directory": "validation/baseline_v1.1",
+    "unit_tests": 26
+  },
+  "version": "1.1"
+}

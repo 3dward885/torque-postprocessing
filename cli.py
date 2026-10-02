@@ -11,10 +11,10 @@ from presets import apply_preset, PRESET_LABELS
 from storage import atomic_json, export_run, load_config, load_session
 
 
-def run_entry(path, settings=None, profile="fractional"):
+def run_entry(path, settings=None, profile="fractional", allow_stale_review=False):
     obj = read_raw(path, settings["profile"] if settings else profile)
     cfg = settings if settings else default_config(obj)
-    return process(obj, cfg)
+    return process(obj, cfg, allow_stale_review=allow_stale_review)
 
 
 def main(argv=None):

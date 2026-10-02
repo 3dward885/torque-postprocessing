@@ -19,3 +19,10 @@ automatically. Every override is bound to the exact input and pass identity.
 
 All molar multipliers in these reference examples are documented export
 multipliers, not independently verified sample amounts.
+
+baseline_review_accepted.json (v1.1)
+  Committed automated GUI-test setting for New Rot1 P003; delta is
+  1.2345678901234567e-9 N m. Ordinary mean remains the policy for unreviewed
+  passes. This is a software illustration, not a recommended physical correction.
+  The explicit factor 1575.45 has verified arithmetic, unverified physical basis.
+  CLI replay: python cli.py process --session examples/baseline_review_accepted.json --output runs

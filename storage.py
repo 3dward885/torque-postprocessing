@@ -80,6 +80,8 @@ def environment():
 
 def export_run(result, output_folder, run_name=None):
     """Publish a complete directory in one rename; raw inputs can never be replaced."""
+    from pipeline import verify_export
+    verify_export(result)
     raw = Path(result["input"]["path"])
     if sha256(raw) != result["input"]["sha256"]:
         raise InputError("Raw input changed since processing. Re-import and process again.")

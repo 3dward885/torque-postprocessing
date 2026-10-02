@@ -20,7 +20,6 @@ User_session.json
 FILE_MANIFEST.json
 SHA256SUMS.txt
 source_verification.json
-Torque_GUI_project_state_v1.0.json
 
 # Supplied proprietary font stays in the local scientific application package.
 fonts/*.TTF

@@ -1,102 +1,174 @@
-# Torque Postprocessing
+# Torque Postprocessing 1.1
 
-Local Python desktop application for processing torque-magnetometry DAT files.
-The Tkinter interface and command-line entry point use the same numerical core.
+Local Python desktop application for torque magnetometry. The Tkinter GUI and
+command-line processor share the same numerical core. Version 1.1 adds optional,
+independent baseline review for each acquired signal pass.
 
-## Run on Windows
+## Launch on Windows
 
-This repository was copied without the machine-specific Python environment.
-Run **Setup_Windows.cmd** once in this folder, then **Launch_GUI.cmd**.
-The setup finds the existing bundled Python 3.12 or an installed Python 3.12
-with Tkinter and downloads the pinned dependencies. The original delivered
-application remains available in its original folder with its tested environment.
-Equivalent launch command after setup, from this repository directory:
+The environment in this local repository is installed and tested. Double-click
+**Launch_GUI.cmd**, or run this from the repository folder in PowerShell:
 
 ```powershell
 .\.venv\Scripts\python.exe app.py
 ```
 
-Tested: Python 3.12.14, NumPy 2.3.5, Matplotlib 3.10.8, Tk 8.6.12, Windows 11.
-Other platforms and numerical environments have not been validated.
+For a fresh extracted copy, run **Setup_Windows.cmd** once first. It finds the
+bundled or installed Python 3.12 with Tkinter, creates a local environment (an
+isolated folder of Python dependencies), and installs the pinned requirements.
+The ZIP excludes that machine-specific environment. No server is needed.
 
-## Workflow
+Tested here: Windows 11, Python 3.12.14, NumPy 2.3.5, Matplotlib 3.10.8, Tk 8.6.12.
+Other operating systems have not been tested. Arial Regular must be installed
+for compliant scientific exports; the app reports an unavailable font explicitly.
 
-Add raw files, inspect passes and their backgrounds, select settings, process,
-preview, and export. Each new file defaults to midrange centering and torque-only
-output. Molar output requires explicit sample metadata or a documented multiplier.
-Optional treated-reference comparison occurs only after export.
+## Process and review
 
-The fixed recipe uses six-significant-digit torque inputs, an unweighted
-degree-six background fit on the nominal [0, 200] degree domain, subtraction,
-explicit centering, eight-significant-digit D export and exact Decimal E from
-the exported D. The application never invents missing signal observations.
+1. Add a supported raw DAT file. Select its profile, ordinary centering and
+   optional molar settings in **File settings**. New files start with midrange
+   centering, torque-only output and **Interactive baseline adjustment** unchecked.
+2. **Process all**, select an acquired signal pass, then enable **Interactive
+   baseline adjustment** for that input and click **Review baseline**.
+3. A new review starts at midrange over all retained samples. Viewing it does
+   not accept a setting: export still uses that pass's ordinary mean/midrange
+   policy until **Apply**.
+4. Drag the baseline in the uncentered view or enter Delta in N m. Positive
+   Delta moves corrected values downward. The corrected view has a fixed zero.
+   Pan/zoom leaves the baseline unchanged; zoom never changes the samples used.
+5. **Apply** commits only this pass. **Cancel** discards its draft. **Reset**
+   creates a zero-Delta draft that still needs Apply. **Remove override**
+   restores its ordinary policy. Apply or Cancel before leaving a dirty editor,
+   disabling the feature, saving/loading, processing or exporting.
+6. Unchecking retains accepted records but uses ordinary centering. Rechecking
+   validates them. Stale active settings visibly block export until reviewed
+   and applied, removed, or disabled. Each pass shows its effective export mode.
+7. Save configuration; **Export ready** writes committed data to a new run
+   directory. Preview export includes baseline_uncentered and baseline_corrected.
+   The independent treated-reference comparison is available after data export.
 
-Read [README.txt](README.txt) for the full workflow, units, profiles and commands.
-[BUILD_REPORT.txt](BUILD_REPORT.txt) records the observed version 1.0 acceptance.
+For each pass, u is the original background-subtracted vector. The editor uses
+c_mid = (min(u)+max(u))/2, c_final = c_mid + Delta, and u-c_final exactly once.
+Neither dragging nor Apply rereads the input or refits the background. Repeated
+processing never accumulates shifts. These are user-provided centering choices,
+not measured calibration constants or fitted drift parameters.
 
-## Validated baseline
+## Scientific contract
 
-| Dataset | Centering | Exact saved rows |
-| --- | --- | ---: |
-| New Rot1 | Midrange | 818/818 |
-| New Rot2 | Midrange | 938/938 |
-| Previous Rot2 | Midrange | 820/820 |
-| Previous Rot1 | Mean | 615/943 |
-| Previous Rot1 | Midrange | 328/943 |
-| Previous Rot1 | Explicit diagnostic choices | 943/943 |
+The recipe is unchanged: original torque tokens are rounded to six significant
+digits using Decimal semantics; an unweighted degree-six background polynomial
+is fitted against nominal angles on [0,200] degrees; the evaluated background is
+subtracted; centering follows; D is serialized with binary64 .8g; E is the exact
+Decimal product of **exported D** and the explicit factor. D remains N m and E
+is labelled N m/mol. No extra rounding, smoothing, synthetic points or rescaling.
 
-The old Rot1 diagnostic example uses reference-selected choices; the automatic
-selector remains unresolved. The physical basis of multipliers 911.63 and
-1575.45 remains unverified. Synthetic tests establish software behavior, not
-experimental validity for new samples.
+Both existing profiles support the feature. Supported inputs remain the strict
+32-column instrument CSV schema (14-32 recorded columns) and documented
+four-column TSV, with their existing coordinate tolerances and acquisition rules.
+The fractional profile preserves supported missing samples and monotonic changing
+fields. Previous requires complete signal grids and stable fields. One input is
+one acquisition/rotation; same-temperature backgrounds stay within that input,
+including backgrounds acquired afterward. Multiple candidates require a choice.
+This is not an arbitrary-file parser. Details remain in README.txt and profiles/.
 
-## Repository and local evidence
+Scientific figures use Arial Regular, 8 x 6 inches (background fits 8 x 6.1),
+22 pt labels, 18 pt ticks, 12 pt legends, black left/bottom axes and outward ticks,
+without grids/titles. Background samples are filled black 7.5 pt circles; the
+stored polynomial is a solid red 0.5 pt curve. The baseline is a control, not a fit.
+The old Gill Sans requirement is superseded; historical figures are unchanged.
 
-This repository tracks source, explicit profiles, tests, synthetic fixtures,
-sample configurations and documentation. The original research data, generated
-outputs, personal session and Python environment remain local and are ignored
-by Git. The complete delivered source ZIP remains the immutable version 1.0
-archive, including the original evidence and validation artifacts.
+## Save and replay accepted settings
 
-Real-data tests require the supplied evidence package at:
+The optional baseline_review block has schema_version 1, enabled, and independent
+overrides keyed by pass ID. Old configurations without it preserve old behavior.
+Each record binds the source SHA-256, profile, acquisition identity and source
+rows/angles, selected background, upstream numerical recipe/environment and
+little-endian binary64 u digest. Temperature/field labels alone are not identities.
+The accepted offset is lossless binary64 hexadecimal; readable round-trip decimal
+values are checked against it. Unknown feature versions and pass keys are errors.
 
-```text
-evidence/Torque_Ho2thd4Pc_pipeline_comparison_v1.2/
-```
+Changing background/data/upstream arithmetic invalidates affected records.
+Changing zoom/font or ordinary policy does not. A molar-factor change leaves the
+N m baseline valid and recomputes E. Different numerical/platform environments
+can require explicit reacceptance. Provenance and the existing row ledger record
+the ordinary and effective policies, offset, origin and acceptance record.
+Malformed inactive values remain inactive and are identified; they cannot become
+active without validation.
 
-The source archive SHA-256 is
-`71b5c9bd246648fd52ad6cdaf48626ce6b9051facbbb31bea35347fcdffdc605`.
-Exact fixture identities are in [fixtures/manifest.json](fixtures/manifest.json).
-Restore the evidence from the original archive before running:
+The committed example is an **automated software test choice**, not a physical
+correction for the sample: P003 Delta = 1.2345678901234567e-9 N m, ordinary mean,
+explicit reference multiplier 1575.45 mol^-1. Run:
 
 ```powershell
-.\.venv\Scripts\python.exe tests/test_core.py
-.\.venv\Scripts\python.exe tests/regression.py --output validation/replay_new
-.\.venv\Scripts\python.exe tests/isolation.py
-.\.venv\Scripts\python.exe tests/gui_smoke.py
+.\.venv\Scripts\python.exe cli.py process --session examples/baseline_review_accepted.json --output runs
+.\.venv\Scripts\python.exe cli.py process --raw "your_raw.dat" --profile fractional --output runs
 ```
 
-The supplied Gill Sans MT font is retained in the local application package
-and is excluded from Git. For compliant scientific plot exports in a fresh
-clone, restore the supplied `fonts/GIL_____.TTF` from that package.
-Its required SHA-256 is
-`f6664b244192ab4cf3a58bb6a653700d1f345d03bb8879888bcea1b6f8f3f97c`.
-Without it, numerical processing works and previews identify the fallback;
-compliant scientific PDF/PNG export is disabled.
-See [NOTICE.txt](NOTICE.txt) for source and font provenance.
+No GUI or treated reference is needed for processing. Each export includes DAT,
+settings, provenance, original-token row ledger, raw snapshot and file hashes.
+Completed directories are published atomically (only after every file succeeds).
+Existing run names and plot paths are rejected instead of overwritten.
 
-Historical reports and `tools/package_release.py` describe the complete local
-delivery, including files intentionally excluded from Git. They are not claims
-that a fresh clone includes private data or generated validation artifacts.
+## Observed validation and reproducible commands
 
-## Tracking changes
+A-I passed. All six ordinary outputs match version 1.0 byte for byte. Accepted
+Delta=0 reproduces all 3519 midrange rows exactly in D and E. All 4869 raw rows
+remain accounted for. Manual shifts are tested against the specified floating
+point bound, never against historical reference equality.
 
-The repository is initialized on main with no initial commit. Add this folder
-as an existing local repository in GitHub Desktop, review the changes, and
-create the initial commit when ready. Publishing and pushing are manual.
-Make future source edits in this same Git checkout. Review `git diff`, commit related changes with a useful
-message, and push to GitHub. Commits are saved versions; pushing uploads them.
-Changes are not uploaded automatically.
+| Historical reference | Policy | Exact D / exact E rows |
+| --- | --- | --- |
+| Ho2thd4Pc Rot1 | Midrange | 818 / 818 of 818 |
+| Ho2thd4Pc Rot2 | Midrange | 938 / 938 of 938 |
+| Previous Rot2 | Midrange | 820 / 820 of 820 |
+| Previous Rot1 | Mean | 615 / 615 of 943 |
+| Previous Rot1 | Midrange | 328 / 328 of 943 |
+| Previous Rot1 | Explicit diagnostic choices | 943 / 943 of 943 |
 
-Keep raw measurements and generated runs outside tracked source files.
-Line-ending conversion is disabled to preserve the verified source hashes.
+26 unit tests passed. The actual Windows GUI completed load/process/review,
+drag/numeric input, pan/zoom, invalid-input/state checks, save/load and export.
+GUI and CLI DAT files match byte for byte. The CLI also passed with reference
+reads denied; comparison ran separately afterward. One live editor screenshot
+and three inspected vector-PDF/300-dpi-PNG figure pairs are included. After the
+request to free the PC, all further GUI tests used withdrawn windows and no
+desktop input. These are automated widget/event tests and agent visual
+inspection, not human manual acceptance.
+
+From this directory, choose unused output folders for repeat runs:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe tests/baseline_regression.py --output validation/replay_baseline
+.\.venv\Scripts\python.exe tests/baseline_gui.py --background --output validation/replay_gui
+.\.venv\Scripts\python.exe -m pip install -r requirements-validation.txt
+.\.venv\Scripts\python.exe tests/figures.py --session examples/baseline_review_accepted.json --output validation/replay_figures
+```
+
+Omit --background only when you want visible GUI testing; --hold keeps that test
+window open. The regression requires immutable evidence at
+evidence/Torque_Ho2thd4Pc_pipeline_comparison_v1.2 and the six pre-change
+validation/regression/<case_policy>/{settings.json,treated.dat} fixtures.
+These are included in the v1.1 ZIP, but remain local and Git-ignored.
+The evidence ZIP SHA-256 is
+71b5c9bd246648fd52ad6cdaf48626ce6b9051facbbb31bea35347fcdffdc605.
+Do not run the archived validate_compare.py main or historical package builder
+against the edited application. Current packaging: tools/package_baseline_release.py.
+
+See BASELINE_IMPLEMENTATION_REPORT_v1.1.txt and validation/baseline_v1.1.
+The current compact state remains Torque_GUI_project_state_v1.0.json for
+continuity; its version field is 1.1. BUILD_REPORT.txt and old validation folders
+describe the historical v1.0 release.
+
+## Remaining scientific limits and Git workflow
+
+The autonomous previous-Rot1 centering selector remains unresolved; diagnostic
+choices are reference-selected. Factors 911.63 and 1575.45 have verified
+arithmetic but unverified physical normalization. Exact reproduction does not
+establish a unique historical algorithm or transferability to new samples.
+Manual offsets do not resolve those scientific questions.
+
+Changes are in the existing local repository, based on commit
+266ff17d1b3d5c18b97d924b204d2264ff875082. No commit or push was performed for this
+feature. Review and commit through GitHub Desktop, then push when ready.
+Source and compact documentation are tracked; raw/evidence/generated output and
+the Python environment remain local. The downloadable v1.1 ZIP includes the
+immutable fixtures needed for replay. Original inputs and archives are unchanged.

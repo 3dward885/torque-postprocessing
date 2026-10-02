@@ -7,9 +7,12 @@ from __future__ import annotations
 from dataclasses import asdict
 from decimal import Decimal, ROUND_HALF_EVEN, localcontext
 import copy
+import hashlib
+import inspect
 import numpy as np
 from numpy.polynomial import Polynomial
-from io_profiles import InputError, decimal_value
+from io_profiles import InputError, decimal_value, read_raw, _nominal
+from baseline import empty_review, review_settings, make_binding, resolve, finalize_pass
 
 RECIPE = {
     "version": "verified-1.2/gui-1.0",
@@ -28,7 +31,7 @@ def default_config(acquisition):
         "centering_source": "Application default: midrange",
         "molar": {"mode": "torque", "source": "No sample amount supplied"},
         "export_format": "canonical", "overrides": {}, "support_exceptions": [],
-        "note": "",
+        "note": "", "baseline_review": empty_review(),
     }
 
 
@@ -96,6 +99,7 @@ def validate_config(acquisition, config):
             raise InputError("Malformed support permission.")
         if exception["input_sha256"] != acquisition.sha256 or not exception["source"].strip():
             raise InputError("Support permission fingerprint/source mismatch; select an explicit general support policy.")
+    review_settings(config, {p.id for p in acquisition.passes if not p.zero})
     molar_settings(config["molar"])
 
 
@@ -162,7 +166,96 @@ def check_support(acquisition, signal, background, config):
     raise InputError(f"{signal.id}: angles {outside} exceed {background.id} measured support [{low},{high}] deg. Choose a supported background or load a documented profile with an explicit extrapolation allowance.")
 
 
-def process(acquisition, config):
+def prepare_signal(signal, fit):
+    x = np.asarray([r.angle for r in signal.rows], dtype=float)
+    r6 = q6([r.tokens[12] for r in signal.rows])
+    b = fit(x)
+    return x, r6, b, r6 - b
+
+
+# Only code that defines u participates; plotting, timestamps, molar settings
+# and the centering/finalization implementation do not invalidate N m choices.
+UPSTREAM_IMPLEMENTATION = hashlib.sha256("\n".join(inspect.getsource(f) for f in
+    (read_raw, _nominal, q6, fit_background, prepare_signal, select_background, check_support)).encode()).hexdigest()
+
+
+def finalize_prediction(pred, config, factor, allow_stale_review=False):
+    ordinary = config.get("overrides", {}).get(pred["pass_id"], {})
+    mode = ordinary.get("centering", config["centering"])
+    offset, review = resolve(config, pred["baseline_binding"], pred["subtracted_Nm"], allow_stale_review)
+    if review["status"] == "active" and RECIPE["order"] != "subtract_then_center":
+        raise InputError("Interactive baselines support subtract_then_center only.")
+    finalized = finalize_pass(pred["subtracted_Nm"], mode, factor, offset)
+    effective = review["accepted_record"]["origin"] if review["status"] == "active" else mode
+    if review["status"] == "stale":
+        effective = "stale override - export blocked"
+    pred.update(ordinary_centering=mode, centering=effective,
+                centering_source=("User-provided accepted baseline setting" if review["status"] == "active"
+                                  else ordinary.get("source", config["centering_source"])),
+                centering_constant_Nm=finalized["offset"],
+                centered_internal_Nm=finalized["values"].tolist(),
+                D=finalized["D"], E=finalized["E"], baseline_review=review)
+    return finalized
+
+
+def review_summary(result):
+    blockers = [p["pass_id"] for p in result["passes"] if p["baseline_review"]["status"] == "stale"]
+    result["exportable"] = not blockers
+    result["export_blockers"] = blockers
+    return result
+
+
+def baseline_ledger(pred):
+    return {"ordinary_centering": pred["ordinary_centering"], "centering": pred["centering"],
+            "centering_constant_Nm": pred["centering_constant_Nm"],
+            "baseline_status": pred["baseline_review"]["status"],
+            "baseline_record_pass_id": pred["pass_id"] if pred["baseline_review"]["accepted_record"] else None,
+            "c_final_binary64_hex": float(pred["centering_constant_Nm"]).hex(),
+            "centering_source": pred["centering_source"]}
+
+
+def refinalize(result, config, allow_stale_review=False):
+    """Replay committed choices from cached u; never reread raw data or refit."""
+    review_settings(config, {p["pass_id"] for p in result["passes"]})
+    for key in ("input_sha256", "profile", "support_exceptions"):
+        if config.get(key) != result["config"].get(key):
+            raise InputError("Upstream settings changed; process again before reviewing the baseline.")
+    old, new = result["config"].get("overrides", {}), config.get("overrides", {})
+    for pid in set(old) | set(new):
+        if old.get(pid, {}).get("background") != new.get(pid, {}).get("background"):
+            raise InputError("Background changed; process again before baseline review.")
+    updated = copy.deepcopy(result)
+    updated["config"] = copy.deepcopy(config)
+    updated["molar"] = molar_settings(config["molar"])
+    ledger = {r["line"]: r for r in updated["ledger"]}
+    for pred in updated["passes"]:
+        finalize_prediction(pred, config, updated["molar"]["factor_mol_inverse"], allow_stale_review)
+        for i, line in enumerate(pred["baseline_binding"]["source_lines"]):
+            row = updated["output_rows"][pred["output_start"] + i]
+            updated["output_rows"][pred["output_start"] + i] = row[:3] + [pred["D"][i]] + ([pred["E"][i]] if pred["E"] else [])
+            ledger[line].update(**baseline_ledger(pred), centered_internal_Nm=pred["centered_internal_Nm"][i],
+                                exported_D_Nm=pred["D"][i], exported_E_Nm_per_mol=pred["E"][i] if pred["E"] else None)
+    return review_summary(updated)
+
+
+def verify_export(result):
+    if result.get("exportable") is False:
+        raise InputError("Stale active baseline overrides block export: " + ", ".join(result["export_blockers"]))
+    if "baseline_review" in result["config"]:
+        review_settings(result["config"], {p["pass_id"] for p in result["passes"]})
+        for pred in result["passes"]:
+            checked = copy.deepcopy(pred)
+            finalize_prediction(checked, result["config"], result["molar"]["factor_mol_inverse"])
+            if any(checked[k] != pred[k] for k in ("D", "E", "centering_constant_Nm", "centered_internal_Nm")):
+                raise InputError("Processed output differs from committed baseline settings. Process again.")
+            if "output_rows" in result:
+                rows = result["output_rows"][pred["output_start"]:pred["output_start"]+pred["rows"]]
+                expected = [[d]+([pred["E"][i]] if pred["E"] else []) for i, d in enumerate(pred["D"])]
+                if [r[3:] for r in rows] != expected:
+                    raise InputError("Export rows differ from committed values. Process again.")
+
+
+def process(acquisition, config, allow_stale_review=False):
     """Pure shared GUI/CLI computation. Does not read or write any files."""
     validate_config(acquisition, config)
     molar = molar_settings(config["molar"])
@@ -188,20 +281,7 @@ def process(acquisition, config):
         bg = select_background(acquisition, signal, config)
         support = check_support(acquisition, signal, bg, config)
         fit, fit_info = fits[bg.id]
-        x = np.asarray([r.angle for r in signal.rows], dtype=float)
-        r6 = q6([r.tokens[12] for r in signal.rows])
-        b = fit(x)
-        u = r6 - b
-        override = config.get("overrides", {}).get(signal.id, {})
-        mode = override.get("centering", config["centering"])
-        c = float(np.mean(u)) if mode == "mean" else float((np.min(u) + np.max(u)) / 2)
-        y = u - c
-        if not np.isfinite(y).all():
-            raise InputError(f"{signal.id}: nonfinite arithmetic result.")
-        d = [format(float(v), ".8g") for v in y]
-        with localcontext() as ctx:
-            ctx.prec = max(50, len(Decimal(factor).as_tuple().digits) + 16) if factor else 50
-            e = [str(Decimal(v) * Decimal(factor)) for v in d] if factor else None
+        x, r6, b, u = prepare_signal(signal, fit)
         timing = "before" if bg.rows[-1].line < signal.rows[0].line else "after"
         gap = None
         if bg.rows[0].tokens[1] and signal.rows[0].tokens[1]:
@@ -209,19 +289,20 @@ def process(acquisition, config):
         pred = {
             "pass_id": signal.id, "identity": signal.identity, "background_id": bg.id,
             "background_order": timing, "background_time_gap_s": gap, "support": support,
-            "centering": mode, "centering_source": override.get("source", config["centering_source"]),
-            "centering_constant_Nm": c, "angles_deg": x.tolist(),
+            "angles_deg": x.tolist(),
+            "baseline_binding": make_binding(acquisition, signal, bg, u, RECIPE, UPSTREAM_IMPLEMENTATION),
             "raw_Nm": [float(r.tokens[12]) for r in signal.rows], "q6_signal_Nm": r6.tolist(),
             "background_Nm": b.tolist(), "subtracted_Nm": u.tolist(),
-            "centered_internal_Nm": y.tolist(), "D": d, "E": e,
             "output_start": len(output_rows), "rows": len(signal.rows),
         }
+        finalized = finalize_prediction(pred, config, factor, allow_stale_review)
+        y, d, e = finalized["values"], pred["D"], pred["E"]
         for i, row in enumerate(signal.rows):
             output_rows.append([str(row.T), str(row.B), str(row.angle), d[i]] + ([e[i]] if e else []))
             stages[row.line] = {
                 "background_id": bg.id, "q6_signal_Nm": float(r6[i]),
                 "evaluated_background_Nm": float(b[i]), "subtracted_Nm": float(u[i]),
-                "centering": mode, "centering_constant_Nm": c,
+                **baseline_ledger(pred),
                 "centered_internal_Nm": float(y[i]), "exported_D_Nm": d[i],
                 "exported_E_Nm_per_mol": e[i] if e else None,
             }
@@ -236,7 +317,7 @@ def process(acquisition, config):
             "measured_angle_deg": row.tokens[5], "raw_torque_Nm": row.tokens[12],
             "record_width": len(row.source_tokens), **stages[row.line],
         })
-    return {
+    return review_summary({
         "recipe": copy.deepcopy(RECIPE), "config": copy.deepcopy(config), "molar": molar,
         "input": {"path": acquisition.path, "filename": acquisition.path.replace("\\", "/").rsplit("/", 1)[-1],
                   "sha256": acquisition.sha256, "bytes": acquisition.bytes, "schema": acquisition.schema,
@@ -250,5 +331,5 @@ def process(acquisition, config):
         "fits": {key: info for key, (_, info) in fits.items()},
         "passes": predictions, "output_rows": output_rows, "ledger": ledger,
         "reference_inputs": [], "rows": len(output_rows), "raw_rows": len(ledger),
-    }
+    })
 

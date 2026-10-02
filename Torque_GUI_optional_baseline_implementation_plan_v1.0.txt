@@ -1,0 +1,200 @@
+TORQUE MAGNETOMETRY — OPTIONAL INTERACTIVE BASELINE CENTERING
+Implementation plan v1.0 | 2 October 2026
+Status: PLAN COMPLETE; FEATURE NOT IMPLEMENTED
+
+1. OUTCOME, SCOPE AND VERIFIED STARTING POINT
+
+Add an optional baseline-review mode around the existing numerical pipeline. Reuse the calculated background-corrected vector, initialize the review at its midrange, and let the user accept a different constant offset. Apply that accepted offset once at the centering stage. Keep the ordinary processing path unchanged when the option is off or a pass has no accepted override.
+
+VERIFIED by source inspection: the supplied project contains a command-line research processor and a GUI implementation specification. No implemented GUI, widget/controller code, GUI session state, or GUI tests were located in the supplied/extracted project. Limited searches for a saved GUI project/state did not locate another implementation; this is not proof that none exists elsewhere. Tkinter/ttk with embedded Matplotlib is the PROPOSED toolkit in the earlier GUI specification, not an observed running application.
+
+This plan therefore identifies exact numerical integration points and proposed GUI responsibilities. It does not invent existing widgets or undertake the larger GUI build. A host application with file/pass selection and a plot canvas is an implementation dependency.
+
+Inspection was read-only. No pipeline functions, fits, regression commands, plots or GUI were executed. Source hashes and saved validation records were checked. No applicable AGENTS.md was found in the checked workspace ancestors or extracted package. The package has no independent Git metadata; file hashes identify this baseline instead of an invented application commit.
+
+Authoritative locations and identities
+
+Let P denote the verified extracted directory:
+/workspace/scratch/4ae51e3f31b9/Torque_Ho2thd4Pc_pipeline_comparison_v1.2
+Paths below beginning P/ are relative to that directory. Historical upload paths inside its records are provenance, not reliable current input locations.
+
+Record | SHA-256
+Torque_Ho2thd4Pc_pipeline_comparison_v1.2.zip | 71b5c9bd246648fd52ad6cdaf48626ce6b9051facbbb31bea35347fcdffdc605
+P/torque_pipeline.py | 8d20c98799b15aa58df50088cb9c4084f900aff8582c0b838bbbd38bc6b2d4a4
+P/previous/torque_dat_postprocess_v1.0.py | de2e3738abaabb020d81134b1f55b57fadcecf2a45257cc15b4705538faf147e
+P/recipe_v1.2.json | 859af9f6863b9805a8909cf4128bc73b7c752882f76ed536a25bc7b82ba38cda
+P/Torque_Ho2thd4Pc_pipeline_comparison_state_v1.2.json | ea12539e6a82c6038e8efe99dd059d740d7842eedca6b7abc9f5ba601f8dcefd
+Torque_GUI_implementation_prompt_v1.0.txt | 2e46c9549ecd7efb435db00d64f9ea897ee7ef65785b7f6a79703a01ead98598
+Torque_GUI_optional_baseline_planning_prompt_v1.1.txt | a4902558b52e035f7280c43c232222d272eeafe49eaf58f13809aadcab799673
+
+The executed attachment was upload/01-Pasted-markdown.md, 19065 bytes, SHA-256 7216a2d95021c0978fada16c9e2ebf61a8573c6dbffa1a4f250618fa747d6b27. It contains the v1.1 planning instructions in pasted formatting. Its bytes differ from the 19059-byte saved TXT; its instructions, including the final planning-only stop, were read directly. This plan is v1.0; the source planning prompt remains v1.1.
+
+The current scientific state was read before planning. Supporting inspection covered README.txt, recipe_v1.2.json, requirements.txt, both processors' relevant functions, validate_compare.py, verify_isolation.py, and saved round-trip/isolation records. The earlier GUI specification supplies design context only. Its implementation command and former scientific font convention do not govern this planning task.
+
+2. CURRENT CODE AND THE SMALLEST INTEGRATION
+
+Location in verified source | Observed behavior | Planned integration
+torque_pipeline.py:22, read_raw | Builds rows, pass IDs, source lines and same-T backgrounds; admits known source hashes | Reuse its acquisition identities for this feature; do not change parsing or loosen admission checks here.
+torque_pipeline.py:89, predict | Fits/evaluates background, calculates u, centers, serializes D/E | Preserve background stage; introduce an optional accepted-offset input at the centering boundary.
+torque_pipeline.py:113-121 | u is computed before center(); returned fields include uncentered, rounded_signal, background, offset and background_info | Expose/cache these intermediates without reconstructing u from already centered or exported data.
+previous/torque_dat_postprocess_v1.0.py:202, quantize; :207, center | Decimal-token significant-digit conversion; none/mean/midrange centering | Preserve exact arithmetic for the ordinary path; midrange uses (np.min(v)+np.max(v))/2.
+previous/torque_dat_postprocess_v1.0.py:251, predict | Previous-profile equivalent of subtraction, centering and D/E serialization | Use the same new application-level finalization contract for this profile too.
+torque_pipeline.py:131, process; :143, main | Reads JSON and an explicit CLI centering mode; previous profile immediately delegates to old.process | Resolve feature settings before profile dispatch, so previous-profile overrides cannot be ignored.
+torque_pipeline.py:123, export; previous processor:283, export | Writes existing headers and acquisition-ordered rows | Keep formatting and row order; supply newly finalized D/E values only.
+torque_pipeline.py:140; previous processor:306 | Existing provenance records hashes, ordinary centering and molar provenance | Extend application provenance with effective per-pass baseline settings and their origin.
+validate_compare.py:18, roundtrip; :31, main | Decimal equality after export; main enforces frozen hashes and rewrites evidence | Reuse the small comparison logic in isolated application tests, not main() in the frozen archive.
+verify_isolation.py:9, child; :26, main | Runs the CLI with data reads restricted to raw/config, then compares separately | Adapt this test pattern to configuration containing accepted overrides.
+
+PROPOSED minimal design: add one shared finalization function in the application processing core, tentatively named finalize_pass. This name is a proposal, not an existing function. It takes immutable u, the ordinary policy, an optional validated accepted offset, and existing serialization settings; it returns pre-export torque, effective offset/method, D and E. Both GUI previews and headless replay use it. For absent/inactive overrides, retain the existing center() arithmetic and export operations exactly. For an active override, calculate y = u - c_final, then use the same serializer. Do not add a second background fit or cumulative correction.
+
+The application copy of each predict path prepares u and calls that shared finalizer. Preserve each profile's existing fitting arithmetic and support handling; this feature does not require unifying their background implementations. Existing alternative operation-order diagnostics remain unchanged when the option is off. Reject interactive overrides for an order other than subtract_then_center rather than quietly applying a different rule.
+
+Use the application core, configuration loader and GUI controller if a current implementation is supplied. Otherwise these responsibilities extend the earlier proposed pipeline.py/app.py design; those files have not been found as an implementation. Do not modify P/previous/ or the frozen research package. Work in a separately versioned application checkout when implementation is authorized. Generalizing the research adapter's hash whitelist is a separate base-application task, not part of this baseline option.
+
+3. NUMERICAL CONTRACT AND SCIENTIFIC LIMITS
+
+VERIFIED recipe retained: six significant digits from original signal and background torque tokens; unweighted degree-six polynomial versus nominal angle, scaled domain [0,200] degrees; background subtraction; centering; binary64 .8g formatting of D; exact Decimal multiplication of exported D for E. The imported legacy code sets Decimal precision to 50. Preserve those numerical semantics if extracting functions into an independent application core. Significant digits are not decimal places. Add no intermediate rounding.
+
+For one acquired signal pass, using every actual retained sample:
+  u_i = rounded_signal_i - evaluated_background_i
+  c_mid = (min(u) + max(u)) / 2
+  c_final = c_mid + delta
+  tau_i = u_i - c_final
+
+All three offsets and u/tau are in N m. Positive delta moves the final curve downward. At delta=0, max(tau) = -min(tau) = (max(u)-min(u))/2 before serialization, within floating-point error. A nonzero manual delta generally changes that equality. Do not recenter afterward. The signed imbalance displayed is max(tau)+min(tau), in N m.
+
+DERIVED quantities: extrema, midrange, accepted numerical offset, corrected values and imbalance. FITTED quantities: background polynomial coefficients. PROVIDED: the user's desired balancing criterion and any manual choice. Neither a numerical balance nor a user choice establishes a measured calibration constant or physical drift.
+
+Take extrema over the complete acquired pass, even after zooming or when an angle is missing. Preserve the supported changing-field pass as one acquisition. Do not infer absent measurements or evaluate interpolated signal extrema. A constant-valued valid pass centers to zero at delta=0; show zero range and omit range-normalized diagnostics rather than divide by zero. Empty/nonfinite data remain errors.
+
+A vertical translation preserves sample angles, extrema locations, point-to-point differences and peak-to-peak torque before serialization. It does not enforce angular antisymmetry, equal lobe areas, or common amplitudes across fields/temperatures. Noise can influence sampled extrema; do not add smoothing, point rejection, robust estimators, normalization, angular shifts or simulation matching.
+
+D remains torque in N m; E remains labelled N m/mol. Use the explicitly configured factor only after D is exported. The factors 911.63 and 1575.45 reproduce reference arithmetic; their physical normalization remains unverified. Keep baseline entry in N m even if the existing application offers a separate molar preview. No sample metadata or calibration-file interpretation is needed to design this option. No investigation of the known Rot2 50 K endpoint is included.
+
+4. CHECKBOX, EDITOR AND STATE TRANSITIONS
+
+PROPOSED control: "Interactive baseline adjustment", unchecked for new sessions. It controls review mode for the run; accepted overrides are independent for each signal pass. Off means the ordinary policy remains active, not that all centering is disabled. An unreviewed pass keeps its ordinary policy even while review mode is on.
+
+State consists of: run-level enabled flag; selected pass; optional accepted record per pass; optional draft for the selected pass; and whether the draft differs from its accepted/initial value. Preview and committed export are distinct. Show effective method per pass: ordinary policy, accepted midrange, manual offset, inactive override, or stale override.
+
+Action / prior state | Result | Effect on export
+Open old config / new session | Missing feature block means disabled, no overrides | Identical ordinary processing.
+Check option | Enable review; restore only valid accepted records; initialize a newly selected unreviewed pass at c_mid | Existing valid accepted records become active; other passes still use ordinary policy.
+Select unreviewed pass | Preview midrange; label it uncommitted | No override until Apply.
+Drag line / edit delta | Update draft, line, numeric readouts and corrected preview | No change to committed settings.
+Apply | Validate binding/finite numbers; accept current draft and timestamp/provenance | This pass uses c_final in place of ordinary centering.
+Cancel | Discard draft; show last accepted preview or initial midrange if none | Accepted settings unchanged; no new override.
+Reset to midrange | Set draft delta=0 using current u | Does not commit until Apply.
+Switch pass with dirty draft | Keep selection until user chooses existing Apply or Cancel control; show a short inline notice | No silent loss or acceptance.
+Switch pass without dirty draft | Show its valid accepted record, otherwise uncommitted midrange | Previously accepted records persist independently.
+Uncheck with dirty draft | Require Apply or Cancel through the same editor controls, then disable | All overrides bypassed; ordinary policies restored.
+Uncheck / recheck without dirty draft | Retain accepted records inactive, then validate/reactivate when enabled | No cumulative shifts or implicit propagation.
+Export with dirty draft | Require Apply or Cancel; do not export a stale preview | Export committed settings only.
+Export with an untouched uncommitted preview | Explicit ordinary-policy status remains visible | Ordinary policy is used for that pass; viewing midrange did not accept it.
+Load saved configuration | Restore flag and accepted records after validation; no draft restoration | Valid records replay deterministically; invalid active records block export until resolved.
+Change upstream data/settings | Mark affected records stale; invalidate affected outputs | Require review/reacceptance, removal, or disabling the feature; no silent fallback while stale overrides are enabled.
+
+Save Configuration uses the same Apply/Cancel rule for a dirty draft; it writes accepted settings only. A small "Remove override" action returns one pass to its ordinary policy without removing other edits. It follows the same dirty-draft rule. Repeated Apply on an unchanged accepted draft is a no-op; preserve its acceptance record.
+
+Editor layout: retain file/pass selection and existing controls. Provide an uncentered view of u versus angle with a draggable baseline at c_final, plus a toggle to a corrected preview with fixed y=0. One canvas with two views is sufficient. Show c_mid, editable delta, c_final, corrected max/min and imbalance alongside it, all in N m. A short status identifies whether the view is draft or accepted. Do not describe a manual result as an exact reconstruction without separate validation.
+
+Dragging uses the uncentered view's data coordinates. Disable baseline dragging while the plotting toolbar is in pan/zoom mode; ignore invalid/out-of-axes events. Hold limits steady during the gesture; provide deliberate fit-to-data afterward. Convert a dragged target baseline to delta, then recompute c_final=c_mid+delta in the shared numerical convention; the numeric control and line use that same result. Reject nonfinite input, conversion overflow or nonfinite corrected values.
+
+Cache immutable u, angles and background metadata by acquisition and upstream settings. Dragging calls only finalization/preview code, never file readers or background fitting. Use the GUI event thread for widget updates and deferred repainting; no extra worker is needed for a short vector translation. Keep any existing processing worker and stale-result invalidation rather than adding concurrency.
+
+5. CONFIGURATION, REPLAY AND PROVENANCE
+
+PROPOSED optional feature block within the existing human-readable configuration: baseline_review, with schema_version, enabled and an overrides collection. Absence means disabled. Do not replace ordinary centering fields or silently select a different base policy. The existing CLI --centering choice remains authoritative unless an accepted active override replaces it for a specific pass; record both effective and underlying policies.
+
+Each accepted record contains:
+Field | Meaning
+input_sha256, profile_id, rotation, pass_id | Source identity; pass_id alone is insufficient.
+source_lines, nominal_angles, displayed_T_and_fields | Ordered acquisition identity, including changing-field row labels; T/B is not a key by itself.
+background_identity, upstream_fingerprint | Background source/pass and exact numerical inputs/settings that produced u.
+u_sha256 | Digest of canonical ordered binary64 u values as an additional stale-state check, not stored reference-derived corrections.
+c_final_binary64_hex | Canonical replay value, stored losslessly using a binary64 hexadecimal representation.
+c_mid_Nm, delta_Nm, c_final_Nm | Round-trip decimal text for audit/readability; display rounding never changes computational values.
+origin, accepted_utc, app_and_config_versions | Origin is accepted_midrange or user_adjusted; neither means instrument calibration.
+
+The upstream fingerprint covers raw bytes, pass membership/angles, background association, quantization, polynomial degree/basis/domain/weights, subtraction order and relevant numerical implementation/environment. Use deterministic JSON for its structured settings and defined little-endian binary64 bytes plus length for u. Exclude display zoom/style, timestamps and the manual values themselves. Do not use the hash of the entire mutable configuration as this fingerprint: editing an override would otherwise invalidate itself.
+
+Changes to raw bytes, segmentation, background association or upstream arithmetic invalidate affected offsets. A zoom/font change does not. Changing ordinary centering preserves the same u and accepted offset but changes the recorded underlying policy; recompute output status. Changing the explicit molar factor invalidates E/export, not the N m baseline. Revalidate against the recomputed u on load and before headless export.
+
+Canonical replay uses c_final_binary64_hex directly. Check that stored c_mid agrees with current calculation and that the saved delta/c_mid relation produces the same canonical final offset. Reject inconsistent or nonfinite redundant fields; do not guess which is correct. Display may use fewer digits, while editable/saved values retain round-trip precision. Store only accepted overrides, not an event-by-event drag log or synthetic background samples.
+
+Headless processing reads raw inputs and configuration only. Both profile routes must honor the feature block; an unsupported version or unknown pass key must produce an explicit error instead of ignoring it. Disabled overrides may remain inactive even when stale, and must never affect outputs. When re-enabled they require validation. Record active/inactive/stale status and the reason in provenance.
+
+Extend the existing output provenance/row ledger with effective method and c_final per pass, linking rows to the accepted record. Preserve source hashes, relevant code/config hashes, output hashes, background metadata and factor provenance. Use new output paths; do not overwrite raw sources or frozen reference artifacts. Keep reference loading in the independent validator. No hidden reference-selected lookup or production import of diagnostic tables is permitted.
+
+6. ORDERED IMPLEMENTATION TASKS — FUTURE WORK ONLY
+
+ID | Dependency | Concrete task | Completion evidence
+I0 | This plan | Establish the actual application checkout if one exists; otherwise attach this feature to the earlier GUI design. Record source hashes/commit and create a separate working version. Map the numerical anchors in section 2. | Actual target module paths identified; archived sources untouched.
+I1 | I0 | Add optional settings validation and the shared finalization boundary. Preserve the absent/disabled automatic path and exact .8g/Decimal behavior. Cover both Ho2 and previous-profile dispatch. | Focused default-off regression and midrange-equivalence tests pass before GUI edits.
+I2 | I1 | Add acquisition binding, canonical accepted-offset serialization and invalidation rules. Extend existing provenance rather than add a parallel system. | Headless save/load/replay and stale-binding tests pass.
+I3 | I2 plus base GUI canvas/pass selector | Add checkbox, per-pass draft/accepted state, Apply/Cancel/Reset/Remove, numeric delta and baseline dragging. Cache u; implement state table and effective-mode labels. | Real interaction follows the specified state table without refitting during drag.
+I4 | I3 | Connect committed results to existing export/preview controls; invalidate stale outputs and apply Arial to this feature's scientific figures. | Preview/export consistency, font notice and figure checks pass.
+I5 | I4 | Run the focused checks below in isolated output directories; document actual results and update the application state/README. | Honest gate report, replayable settings and unchanged source hashes.
+
+Scope is one numerical finalization boundary, a small settings/provenance extension, one GUI editor/controller addition and focused tests. Exact file count depends on the actual host GUI. No new framework, database, general model-search UI, broad parser redesign or time estimate is needed.
+
+The existing validate_compare.py main routine both asserts frozen source hashes and rewrites many artifacts. Do not disable its guards or run it against an edited archival package. Build the application regression checks from its small Decimal round-trip logic and immutable saved fixtures. Do not rerun discovery or optional model searches.
+
+7. ACCEPTANCE TEST MATRIX — NOT EXECUTED IN THIS PLANNING TASK
+
+ID | Setup and action | Observable and pass criterion
+A | Old configs and new configs with enabled=false, including inactive saved overrides; run each supported profile | Saved DAT content, columns, order and ordinary policy match the pre-change processor. Compare DAT bytes when the same formatter/environment applies; do not require timestamped provenance bytes to match.
+B | Enable; Apply untouched midrange (delta=0) on real passes, including a pass whose ordinary policy is mean | D/E match the existing midrange path exactly after export/re-read; balanced sampled extrema satisfy the arithmetic bound below. Merely opening the editor must not change export.
+C | On a real cached u and one labelled synthetic vector, accept positive and negative delta | Internal differences equal minus delta within arithmetic bounds; angles unchanged and range unchanged within those bounds. Export differences follow existing .8g rounding. No historical-reference match is required for a deliberately manual shift.
+D | Apply/export/reprocess repeatedly; exercise Cancel, Reset, Remove, uncheck/recheck and navigation | No cumulative shift; only committed records affect export; per-pass draft/accepted states follow section 4. Reset needs Apply. Dirty edits cannot be silently exported or discarded.
+E | Separate acquisitions with identical T/B; save/load; change raw hash, background or upstream recipe | No offset crosses pass/source boundaries; valid replay is identical; stale active overrides fail explicitly. Display changes leave the binding valid. Molar-factor-only changes leave D/offset unchanged and recompute E.
+F | CLI replay with raw/config as the only allowed data inputs; compare saved output afterward | Same committed D/E as GUI export, with reference-file probe denied. E equals exact configured factor times exported D. Settings retain user-provided provenance.
+G | Real GUI smoke test: checkbox, drag, numeric entry, pan/zoom, pass change and export | Line and numeric values agree; upward line motion moves corrected data down. No reader/refit call during dragging. Unsupported numeric values give useful errors. UI remains responsive and clearly identifies draft/effective settings.
+H | Constant-valued valid u, missing signal angles and the existing changing-field pass; empty/nonfinite invalid input | Constant u centers to zero at delta=0; zero range never divides. Actual rows/angles/pass membership stay intact. Invalid vectors fail. No dedicated endpoint investigation.
+I | Requested scientific preview/export in the actual application environment | Arial verified for plot text; no silent substitute; dimensions/fonts/axes/clipping comply with section 8. Missing font is a reported formatting limitation, not a numerical failure. No GUI verification claim from numerical unit tests alone.
+
+Arithmetic tolerance is distinct from exact export agreement. For finite non-overflowing test values, use a conservative pre-export bound B=16*epsilon*S+8*s_min, where epsilon is binary64 machine epsilon, s_min the smallest positive subnormal, and S=max(max(abs(u)),abs(c_mid),abs(c_final),abs(delta)). This bounds the few rounded additions/subtractions used in the centering, shift and range comparisons, including cancellation at small signal amplitudes. Validate this bound against the actual implemented operations before fixing it in tests; it is not an adjustable fit tolerance. Check exact zero separately for the all-zero case. Never use measurement noise to excuse a changed serialized value.
+
+Recorded fixture expectations from the existing state, not new test results:
+Dataset / policy | Signal rows | Existing exact reference rows
+Ho2thd4Pc Rot1 / midrange | 818 | 818
+Ho2thd4Pc Rot2 / midrange | 938 | 938
+Previous Rot2 / midrange | 820 | 820
+Previous Rot1 / fixed mean | 943 | 615
+Previous Rot1 / fixed midrange | 943 | 328
+Previous Rot1 / 15 mean + 8 midrange diagnostic choices | 943 | 943, reference-selected
+
+These cover 3519 distinct reference rows. Preserve the existing 4869-raw-row accounting if the application exposes the complete ledger. The previous-Rot1 diagnostic configuration stays test-only and explicitly labelled; it must not become an automatic selector. Compare D and E separately with decimal equality after re-reading, plus maximum absolute error, RMSE and mean residual in their own units when reporting any discrepancy. Relative errors are undefined for a zero-range pass. Existing missing-background support is covered by ordinary all-row checks.
+
+The numerical suite is one targeted regression pass once the common boundary/settings are in place. Broaden only to resolve a concrete failure. Test results remain pending until an implementation actually exists and is run.
+
+8. SCIENTIFIC PREVIEW AND EXPORT PRESENTATION
+
+REQUIRED current font: Arial Regular for all scientific plot text; it supersedes the historical Gill Sans MT statements in the archive/GUI specification. It does not prescribe operating-system widget fonts. Determine actual font availability during implementation; do not silently substitute or claim compliance when unavailable. Numerical processing remains usable.
+
+Reproduction DEFAULTS: 8 x 6 inches, or 8 x 6.1 for actual fits; labels 22 pt, ticks 18 pt, legend 12 pt (9 pt for an applicable dense stack); white background; black left/bottom axes only, 1.2 pt; outward major/minor ticks 6/3 pt; no grids, titles or unsolicited insets. A movable baseline and fixed zero are functional references, not a grid. Use correct torque N m and angle degree labels. Keep the compared uncentered/corrected views on the same angular range and controlled compatible y limits so translation remains visible. Keep case identifiers outside the plot.
+
+For an actual background-fit view only: 7.5 pt filled black sample circles without joining lines, and a solid red #FF0000, 0.5 pt fit. A baseline or corrected experimental trace is not a fitted model. No data rescaling or synthetic points for appearance.
+
+Requested figure exports remain vector PDF and 300-dpi PNG, with font/clipping checks. Embedded canvases can resize with readable labels and preserved aspect ratio; export defaults are not fixed GUI pixel dimensions. Avoid overlaps; crop exterior whitespace only. Do not introduce EPR-specific ticks, stacks, slide/poster layouts or historical-figure regeneration. The current planning deliverable is plain UTF-8 TXT, so document-font rules do not apply to it.
+
+9. CHECKPOINT, REMAINING DEPENDENCY AND STOP
+
+Objective: optional interactive baseline review, with automatic midrange initialization and saved per-acquisition manual replacement at the existing centering stage.
+Authoritative versions: research package/state v1.2 and immutable previous comparator v1.0; planning prompt v1.1; this first implementation plan v1.0. Source hashes are in section 1.
+PROVIDED: vertical zero-line balancing criterion; one agent; plan only; ignore the known Rot2 50 K anomaly; current Arial plotting requirements.
+VERIFIED: numerical core and saved retrospective results inspected; midrange/mean functions exist; no GUI found in supplied code. No new scientific computation or feature test was run.
+FITTED: degree-six background coefficients from actual own-rotation/T background samples. Degree, nominal coordinates, Q6/Q8 and operation order are fixed recipe settings.
+DERIVED: u, c_mid, c_final and corrected torque. User delta is an explicitly PROVIDED setting when accepted, not a fitted physical parameter.
+DECIDED for implementation: checkbox off by default; commit-only per-pass overrides; single subtraction; canonical lossless offset replay; source/settings binding; ordinary export for unaccepted passes; dirty-edit resolution through existing editor controls.
+SUPERSEDED: Gill Sans MT as the scientific-plot font. Historical figures remain unchanged. The recipe's archived phrase "reserved outputs not yet scored" describes its freeze; the completed state records successful subsequent verification.
+REJECTED for this feature: reference-derived selector, copied offsets across acquisitions, double centering, angular shifts, filtering/normalization, synthetic missing data, or an endpoint investigation.
+UNKNOWN: actual GUI host/source if developed elsewhere, its toolkit/session implementation, Arial availability there, the previous-Rot1 predictive selector, physical molar normalization, and unique historical offset origin. Exact reconstruction is retrospective evidence; it does not establish general transfer.
+
+Smallest implementation dependency: provide the current GUI repository/archive and revision if it exists elsewhere. Without it, build the base file/pass selection and plot canvas under a separately authorized GUI implementation task, using the earlier GUI specification with this plan as its baseline-feature addition. This dependency affects concrete widget patch locations and interactive verification; it does not invalidate the numerical integration plan.
+
+No sample-mass record, calibration file or new measurement is required to implement the baseline option. Those remain separate evidence requirements for physical normalization, calibration interpretation or transfer claims.
+
+Concrete first implementation step, once authorized: map the section-2 predict/center/export boundary into the actual application working copy, add the shared finalizer with an optional validated override, and prove that absent/disabled overrides leave existing outputs unchanged before connecting GUI events. Preserve the delivered research archive and its tests as reference evidence.
+
+Completion of the future feature requires tests A-I with the documented limits, recorded settings replay, an actual GUI smoke test, and an application-state update reporting observed results. Completion of this planning task requires this document only. No code/configuration was changed, no data processing was rerun, and no GUI was implemented. Stop here.

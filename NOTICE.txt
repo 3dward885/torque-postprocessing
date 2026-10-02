@@ -19,7 +19,7 @@ treated-reference code. presets.py holds deliberately selected export settings
 and one fingerprint-bound support permission, never an admission whitelist.
 The old Rot1 reference-selected choices occur only in labelled tests/examples.
 
-SUPPLIED FONT
+HISTORICAL SUPPLIED FONT (UNUSED BY v1.1)
 
 fonts/GIL_____.TTF is copied byte-for-byte from previous/fonts/GIL_____.TTF in
 the supplied package. Its existing origin notice is retained in
@@ -29,7 +29,10 @@ fonts/provenance.txt. SHA-256:
 Its OS/2 fsType value is 8 (editable embedding permitted by that font flag).
 The private application package reuses the user-supplied asset as requested.
 This does not create a general third-party font redistribution license.
-The font is not silently replaced for scientific exports.
+Version 1.1 uses the installed Arial Regular font as explicitly requested.
+It does not redistribute the installed Arial font file. Figure exports embed
+the resolved font subset. Missing Arial disables compliant export and labels
+the fallback preview noncompliant. Historical Gill Sans assets remain unchanged.
 
 CLAIM LIMITS
 

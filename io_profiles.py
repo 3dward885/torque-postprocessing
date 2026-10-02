@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN, localcontext
 from pathlib import Path
 
-APP_VERSION = "1.0"
+APP_VERSION = "1.1"
 GRID = tuple(range(200, -1, -5))
 TSV_HEADER = ["Temperature (K)", "Magnetic Field (Oe)", "Sample Position (deg)", "Torque (Nm)"]
 INSTRUMENT_HEADER = (
