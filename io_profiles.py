@@ -1,6 +1,7 @@
 """Strict DAT readers and explicit acquisition profiles; no numerical treatment."""
 from __future__ import annotations
 import csv
+import copy
 import hashlib
 import json
 import math
@@ -8,7 +9,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN, localcontext
 from pathlib import Path
 
-APP_VERSION = "1.1"
+APP_VERSION = "1.2"
 GRID = tuple(range(200, -1, -5))
 TSV_HEADER = ["Temperature (K)", "Magnetic Field (Oe)", "Sample Position (deg)", "Torque (Nm)"]
 INSTRUMENT_HEADER = (
@@ -47,14 +48,13 @@ def decimal_value(value, label="value", positive=False):
 @dataclass(frozen=True)
 class Profile:
     name: str = "fractional"
-    temperature_step_K: str = "1"
     temperature_tolerance_K: str = "0.2"
     field_step_T: str = "0.01"
     stable_field_tolerance_Oe: str = "1"
     angle_step_deg: str = "5"
+    angle_origin_deg: str = "0"
     angle_tolerance_deg: str = "0.05"
     background_threshold_Oe: str = "1"
-    angle_reset_deg: str = "100"
     allow_signal_gaps: bool = True
     allow_background_gaps: bool = True
     trajectory: str = "monotonic"
@@ -64,16 +64,13 @@ class Profile:
     def validate(self):
         if not self.name or not self.provenance.strip():
             raise InputError("A profile needs a name and provenance.")
-        for key in ("temperature_step_K", "field_step_T", "angle_step_deg", "angle_reset_deg"):
+        for key in ("field_step_T", "angle_step_deg"):
             decimal_value(getattr(self, key), key, True)
         for key in ("temperature_tolerance_K", "stable_field_tolerance_Oe", "angle_tolerance_deg",
                     "background_threshold_Oe", "max_extrapolation_deg"):
             if decimal_value(getattr(self, key), key) < 0:
                 raise InputError(f"{key} must be nonnegative.")
-        if Decimal(self.angle_step_deg) != 5:
-            raise InputError("Version 1.0 supports the 5-degree nominal grid on [0,200] only.")
-        if Decimal(self.angle_reset_deg) >= 200:
-            raise InputError("angle_reset_deg must be less than 200.")
+        decimal_value(self.angle_origin_deg, "Angle origin (deg)")
         if self.trajectory not in ("stable", "monotonic"):
             raise InputError("trajectory must be stable or monotonic.")
         if not isinstance(self.allow_signal_gaps, bool) or not isinstance(self.allow_background_gaps, bool):
@@ -90,6 +87,8 @@ PROFILES = {
 
 def profile_from(value):
     try:
+        if isinstance(value, dict):
+            value = {k: v for k, v in value.items() if k not in ("temperature_step_K", "angle_reset_deg")}
         return (PROFILES[value] if isinstance(value, str) else Profile(**value)).validate()
     except (KeyError, TypeError) as exc:
         raise InputError("Unknown profile or profile field. Choose previous/fractional or load a documented profile JSON.") from exc
@@ -113,16 +112,24 @@ class Pass:
     id: str
     order: int
     identity: str
-    T: Decimal
+    T: Decimal | None
     zero: bool
     rows: list[Row]
     missing: list[int]
     trajectory: bool
+    issue: str = ""
+    excluded: bool = False
+    acquired_rows: list[Row] = field(default_factory=list)
 
     @property
     def field_label(self):
-        b = [r.B for r in self.rows]
+        b = [r.B for r in self.rows or self.acquired_rows]
         return str(b[0]) if len(set(b)) == 1 else f"{min(b)} to {max(b)}"
+
+    @property
+    def measured_temperature(self):
+        values = [Decimal(r.tokens[3]) for r in self.acquired_rows or self.rows]
+        return f"{min(values):.7g}–{max(values):.7g}"
 
 
 @dataclass
@@ -140,18 +147,31 @@ class Acquisition:
         "temperature": "K", "raw_field": "Oe", "export_field": "T", "angle": "deg", "torque": "N m"})
 
     def candidates(self, signal):
-        return [p for p in self.passes if p.zero and p.T == signal.T]
+        return [p for p in self.passes if p.zero and not p.excluded and p.T is not None and p.T == signal.T]
 
 
-def _nominal(token, step, tolerance, label):
+def check_deviation(token, reference, tolerance, label):
+    value = decimal_value(token, label)
+    reference = decimal_value(reference, label + " reference")
+    tolerance = decimal_value(tolerance, label + " allowed deviation")
+    if tolerance < 0:
+        raise InputError(f"{label}: allowed deviation must be nonnegative.")
+    with localcontext() as ctx:
+        ctx.prec = 50
+        difference = abs(value - reference)
+        if difference > tolerance:
+            raise InputError(f"{label}: measured {value}, reference {reference}, deviation {difference} exceeds allowed deviation {tolerance}.")
+    return reference
+
+
+def _nominal(token, step, tolerance, label, origin="0"):
     value = decimal_value(token, label)
     with localcontext() as ctx:
         ctx.prec = 50
         step = Decimal(step)
-        nominal = (value / step).to_integral_value(rounding=ROUND_HALF_EVEN) * step
-        if abs(value - nominal) > Decimal(tolerance):
-            raise InputError(f"{label}: {token} exceeds tolerance {tolerance} from the {step} grid; select an explicit compatible profile.")
-        return nominal
+        origin = Decimal(origin)
+        nominal = ((value - origin) / step).to_integral_value(rounding=ROUND_HALF_EVEN) * step + origin
+        return check_deviation(value, nominal, tolerance, label)
 
 
 def read_raw(path, profile="fractional"):
@@ -215,52 +235,172 @@ def read_raw(path, profile="fractional"):
             for k, value in zip((3, 4, 5, 12), source):
                 decimal_value(value, f"Line {line}, field {k+1}")
                 tokens[k] = value
-        T = _nominal(tokens[3], profile.temperature_step_K, profile.temperature_tolerance_K, f"Line {line}, temperature (K)")
-        angle = int(_nominal(tokens[5], profile.angle_step_deg, profile.angle_tolerance_deg, f"Line {line}, angle (deg)"))
-        if angle not in GRID:
-            raise InputError(f"Line {line}: nominal angle {angle} is outside the supported 200..0 degree grid.")
+        T, B = Decimal(tokens[3]), Decimal(tokens[4]) / 10000
+        angle = float(tokens[5])
         zero = abs(Decimal(tokens[4])) <= Decimal(profile.background_threshold_Oe)
-        with localcontext() as ctx:
-            ctx.prec = 50
-            step = Decimal(profile.field_step_T)
-            B = Decimal(0) if zero else (Decimal(tokens[4]) / 10000 / step).to_integral_value(rounding=ROUND_HALF_EVEN) * step
-        row = Row(line, lines[index], source, tokens, T, B, angle, zero)
-        boundary = not rows or T != rows[-1].T or zero != rows[-1].zero
-        if rows and not boundary and angle > rows[-1].angle:
-            reset = Decimal(tokens[5]) - Decimal(rows[-1].tokens[5])
-            if reset <= Decimal(profile.angle_reset_deg) or angle != GRID[0]:
-                raise InputError(f"Line {line}: ambiguous angle reset/reversal. A new same-role pass must reset to 200 degrees by more than {profile.angle_reset_deg} degrees.")
-            boundary = True
-        if boundary:
-            groups.append([])
-        groups[-1].append(row)
-        rows.append(row)
+        rows.append(Row(line, lines[index], source, tokens, T, B, angle, zero))
     if not rows:
         raise InputError("No measurement records.")
+    acquisition = Acquisition(str(path), hashlib.sha256(blob).hexdigest(), len(blob), schema,
+                              header, metadata, rows, [], profile)
+    acquisition.passes = split_scans(rows)
+    return acquisition
+
+
+def split_scans(rows, starts=None):
+    """Split sweep reversals/restarts in acquisition order, never by measured T."""
+    groups, direction = [], 0
+    if starts is not None:
+        if not isinstance(starts, list) or any(type(n) is not int for n in starts):
+            raise InputError("Scan starts must be a list of physical row numbers.")
+        if starts != sorted(set(starts)) or not starts or starts[0] != rows[0].line:
+            raise InputError("Scan starts must be unique, increasing, and include the first measurement row.")
+        if set(starts) - {r.line for r in rows}:
+            raise InputError("A scan start does not identify a measurement row.")
+    for row in rows:
+        boundary = not groups
+        if groups:
+            difference = Decimal(row.tokens[5]) - Decimal(groups[-1][-1].tokens[5])
+            sign = (difference > 0) - (difference < 0)
+            boundary = row.line in starts if starts is not None else bool(direction and sign and sign != direction)
+            if not boundary and sign:
+                direction = sign
+        if boundary:
+            groups.append([])
+            direction = 0
+        groups[-1].append(row)
     passes = []
     for group in groups:
-        angles = [r.angle for r in group]
-        label = f"Lines {group[0].line}-{group[-1].line}"
-        if len(set(angles)) != len(angles) or any(a <= b for a, b in zip(angles, angles[1:])):
-            raise InputError(f"{label}: duplicate or unordered angles; rows were not averaged or removed.")
-        missing = [a for a in GRID if a not in angles]
-        zero = group[0].zero
-        if missing and not (profile.allow_background_gaps if zero else profile.allow_signal_gaps):
-            raise InputError(f"{label}: incomplete {'background' if zero else 'signal'} grid; missing {missing}.")
-        nominal_fields = [r.B for r in group]
-        changing = len(set(nominal_fields)) > 1
-        if changing:
-            if zero or profile.trajectory != "monotonic":
-                raise InputError(f"{label}: changing-field trajectory not permitted by this profile.")
-            differences = [b - a for a, b in zip(nominal_fields, nominal_fields[1:])]
-            if not (all(d >= 0 for d in differences) or all(d <= 0 for d in differences)):
-                raise InputError(f"{label}: unsupported reversing field trajectory; provide a separately documented acquisition.")
-        elif not zero and any(abs(Decimal(r.tokens[4]) - r.B * 10000) > Decimal(profile.stable_field_tolerance_Oe) for r in group):
-            raise InputError(f"{label}: stable field departs by more than {profile.stable_field_tolerance_Oe} Oe from the selected nominal field.")
         pid = f"P{len(passes)+1:03d}"
         identity = hashlib.sha256(json.dumps([[r.line, r.source_tokens] for r in group], separators=(",", ":")).encode()).hexdigest()
         for row in group:
             row.pass_id = pid
-        passes.append(Pass(pid, len(passes)+1, identity, group[0].T, zero, group, missing, changing))
-    return Acquisition(str(path), hashlib.sha256(blob).hexdigest(), len(blob), schema, header, metadata, rows, passes, profile)
+        issue = f"{pid}: ambiguous short scan at an angle reversal; confirm scan starts in Acquisition settings." if starts is None and len(group) < 3 and len(groups) > 1 else ""
+        passes.append(Pass(pid, len(passes)+1, identity, None, all(r.zero for r in group), group, [], False, issue=issue, acquired_rows=list(group)))
+    return passes
 
+
+def acquisition_defaults():
+    return {"schema_version": 1, "temperature_setpoints_K": [], "source": "User settings",
+            "scan_starts": None, "angle_range_deg": None, "scans": {}}
+
+
+def metadata_setpoints(acquisition):
+    # Optional explicit INFO metadata; never interpret measured User Temperature as a setpoint.
+    values = []
+    for record in acquisition.metadata:
+        fields = next(csv.reader([record["text"]]))
+        if len(fields) == 3 and fields[0].strip() == "INFO" and fields[2].strip() == "TEMPERATURE_SETPOINTS_K":
+            values.extend(str(decimal_value(v.strip(), "Metadata temperature setpoint (K)"))
+                          for v in fields[1].split(";") if v.strip())
+    return values
+
+
+def configure_acquisition(acquisition, settings):
+    """Validate references on a detached inventory; retain unresolved scans for review."""
+    obj = copy.deepcopy(acquisition)
+    if not isinstance(settings, dict) or set(settings) != set(acquisition_defaults()) or type(settings["schema_version"]) is not int or settings["schema_version"] != 1:
+        raise InputError("Unsupported acquisition settings; expected schema version 1.")
+    if not isinstance(settings["source"], str) or not settings["source"].strip():
+        raise InputError("Acquisition settings need a source.")
+    if not isinstance(settings["temperature_setpoints_K"], list) or not isinstance(settings["scans"], dict):
+        raise InputError("Setpoints must be a list; scan settings must be an object.")
+    supplied = [decimal_value(v, "Temperature setpoint (K)") for v in settings["temperature_setpoints_K"]]
+    recorded = [Decimal(v) for v in metadata_setpoints(obj)]
+    targets = supplied or recorded
+    limits = settings["angle_range_deg"]
+    if limits is not None:
+        if not isinstance(limits, list) or len(limits) != 2:
+            raise InputError("Angle range needs a lower and upper bound in degrees.")
+        limits = [decimal_value(v, "Angle range (deg)") for v in limits]
+        if limits[0] >= limits[1]:
+            raise InputError("Angle range: the lower bound must be smaller than the upper bound.")
+    obj.analysis_range_deg = [str(v) for v in limits] if limits else None
+    if len(set(targets)) != len(targets):
+        raise InputError("Temperature setpoints contain duplicate values.")
+    obj.passes = split_scans(obj.rows, settings["scan_starts"])
+    keys = {p.id for p in obj.passes}
+    if set(settings["scans"]) - keys:
+        raise InputError("Unknown acquisition scan assignment.")
+    obj.reference_metadata = {"recorded_setpoints_K": [str(v) for v in recorded],
+                              "configured_setpoints_K": [str(v) for v in targets],
+                              "source": settings["source"] if supplied else "Explicit raw INFO metadata" if recorded else None,
+                              "metadata_conflict": bool(recorded and supplied and set(recorded) != set(supplied))}
+    tolerance = Decimal(obj.profile.temperature_tolerance_K)
+    for p in obj.passes:
+        choice = settings["scans"].get(p.id, {})
+        allowed = {"identity", "temperature_K", "source", "role", "exclude", "field_T"}
+        if not isinstance(choice, dict) or set(choice) - allowed:
+            raise InputError(f"{p.id}: unknown scan setting.")
+        if choice and (choice.get("identity") != p.identity or not choice.get("source", "").strip()):
+            raise InputError(f"{p.id}: scan assignment identity/source mismatch.")
+        if type(choice.get("exclude", False)) is not bool:
+            raise InputError(f"{p.id}: exclude must be true or false.")
+        p.excluded = choice.get("exclude", False)
+        try:
+            temperatures = [Decimal(r.tokens[3]) for r in p.rows]
+            if "temperature_K" in choice:
+                target = decimal_value(choice["temperature_K"], "Temperature setpoint (K)")
+            else:
+                with localcontext() as ctx:
+                    ctx.prec = 50
+                    matches = [t for t in targets if all(abs(v-t) <= tolerance for v in temperatures)]
+                if len(matches) != 1:
+                    reason = "Missing" if not matches else "Ambiguous"
+                    raise InputError(f"{p.id}: {reason} temperature setpoint for measured {p.measured_temperature} K. Assign a setpoint in Acquisition settings.")
+                target = matches[0]
+            p.T = target
+            for r in p.rows:
+                check_deviation(r.tokens[3], target, tolerance, f"Line {r.line}, temperature (K)")
+                r.T = target
+                angle = _nominal(r.tokens[5], obj.profile.angle_step_deg, obj.profile.angle_tolerance_deg,
+                                 f"Line {r.line}, angle (deg)", obj.profile.angle_origin_deg)
+                r.angle = int(angle) if angle == int(angle) else float(angle)
+            angles = [r.angle for r in p.rows]
+            differences = [b-a for a,b in zip(angles, angles[1:])]
+            if not differences or not (all(v > 0 for v in differences) or all(v < 0 for v in differences)):
+                raise InputError(f"{p.id}: duplicate or reversing angles; check scan starts in Acquisition settings.")
+            step = Decimal(obj.profile.angle_step_deg)
+            count = int((Decimal(str(max(angles))) - Decimal(str(min(angles)))) / step)
+            if count > 100000:
+                raise InputError(f"{p.id}: angle grid is too large; check the step and units.")
+            nominal = [Decimal(str(min(angles))) + i*step for i in range(count+1)]
+            p.missing = [float(v) for v in nominal if float(v) not in angles]
+            role = choice.get("role")
+            if role not in (None, "signal", "background"):
+                raise InputError(f"{p.id}: role must be signal or background.")
+            p.zero = role == "background" if role else all(abs(Decimal(r.tokens[4])) <= Decimal(obj.profile.background_threshold_Oe) for r in p.rows)
+            for r in p.rows:
+                r.zero = p.zero
+                field = Decimal(r.tokens[4])
+                if p.zero:
+                    check_deviation(field, 0, obj.profile.background_threshold_Oe, f"Line {r.line}, background field (Oe)")
+                    r.B = Decimal(0)
+                elif "field_T" in choice:
+                    r.B = check_deviation(field, decimal_value(choice["field_T"])*10000,
+                                          obj.profile.stable_field_tolerance_Oe, f"Line {r.line}, field (Oe)")/10000
+                else:
+                    with localcontext() as ctx:
+                        ctx.prec = 50
+                        step_b = Decimal(obj.profile.field_step_T)
+                        r.B = (field / 10000 / step_b).to_integral_value(rounding=ROUND_HALF_EVEN)*step_b
+            fields = [r.B for r in p.rows]
+            p.trajectory = len(set(fields)) > 1
+            if p.trajectory:
+                differences = [b-a for a,b in zip(fields, fields[1:])]
+                if obj.profile.trajectory == "stable" or not (all(v >= 0 for v in differences) or all(v <= 0 for v in differences)):
+                    raise InputError(f"{p.id}: reversing or unexpected changing field; check scan boundaries/settings.")
+            elif not p.zero:
+                for r in p.rows:
+                    check_deviation(r.tokens[4], r.B*10000, obj.profile.stable_field_tolerance_Oe,
+                                    f"Line {r.line}, field (Oe)")
+            if p.missing and not (obj.profile.allow_background_gaps if p.zero else obj.profile.allow_signal_gaps):
+                raise InputError(f"{p.id}: incomplete scan; missing angles {p.missing} deg.")
+        except InputError as exc:
+            p.issue = str(exc)
+        if limits:
+            p.rows = [r for r in p.rows if limits[0] <= Decimal(str(r.angle)) <= limits[1]]
+            p.missing = [v for v in p.missing if limits[0] <= Decimal(str(v)) <= limits[1]]
+            if not p.rows and not p.excluded:
+                p.issue = f"{p.id}: no samples in the selected angle range. Change the range or explicitly exclude this scan."
+    return obj

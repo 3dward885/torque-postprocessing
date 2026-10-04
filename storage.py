@@ -45,27 +45,46 @@ def load_config(path):
 
 
 def treated_text(result):
-    fmt = result["config"]["export_format"]
-    factor = result["molar"]["factor_mol_inverse"]
-    molar = factor is not None
-    if fmt == "canonical":
-        names = ["Temperature (K)", "Magnetic Field (T)", "Sample Position (deg)", "Torque (N m)"]
-        if molar:
-            names.append("Torque molar (N m/mol)")
-        headers = [names]
-    else:
-        names = ["Temperature", "Magnetic Field", "Sample Position", "Torque", "Torque molar"]
-        if fmt == "new_rot1":
-            names[2], names[4] = "Sample Posiiton", "Torque Molar"
-        units = ["K", "T", "Deg", "Nm", "Nm/mol"]
-        headers = [names if molar else names[:4], units if molar else units[:4]]
-        if fmt != "new_rot1" and molar:
-            headers.append(["", "", "", "", "D*" + factor])
     stream = io.StringIO(newline="")
     writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
-    writer.writerows(headers)
-    writer.writerows(result["output_rows"])
+    writer.writerow(["Temperature (K)", "Magnetic Field (T)", "Sample Position (deg)", "Torque (N m)"])
+    for row in result["output_rows"]:
+        if len(row) != 4:
+            raise InputError("Treated data must have exactly four torque-only columns.")
+        writer.writerow(row)
     return stream.getvalue()
+
+
+def save_dat(result, path):
+    """Publish the audit folder first, then the DAT; never replace existing paths."""
+    from pipeline import verify_export
+    verify_export(result)
+    path = Path(path).resolve()
+    raw = Path(result["input"]["path"]).resolve()
+    if path.suffix.lower() != ".dat" or path == raw:
+        raise InputError("Choose a .dat output path different from the raw input.")
+    sidecar = path.with_name(path.name + ".details")
+    if path.exists() or sidecar.exists():
+        raise InputError("Output collision: choose a new filename. Existing files are never overwritten.")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pending = path.with_name(".pending_" + uuid.uuid4().hex)
+    published = None
+    try:
+        # Reuse the existing transactional export and all its preservation checks.
+        run = Path(export_run(result, path.parent))
+        published = run
+        pending.write_bytes((run / "treated.dat").read_bytes())
+        run.rename(sidecar)
+        published = sidecar
+        # Windows rename refuses to overwrite; link gives the same guarantee elsewhere.
+        os.link(pending, path)
+        return str(path)
+    except BaseException:
+        if published and published.exists():
+            shutil.rmtree(published)
+        raise
+    finally:
+        pending.unlink(missing_ok=True)
 
 
 def environment():
@@ -145,4 +164,3 @@ def load_session(path):
         return [(str((Path(path).resolve().parent / item["path"]).resolve()), item["settings"]) for item in doc["files"]]
     except (KeyError, TypeError) as exc:
         raise InputError("Each session file needs a path and settings object.") from exc
-

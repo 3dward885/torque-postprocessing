@@ -20,7 +20,7 @@ def main(session, output):
     from pypdf import PdfReader
     raw, cfg = load_session(session)[0]
     result = run_entry(raw, cfg)
-    folder = Path(output)
+    folder = Path(output).resolve()
     reference = None
     reports = []
     for view in ("baseline_uncentered", "baseline_corrected", "background"):
@@ -95,4 +95,3 @@ if __name__ == "__main__":
     parser.add_argument("--output", default=str(ROOT/"validation/baseline_v1.1/figures"))
     args = parser.parse_args()
     main(args.session, args.output)
-

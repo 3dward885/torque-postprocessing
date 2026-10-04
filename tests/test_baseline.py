@@ -14,7 +14,7 @@ from baseline import accepted_record, finalize_pass, preview_values, ReviewCache
 from io_profiles import read_raw, InputError, TSV_HEADER
 from pipeline import default_config, process, refinalize, verify_export
 from storage import treated_text, save_session, load_session
-from test_core import synthetic
+from test_core import synthetic, fixture_config
 
 
 def bound(u, c_mid, c_final, delta):
@@ -33,7 +33,7 @@ class BaselineTests(unittest.TestCase):
             writer.writerow(TSV_HEADER)
             writer.writerows(rows[:41] + rows[:41] + rows[41:])
         self.obj = read_raw(self.path)
-        self.cfg = default_config(self.obj)
+        self.cfg = fixture_config(self.obj)
         self.cfg["centering"] = "mean"
         self.result = process(self.obj, self.cfg)
         self.pred = self.result["passes"][0]
@@ -44,6 +44,7 @@ class BaselineTests(unittest.TestCase):
     def accepted(self, delta=0.):
         cfg = copy.deepcopy(self.cfg)
         cfg["baseline_review"]["enabled"] = True
+        cfg["baseline_review"]["active_passes"] = ["P001"]
         cfg["baseline_review"]["overrides"]["P001"] = accepted_record(
             self.pred["baseline_binding"], self.pred["subtracted_Nm"], delta)
         return cfg
@@ -74,6 +75,7 @@ class BaselineTests(unittest.TestCase):
         self.assertEqual(record, accepted_record(self.pred["baseline_binding"],
             self.pred["subtracted_Nm"], 0., record))
         cfg["baseline_review"]["overrides"].clear()
+        cfg["baseline_review"]["active_passes"].clear()
         self.assertEqual(treated_text(refinalize(result, cfg)), treated_text(self.result))
 
     def test_roundtrip_and_no_refit(self):
@@ -105,12 +107,13 @@ class BaselineTests(unittest.TestCase):
             self.assertFalse(display["exportable"])
             with self.assertRaises(InputError):
                 verify_export(display)
-        for field, value in [("schema_version", 2), ("enabled", "yes")]:
+        for field, value in [("schema_version", 3), ("enabled", "yes")]:
             cfg = self.accepted()
             cfg["baseline_review"][field] = value
             with self.assertRaises(InputError):
                 process(self.obj, cfg)
         cfg = self.accepted()
+        cfg["baseline_review"]["active_passes"] = ["UNKNOWN"]
         cfg["baseline_review"]["overrides"]["UNKNOWN"] = cfg["baseline_review"]["overrides"].pop("P001")
         with self.assertRaisesRegex(InputError, "Unknown"):
             process(self.obj, cfg)
@@ -122,18 +125,21 @@ class BaselineTests(unittest.TestCase):
         record = copy.deepcopy(cfg["baseline_review"]["overrides"]["P001"])
         record["pass_id"] = "P002"
         cfg["baseline_review"]["overrides"]["P002"] = record
+        cfg["baseline_review"]["active_passes"].append("P002")
         with self.assertRaisesRegex(InputError, "stale"):
             process(self.obj, cfg)
 
     def test_molar_and_ordinary_policy_not_upstream(self):
         cfg = self.accepted(1e-9)
         one = process(self.obj, cfg)
+        cfg["version"] = "1.0"
         cfg["molar"] = {"mode":"multiplier","factor":"911.63","source":"Provided software test factor; physical basis unverified"}
         cfg["centering"] = "midrange"
         two = process(self.obj, cfg)
         self.assertEqual(one["passes"][0]["D"], two["passes"][0]["D"])
         self.assertEqual(one["passes"][0]["baseline_binding"], two["passes"][0]["baseline_binding"])
-        self.assertIsNotNone(two["passes"][0]["E"])
+        self.assertNotIn("E", two["passes"][0])
+        self.assertTrue(all(len(r) == 4 for r in two["output_rows"]))
 
     def test_recipe_and_raw_changes_invalidate(self):
         cfg = self.accepted()
@@ -152,11 +158,12 @@ class BaselineTests(unittest.TestCase):
             writer.writerow(TSV_HEADER)
             writer.writerows(synthetic(second_background=True))
         obj = read_raw(self.path)
-        cfg = default_config(obj)
+        cfg = fixture_config(obj)
         cfg["overrides"]["P001"] = {"identity": obj.passes[0].identity,
             "background": "P002", "source": "Explicit synthetic background choice"}
         pred = process(obj, cfg)["passes"][0]
         cfg["baseline_review"]["enabled"] = True
+        cfg["baseline_review"]["active_passes"] = ["P001"]
         cfg["baseline_review"]["overrides"]["P001"] = accepted_record(pred["baseline_binding"], pred["subtracted_Nm"], 1e-9)
         cfg["overrides"]["P001"]["background"] = "P003"
         with self.assertRaisesRegex(InputError, "background_identity"):
@@ -189,4 +196,3 @@ class BaselineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
-

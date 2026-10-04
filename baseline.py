@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
-from decimal import Decimal, localcontext
 import hashlib
 import json
 import math
@@ -13,8 +12,8 @@ import sys
 import numpy as np
 from io_profiles import InputError
 
-SCHEMA_VERSION = 1
-APP_VERSION = "1.1"
+SCHEMA_VERSION = 2
+APP_VERSION = "1.2"
 BINDING_FIELDS = (
     "input_sha256", "profile_id", "rotation", "pass_id", "pass_identity",
     "source_lines", "nominal_angles", "displayed_T_and_fields",
@@ -37,7 +36,7 @@ def finite(value, label="Offset (N m)"):
             raise ValueError()
         return number
     except (TypeError, ValueError, OverflowError) as exc:
-        raise InputError(f"{label}: enter a finite binary64 number.") from exc
+        raise InputError(f"{label}: enter a finite number.") from exc
 
 
 def vector(values):
@@ -63,17 +62,26 @@ def u_digest(values):
 
 
 def empty_review():
-    return {"schema_version": SCHEMA_VERSION, "enabled": False, "overrides": {}}
+    return {"schema_version": SCHEMA_VERSION, "enabled": False, "overrides": {}, "active_passes": []}
 
 
 def review_settings(config, signal_ids=None):
     block = config.get("baseline_review", empty_review())
-    if not isinstance(block, dict) or set(block) != {"schema_version", "enabled", "overrides"}:
-        raise InputError("baseline_review needs schema_version, enabled and overrides only.")
-    if type(block["schema_version"]) is not int or block["schema_version"] != SCHEMA_VERSION:
+    if not isinstance(block, dict):
+        raise InputError("Invalid saved baseline settings.")
+    version = block.get("schema_version")
+    if type(version) is not int or version not in (1, SCHEMA_VERSION):
         raise InputError("Unsupported baseline_review schema_version.")
+    expected = {"schema_version", "enabled", "overrides"} | ({"active_passes"} if version == 2 else set())
+    if set(block) != expected:
+        raise InputError("Unknown or missing baseline settings fields.")
     if type(block["enabled"]) is not bool or not isinstance(block["overrides"], dict):
         raise InputError("baseline_review enabled must be a Boolean; overrides must be an object.")
+    if version == 2 and (not isinstance(block["active_passes"], list) or
+                         any(not isinstance(p, str) for p in block["active_passes"]) or
+                         len(set(block["active_passes"])) != len(block["active_passes"]) or
+                         set(block["active_passes"]) - set(block["overrides"])):
+        raise InputError("Active baseline scan IDs do not match saved adjustments.")
     for pid, record in block["overrides"].items():
         if signal_ids is not None and pid not in signal_ids:
             raise InputError(f"Unknown baseline-review signal pass key: {pid}.")
@@ -106,6 +114,7 @@ def make_binding(acquisition, signal, background, u, recipe, implementation):
         "profile": {k: v for k, v in asdict(acquisition.profile).items() if k != "provenance"},
         "recipe": {k: v for k, v in recipe.items() if k not in ("D_export", "E_export", "version")},
         "implementation_sha256": implementation,
+        "angle_range_deg": getattr(acquisition, "analysis_range_deg", None),
         "environment": {"python": platform.python_version(), "numpy": np.__version__,
                         "machine": platform.machine(), "platform": platform.platform(), "byteorder": sys.byteorder},
     }
@@ -124,7 +133,7 @@ def accepted_record(binding, u, delta, previous=None):
               "c_mid_Nm": repr(c_mid), "delta_Nm": repr(delta), "c_final_Nm": repr(c_final),
               "origin": "accepted_midrange" if delta == 0 else "user_adjusted",
               "accepted_utc": datetime.now(timezone.utc).isoformat(),
-              "app_and_config_versions": {"app": APP_VERSION, "config": "1.0", "baseline_review": SCHEMA_VERSION}}
+              "app_and_config_versions": {"app": APP_VERSION, "config": "1.2", "baseline_review": SCHEMA_VERSION}}
     # Repeated Apply is a no-op, including preservation of its acceptance time.
     if previous and all(previous.get(k) == record[k] for k in BINDING_FIELDS + VALUE_FIELDS if k != "accepted_utc"):
         return copy.deepcopy(previous)
@@ -141,10 +150,10 @@ def record_issue(record, binding, u):
         try:
             c_final = float.fromhex(record["c_final_binary64_hex"])
         except (TypeError, ValueError, OverflowError) as exc:
-            raise InputError("invalid canonical binary64 offset") from exc
+            raise InputError("invalid stored offset") from exc
         finite(c_final)
         if c_final.hex() != record["c_final_binary64_hex"]:
-            raise InputError("noncanonical binary64 hexadecimal offset")
+            raise InputError("invalid hexadecimal offset encoding")
         values = [finite(record[k], k) for k in ("c_mid_Nm", "delta_Nm", "c_final_Nm")]
         c_mid, delta, readable_final = values
         if c_mid.hex() != midrange(u).hex():
@@ -158,7 +167,7 @@ def record_issue(record, binding, u):
         if when.utcoffset() is None or when.utcoffset().total_seconds() != 0:
             raise InputError("acceptance timestamp must be UTC")
         versions = record["app_and_config_versions"]
-        if versions.get("config") != "1.0" or versions.get("baseline_review") != SCHEMA_VERSION or not versions.get("app"):
+        if versions.get("config") not in ("1.0", "1.2") or versions.get("baseline_review") not in (1, SCHEMA_VERSION) or not versions.get("app"):
             raise InputError("unsupported acceptance versions")
         finalize_pass(u, "midrange", accepted_offset=c_final)
     except (InputError, KeyError, TypeError, ValueError, OverflowError, AttributeError) as exc:
@@ -175,19 +184,19 @@ def resolve(config, binding, u, allow_stale_review=False):
         return None, status
     issue = record_issue(record, binding, u)
     status["reason"] = issue
-    if not block["enabled"]:
+    if not block["enabled"] or (block["schema_version"] == 2 and binding["pass_id"] not in block["active_passes"]):
         status["status"] = "inactive_stale" if issue else "inactive"
         return None, status
     if issue:
         if not allow_stale_review:
-            raise InputError(f"{binding['pass_id']}: stale baseline override ({issue}). Review and Apply, Remove override, or disable Interactive baseline adjustment.")
+            raise InputError(f"{binding['pass_id']}: stale baseline override ({issue}). Review and Apply, or remove the saved adjustment.")
         status["status"] = "stale"
         return None, status
     status["status"] = "active"
     return float.fromhex(record["c_final_binary64_hex"]), status
 
 
-def finalize_pass(values, ordinary_policy, factor=None, accepted_offset=None):
+def finalize_pass(values, ordinary_policy, accepted_offset=None):
     """One subtraction and unchanged .8g/Decimal serialization for every route."""
     u = vector(values)
     if ordinary_policy not in ("mean", "midrange"):
@@ -198,10 +207,7 @@ def finalize_pass(values, ordinary_policy, factor=None, accepted_offset=None):
     if not math.isfinite(c) or not np.isfinite(y).all():
         raise InputError("Nonfinite baseline arithmetic result.")
     d = [format(float(v), ".8g") for v in y]
-    with localcontext() as ctx:
-        ctx.prec = max(50, len(Decimal(factor).as_tuple().digits) + 16) if factor else 50
-        e = [str(Decimal(v) * Decimal(factor)) for v in d] if factor else None
-    return {"offset": c, "values": y, "D": d, "E": e}
+    return {"offset": c, "values": y, "D": d}
 
 
 def preview_values(values, delta):
@@ -236,4 +242,3 @@ class ReviewCache:
     @property
     def binding(self):
         return json.loads(self.binding_json)
-

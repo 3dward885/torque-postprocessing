@@ -1,32 +1,28 @@
-"""Small Tk/ttk desktop application. Scientific calculations live in pipeline.py."""
+"""Tk desktop workflow; all scientific processing is shared with the CLI."""
 from __future__ import annotations
 import copy
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
-import json
 import os
 from pathlib import Path
 import queue
 import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-
-from io_profiles import InputError, PROFILES, read_raw, profile_from, sha256
-from pipeline import default_config, molar_settings, select_background, validate_config, refinalize
+from io_profiles import InputError, read_raw, configure_acquisition, profile_from
+from pipeline import (default_config, select_background, refinalize, support_permission,
+                      validate_config)
 from baseline import empty_review
-from baseline_editor import BaselineEditor
-from cli import run_entry
-from presets import PRESET_LABELS, apply_preset
-from storage import atomic_json, export_run, load_config, load_session, save_session, json_text
-from plots import make_figure, export_figure, font_status
+from baseline_editor import BaselineEditor, dispose_canvas
+from cli import load_entry, run_entry
+from storage import save_dat, load_session, save_session, json_text
+from plots import make_figure, raw_figure, export_figure, font_status
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from validate import compare, read_treated
 
 ROOT = Path(__file__).resolve().parent
 
 
 def configure_tk():
-    """Find Tcl/Tk scripts in Python distributions whose default lookup omits tcl/."""
     for key, subfolder, required in (("TCL_LIBRARY", "tcl8.6", "init.tcl"), ("TK_LIBRARY", "tk8.6", "tk.tcl")):
         candidate = Path(sys.base_prefix) / "tcl" / subfolder
         if not os.environ.get(key) and (candidate / required).is_file():
@@ -39,32 +35,27 @@ configure_tk()
 class App:
     def __init__(self, root):
         self.root = root
-        root.title("Torque Postprocessing 1.1")
-        root.geometry("1240x750")
-        root.minsize(1000, 680)
-        self.records = {}
-        self.counter = 0
+        root.title("Torque Postprocessing 1.2")
+        root.geometry("1220x780")
+        root.minsize(1000, 660)
+        self.records, self.counter = {}, 0
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="torque")
         self.events = queue.Queue()
-        self.busy = False
-        self.closed = False
+        self.busy = self.closed = False
         self.pulse_count = 0
-        self.canvas = None
-        self.editor = None
-        self.baseline_enabled = tk.BooleanVar(value=False)
+        self.canvas = self.editor = None
         self.last_error = ""
-        self.output = tk.StringVar(value=str(ROOT / "runs"))
-        self.status = tk.StringVar(value="Add raw files. Each new input starts with Midrange and Torque only.")
-        self.case = tk.StringVar(value="Select an input to inspect its angular passes.")
-        self.details = tk.StringVar(value="")
-        self.view = tk.StringVar(value="stages")
+        self.status = tk.StringVar(value="Open a raw DAT file.")
+        self.details = tk.StringVar()
+        self.range_label = tk.StringVar(value="All angles")
+        self.view = tk.StringVar(value="Corrected")
+        self.background = tk.StringVar()
+        self.extrapolate = tk.BooleanVar(value=False)
         self.buttons = {}
         self.build_ui()
-        self.refresh_buttons()
         root.protocol("WM_DELETE_WINDOW", self.close)
         root.bind("<Control-o>", lambda e: self.add_files())
-        root.bind("<Control-s>", lambda e: self.save_configuration())
-        root.bind("<Control-l>", lambda e: self.load_configuration())
+        root.bind("<Control-s>", lambda e: self.export_all())
         root.bind("<F5>", lambda e: self.process_all())
         root.after(40, self.poll)
 
@@ -72,118 +63,89 @@ class App:
         style = ttk.Style()
         if "vista" in style.theme_names():
             style.theme_use("vista")
-        style.configure("Treeview", rowheight=25)
-        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
+        style.configure("Treeview", rowheight=26)
+        menu = tk.Menu(self.root)
+        file_menu = tk.Menu(menu, tearoff=False)
+        for label, action in [("Open data…", self.add_files), ("Save treated data…", self.export_all),
+                              ("Save settings…", self.save_configuration), ("Load settings…", self.load_configuration),
+                              ("Remove selected file", self.remove_selected), ("Close", self.close)]:
+            file_menu.add_command(label=label, command=action)
+        menu.add_cascade(label="File", menu=file_menu)
+        tools_menu = tk.Menu(menu, tearoff=False)
+        for label, action in [("Acquisition settings…", self.file_settings), ("Export figure…", self.save_plot),
+                              ("Details…", self.show_details)]:
+            tools_menu.add_command(label=label, command=action)
+        menu.add_cascade(label="Tools", menu=tools_menu)
+        self.root.config(menu=menu)
         outer = ttk.Frame(self.root, padding=10)
         outer.pack(fill="both", expand=True)
         toolbar = ttk.Frame(outer)
         toolbar.pack(fill="x")
-        for text, command in [
-            ("Add raw files...", self.add_files), ("Remove selected", self.remove_selected),
-            ("File settings...", self.file_settings), ("Save configuration...", self.save_configuration),
-            ("Load configuration...", self.load_configuration),
-        ]:
-            self.buttons[text] = ttk.Button(toolbar, text=text, command=command)
-            self.buttons[text].pack(side="left", padx=(0, 6))
-        self.files = ttk.Treeview(outer, columns=("name", "schema", "profile", "center", "molar", "state"),
-                                  show="headings", height=3, selectmode="extended")
-        for key, label, width in [
-            ("name", "Raw file", 230), ("schema", "Detected schema", 190), ("profile", "Profile", 90),
-            ("center", "Centering", 90), ("molar", "Molar output", 165), ("state", "Import / result", 280),
-        ]:
-            self.files.heading(key, text=label)
-            self.files.column(key, width=width, minwidth=65)
-        self.files.pack(fill="x", pady=(8, 6))
+        for label, command in [("Open data…", self.add_files), ("Subtract background", self.process_all),
+                               ("Center zero…", self.review_baseline), ("Save treated data…", self.export_all)]:
+            button = ttk.Button(toolbar, text=label, command=command)
+            button.pack(side="left", padx=(0, 8))
+            self.buttons[label] = button
+        self.progress = ttk.Progressbar(toolbar, mode="indeterminate", length=70)
+        self.progress.pack(side="right")
+        self.files = ttk.Treeview(outer, columns=("name", "state"), show="headings", height=2)
+        for key, title, width in [("name", "Raw file", 380), ("state", "Status", 700)]:
+            self.files.heading(key, text=title)
+            self.files.column(key, width=width)
+        self.files.pack(fill="x", pady=8)
         self.files.bind("<<TreeviewSelect>>", self.refresh_selected)
-        self.files.bind("<Double-1>", lambda e: self.file_settings())
-        actions = ttk.Frame(outer)
-        actions.pack(fill="x", pady=(0, 8))
-        ttk.Label(actions, text="Output folder").pack(side="left")
-        ttk.Entry(actions, textvariable=self.output).pack(side="left", fill="x", expand=True, padx=6)
-        self.buttons["Browse..."] = ttk.Button(actions, text="Browse...", command=self.choose_output)
-        self.buttons["Browse..."].pack(side="left", padx=4)
-        for text, command in [("Process all", self.process_all), ("Export ready", self.export_all)]:
-            self.buttons[text] = ttk.Button(actions, text=text, command=command)
-            self.buttons[text].pack(side="left", padx=4)
-        self.progress = ttk.Progressbar(actions, mode="indeterminate", length=80)
-        self.progress.pack(side="left", padx=4)
-        ttk.Label(outer, textvariable=self.case, wraplength=1190).pack(fill="x", pady=(0, 6))
+        settings = ttk.Frame(outer)
+        settings.pack(fill="x", pady=(0, 8))
+        ttk.Button(settings, text="Acquisition settings…", command=self.file_settings).pack(side="left")
+        ttk.Button(settings, text="Angle range…", command=self.range_settings).pack(side="left", padx=8)
+        ttk.Label(settings, textvariable=self.range_label).pack(side="left")
         panes = ttk.Panedwindow(outer, orient="horizontal")
         panes.pack(fill="both", expand=True)
-        left = ttk.Frame(panes)
-        right = ttk.Frame(panes)
+        left, right = ttk.Frame(panes), ttk.Frame(panes)
         panes.add(left, weight=4)
         panes.add(right, weight=6)
-        ttk.Label(left, text="Angular passes", font=("Segoe UI", 11, "bold")).pack(anchor="w")
-        tree_area = ttk.Frame(left)
-        tree_area.pack(fill="both", expand=True, pady=4)
-        self.passes = ttk.Treeview(tree_area, columns=("T", "B", "n", "role", "center"), show="tree headings", selectmode="browse")
-        self.passes.heading("#0", text="Pass")
-        self.passes.column("#0", width=62, minwidth=55, stretch=False)
-        for key, label, width in [("T", "T (K)", 58), ("B", "B (T)", 110), ("n", "Rows", 45),
-                                   ("role", "Role", 80), ("center", "Centering", 90)]:
+        self.passes = ttk.Treeview(left, columns=("T", "B", "n", "role"), show="tree headings", selectmode="extended")
+        self.passes.heading("#0", text="Scan")
+        self.passes.column("#0", width=65, stretch=False)
+        for key, label, width in [("T", "T (K)", 130), ("B", "B (T)", 110),
+                                   ("n", "Points", 55), ("role", "Role", 90)]:
             self.passes.heading(key, text=label)
-            self.passes.column(key, width=width, minwidth=40)
-        self.passes.pack(side="left", fill="both", expand=True)
-        scroll = ttk.Scrollbar(tree_area, orient="vertical", command=self.passes.yview)
-        scroll.pack(side="right", fill="y")
+            self.passes.column(key, width=width, minwidth=45)
+        scroll = ttk.Scrollbar(left, orient="vertical", command=self.passes.yview)
         self.passes.configure(yscrollcommand=scroll.set)
+        scroll.pack(side="right", fill="y")
+        self.passes.pack(fill="both", expand=True)
         self.passes.bind("<<TreeviewSelect>>", self.select_pass)
-        self.passes.bind("<Double-1>", lambda e: self.pass_settings())
-        self.buttons["Pass settings / Background..."] = ttk.Button(left, text="Pass settings / Background...", command=self.pass_settings)
-        self.buttons["Pass settings / Background..."].pack(fill="x", pady=3)
-        self.baseline_check = ttk.Checkbutton(left, text="Interactive baseline adjustment",
-                                              variable=self.baseline_enabled, command=self.toggle_baseline)
-        self.baseline_check.pack(anchor="w", pady=4)
-        self.buttons["Review baseline..."] = ttk.Button(left, text="Review baseline...", command=self.review_baseline)
-        self.buttons["Review baseline..."].pack(fill="x", pady=3)
-        ttk.Label(left, textvariable=self.details, wraplength=420, justify="left").pack(fill="x", pady=6)
-        self.tabs = ttk.Notebook(right)
-        self.tabs.pack(fill="both", expand=True, padx=(8, 0))
-        preview = ttk.Frame(self.tabs)
-        advanced = ttk.Frame(self.tabs)
-        validation = ttk.Frame(self.tabs)
-        self.tabs.add(preview, text="Preview")
-        self.tabs.add(advanced, text="Provenance")
-        self.tabs.add(validation, text="Validation")
-        choices = ttk.Frame(preview)
-        choices.pack(fill="x", padx=4, pady=4)
-        ttk.Label(choices, text="View").pack(side="left")
-        combo = ttk.Combobox(choices, textvariable=self.view, state="readonly", width=16,
-                             values=("stages", "background", "centered", "baseline_uncentered", "baseline_corrected", "comparison", "residual"))
-        combo.pack(side="left", padx=6)
-        combo.bind("<<ComboboxSelected>>", self.select_pass)
-        ttk.Button(choices, text="Export PDF + PNG...", command=self.save_plot).pack(side="left", padx=4)
-        self.plot_area = ttk.Frame(preview)
-        ttk.Label(preview, text=font_status(), wraplength=650).pack(side="bottom", fill="x", padx=4)
+        association = ttk.Frame(left, padding=(0, 8))
+        association.pack(fill="x")
+        ttk.Label(association, text="Background").pack(anchor="w")
+        self.background_box = ttk.Combobox(association, textvariable=self.background, state="readonly")
+        self.background_box.pack(fill="x", pady=3)
+        self.extrapolation_check = ttk.Checkbutton(association, text="Allow background extrapolation",
+                                                 variable=self.extrapolate)
+        self.extrapolation_check.pack(anchor="w")
+        ttk.Button(association, text="Apply background", command=self.apply_background).pack(anchor="e", pady=3)
+        ttk.Label(left, textvariable=self.details, wraplength=420).pack(fill="x", pady=6)
+        controls = ttk.Frame(right)
+        controls.pack(fill="x", padx=10)
+        ttk.Label(controls, text="View").pack(side="left")
+        box = ttk.Combobox(controls, textvariable=self.view, state="readonly", width=20,
+                          values=("Corrected", "Background fit", "Processing steps", "Raw"))
+        box.pack(side="left", padx=6)
+        box.bind("<<ComboboxSelected>>", self.select_pass)
+        self.plot_area = ttk.Frame(right, padding=5)
         self.plot_area.pack(fill="both", expand=True)
-        self.plot_message = ttk.Label(self.plot_area, text="Process the selected input to preview its results.", anchor="center")
+        self.plot_message = ttk.Label(self.plot_area, text="", anchor="center")
         self.plot_message.pack(fill="both", expand=True)
-        self.advanced = tk.Text(advanced, wrap="word", font=("Consolas", 10), state="disabled")
-        self.advanced.pack(fill="both", expand=True)
-        ttk.Button(validation, text="Compare saved output with reference...", command=self.validate_saved).pack(anchor="w", padx=8, pady=8)
-        ttk.Label(validation, text="Available after export. Comparison cannot change processing settings or output.", wraplength=600).pack(fill="x", padx=8)
-        self.validation_text = tk.Text(validation, height=12, wrap="word", font=("Consolas", 10), state="disabled")
-        self.validation_text.pack(fill="both", expand=True, padx=8, pady=8)
-        self.status_label = ttk.Label(outer, textvariable=self.status, wraplength=1190, foreground="#203e58")
-        self.status_label.pack(side="bottom", fill="x", pady=(7, 0), before=panes)
+        ttk.Label(outer, textvariable=self.status, wraplength=1160).pack(fill="x", pady=(8, 0))
 
     def selected(self):
         ids = self.files.selection()
         return self.records.get(ids[0]) if ids else None
 
     def selected_pass(self):
-        record = self.selected()
-        ids = self.passes.selection()
-        if record and record.get("obj") and ids:
-            return next((p for p in record["obj"].passes if p.id == ids[0]), None)
-        return None
-
-    def set_text(self, widget, text):
-        widget.configure(state="normal")
-        widget.delete("1.0", "end")
-        widget.insert("1.0", text)
-        widget.configure(state="disabled")
+        record, ids = self.selected(), self.passes.selection()
+        return next((p for p in record["obj"].passes if p.id == ids[0]), None) if record and record.get("obj") and ids else None
 
     def show_error(self, error):
         self.last_error = str(error)
@@ -196,8 +158,7 @@ class App:
         self.busy = True
         self.status.set(message)
         self.progress.start(12)
-        for button in self.buttons.values():
-            button.configure(state="disabled")
+        self.refresh_buttons()
         future = self.executor.submit(job)
         future.add_done_callback(lambda f: self.events.put((f, callback)))
 
@@ -212,8 +173,6 @@ class App:
         else:
             self.busy = False
             self.progress.stop()
-            for button in self.buttons.values():
-                button.configure(state="normal")
             try:
                 callback(future.result())
             except Exception as exc:
@@ -222,44 +181,41 @@ class App:
         self.root.after(40, self.poll)
 
     def refresh_buttons(self):
+        r = self.selected()
+        for button in self.buttons.values():
+            button.configure(state="disabled" if self.busy else "normal")
         if not self.busy:
-            self.buttons["Export ready"].configure(state="normal" if any(r.get("result") for r in self.records.values()) else "disabled")
+            self.buttons["Save treated data…"].configure(state="normal" if r and r.get("result", {}) and r["result"]["exportable"] else "disabled")
+            self.buttons["Center zero…"].configure(state="normal" if r and (r.get("result") or {}).get("passes") else "disabled")
 
     def add_record(self, path, obj=None, cfg=None, error=""):
         self.counter += 1
         key = f"F{self.counter}"
-        record = {"key": key, "path": str(Path(path).resolve()), "obj": obj, "cfg": cfg,
-                  "result": None, "saved": None, "reference": None, "validation": None,
-                  "state": error or "Ready to process", "error": error}
+        record = {"key": key, "path": str(Path(path).resolve()), "raw": obj, "cfg": cfg, "obj": None,
+                  "result": None, "saved": None, "state": error, "error": error}
+        if obj:
+            record["obj"] = configure_acquisition(obj, cfg["acquisition"])
+            record["state"] = f"{len(obj.rows)} measurements; {len(record['obj'].passes)} scans"
         self.records[key] = record
         self.files.insert("", "end", iid=key)
         self.update_file(record)
         return key
 
     def update_file(self, record):
-        obj, cfg = record.get("obj"), record.get("cfg")
-        molar = (cfg or {}).get("molar", {"mode": "torque"})
-        label = {"torque": "Torque only", "multiplier": f"k = {molar.get('factor', '')}",
-                 "amount": f"n = {molar.get('amount_mol', '')} mol",
-                 "mass": f"{molar.get('mass', '')} {molar.get('mass_unit', '')}"}.get(molar["mode"], molar["mode"])
-        self.files.item(record["key"], values=(Path(record["path"]).name, obj.schema if obj else "Import failed",
-                        obj.profile.name if obj else "unresolved", (cfg or {}).get("centering", "midrange"), label, record["state"]))
+        self.files.item(record["key"], values=(Path(record["path"]).name, record["state"]))
 
     def add_files(self, paths=None):
-        if not self.guard_baseline(close=True):
+        if self.busy or not self.guard_baseline(close=True):
             return
-        if self.busy:
-            return
-        paths = paths or filedialog.askopenfilenames(parent=self.root, title="Add raw DAT files",
-                                                     filetypes=[("DAT text", "*.dat"), ("All files", "*.*")])
+        paths = paths or filedialog.askopenfilenames(parent=self.root, title="Open raw data", filetypes=[("DAT", "*.dat")])
         if not paths:
             return
         def job():
             imports = []
             for path in paths:
                 try:
-                    obj = read_raw(path, "fractional")
-                    imports.append((path, obj, default_config(obj), ""))
+                    obj, cfg = load_entry(path)
+                    imports.append((path, obj, cfg, ""))
                 except (ValueError, OSError) as exc:
                     imports.append((path, None, None, str(exc)))
             return imports
@@ -267,457 +223,232 @@ class App:
             keys = [self.add_record(*item) for item in imports]
             self.files.selection_set(keys[0])
             self.refresh_selected()
-            self.status.set(f"Imported {sum(not i[3] for i in imports)}/{len(imports)} files. New inputs have independent torque-only settings.")
-        self.submit("Reading raw files...", job, done)
+            self.status.set("Data loaded. Set experimental temperatures in Acquisition settings.")
+        self.submit("Reading data…", job, done)
 
     def remove_selected(self):
-        if not self.guard_baseline(close=True):
-            return
-        if self.busy:
+        if self.busy or not self.guard_baseline(close=True):
             return
         for key in self.files.selection():
-            del self.records[key]
+            self.records.pop(key)
             self.files.delete(key)
         self.refresh_selected()
 
-    def choose_output(self):
-        path = filedialog.askdirectory(parent=self.root, title="Output parent folder")
-        if path:
-            self.output.set(path)
-
-    def clear_plot(self, text="Process this input to preview current results."):
+    def clear_plot(self):
         if self.canvas:
-            self.canvas.get_tk_widget().destroy()
+            dispose_canvas(self.canvas)
             self.canvas = None
-        self.plot_message.configure(text=text)
         self.plot_message.pack(fill="both", expand=True)
-
-    def invalidate(self, record):
-        record.update(result=None, saved=None, reference=None, validation=None, state="Settings changed: process again", error="")
-        self.update_file(record)
-        if record is self.selected():
-            self.clear_plot()
-            self.set_text(self.validation_text, "")
-        self.refresh_buttons()
 
     def refresh_selected(self, event=None):
         if self.editor and self.selected() is not self.editor.record:
             if not self.guard_baseline(close=True):
                 self.files.selection_set(self.editor.record["key"])
                 return
-        old_pass = self.passes.selection()
+        old = self.passes.selection()
         self.passes.delete(*self.passes.get_children())
         self.clear_plot()
-        record = self.selected()
-        if not record:
-            self.case.set("Select an input to inspect its angular passes.")
-            self.details.set("")
-            self.set_text(self.advanced, "")
-            self.set_text(self.validation_text, "")
+        r = self.selected()
+        if not r or not r.get("obj"):
+            self.details.set(r["error"] if r else "")
             self.refresh_buttons()
             return
-        obj = record.get("obj")
-        if not obj:
-            self.case.set(record["state"])
-            self.details.set("Open File settings to select an explicit compatible profile.")
-            self.set_text(self.advanced, record["error"])
-            return
-        cfg = record["cfg"]
-        self.baseline_enabled.set(cfg.get("baseline_review", empty_review())["enabled"])
-        self.case.set(f"{Path(record['path']).name}  |  {obj.schema}  |  Input: K, Oe, deg, N m  |  Profile: {obj.profile.name}  |  {len(obj.rows)} observed rows")
-        for p in obj.passes:
-            override = cfg.get("overrides", {}).get(p.id, {})
-            mode = "" if p.zero else override.get("centering", cfg["centering"]) + (" *" if "centering" in override else "")
-            if record.get("result") and not p.zero:
-                pred = next(v for v in record["result"]["passes"] if v["pass_id"] == p.id)
-                mode = pred["centering"]
-            self.passes.insert("", "end", iid=p.id, text=p.id, values=(str(p.T), p.field_label, len(p.rows), "background" if p.zero else "signal", mode))
-        selected_id = old_pass[0] if old_pass and self.passes.exists(old_pass[0]) else obj.passes[0].id
-        self.passes.selection_set(selected_id)
-        self.passes.see(selected_id)
-        advanced = {"input_sha256": obj.sha256, "detected_columns": obj.header, "units": obj.units,
-                    "settings": cfg, "error": record["error"]}
-        if record.get("result"):
-            advanced["recipe"] = record["result"]["recipe"]
-            advanced["fits"] = record["result"]["fits"]
-        self.set_text(self.advanced, json_text(advanced))
-        met = record.get("validation")
-        self.set_text(self.validation_text, self.validation_summary(met) if met else "No current saved-output comparison.")
+        limits = r["cfg"]["acquisition"]["angle_range_deg"]
+        self.range_label.set(f"{limits[0]} to {limits[1]}° — fit, center and export" if limits else "All angles")
+        for p in r["obj"].passes:
+            self.passes.insert("", "end", iid=p.id, text=p.id, values=(
+                str(p.T) if p.T is not None else p.measured_temperature,
+                p.field_label, f"{len(p.rows)}/{len(p.acquired_rows)}",
+                "Excluded" if p.excluded else "Background" if p.zero else "Signal"))
+        selected = [pid for pid in old if self.passes.exists(pid)] or [r["obj"].passes[0].id]
+        self.passes.selection_set(selected)
         self.select_pass()
         self.refresh_buttons()
 
     def select_pass(self, event=None):
         if self.busy:
             return
-        record, p = self.selected(), self.selected_pass()
-        if not record or not p:
+        r, p = self.selected(), self.selected_pass()
+        if not r or not p:
             return
-        if self.editor and p.id != self.editor.main_pass_id:
-            if not self.guard_baseline(close=True):
-                self.passes.selection_set(self.editor.main_pass_id)
-                return
-        text = f"Acquisition {p.order}; physical lines {p.rows[0].line}-{p.rows[-1].line}.\nMissing angles: {p.missing or 'none'}."
-        if p.trajectory:
-            text += "\nChanging field: one pass; row-specific B retained."
-        if not p.zero:
-            try:
-                bg = select_background(record["obj"], p, record["cfg"])
-                order = "before" if bg.rows[-1].line < p.rows[0].line else "after"
-                text += f"\nBackground: {bg.id}, {order}; lines {bg.rows[0].line}-{bg.rows[-1].line}; {len(bg.rows)} samples."
-            except InputError as exc:
-                text += "\n" + str(exc)
-            if record.get("result"):
-                pred = next(x for x in record["result"]["passes"] if x["pass_id"] == p.id)
-                text += f"\nExport: {pred['centering']}; offset {pred['centering_constant_Nm']:.11g} N m."
-                text += f"\nOrdinary policy: {pred['ordinary_centering']}. Baseline review: {pred['baseline_review']['status']}."
-                if pred["baseline_review"]["reason"]:
-                    text += "\n" + pred["baseline_review"]["reason"]
+        if self.editor and p.id != self.editor.main_pass_id and not self.guard_baseline(close=True):
+            self.passes.selection_set(self.editor.main_pass_id)
+            return
+        candidates = r["obj"].candidates(p) if not p.zero else []
+        labels = [f"{b.id}: {b.T} K; {min(x.angle for x in b.rows):g}–{max(x.angle for x in b.rows):g}°"
+                  for b in candidates if b.rows]
+        self.background_box.configure(values=labels)
+        selected = r["cfg"]["overrides"].get(p.id, {}).get("background")
+        if not selected and len(candidates) == 1:
+            selected = candidates[0].id
+        self.background.set(next((v for v in labels if v.startswith(str(selected) + ":")), ""))
+        self.extrapolate.set(any(e.get("signal_id") == p.id for e in r["cfg"]["support_exceptions"]))
+        self.extrapolation_check.configure(state="normal" if candidates and not p.zero else "disabled")
+        pred = next((x for x in (r.get("result") or {}).get("passes", []) if x["pass_id"] == p.id), None)
+        issue = (r.get("result") or {}).get("processing_errors", {}).get(p.id) or p.issue
+        text = issue or f"Measured T: {p.measured_temperature} K"
+        if pred:
+            text += f"\nZero offset: {pred['centering_constant_Nm']:.8g} N m ({pred['centering']})"
         self.details.set(text)
         self.clear_plot()
-        if p.zero:
-            self.plot_message.configure(text="Background pass selected. Choose a signal pass and Background view to inspect its selected fit.")
-        elif record.get("result"):
-            try:
-                fig = make_figure(record["result"], p.id, self.view.get(), record.get("reference"), preview=True)
-                self.plot_message.pack_forget()
-                self.canvas = FigureCanvasTkAgg(fig, master=self.plot_area)
-                self.canvas.get_tk_widget().pack(fill="both", expand=True)
-                self.canvas.draw_idle()
-            except InputError as exc:
-                self.plot_message.configure(text=str(exc))
+        try:
+            if pred and self.view.get() != "Raw":
+                fig = make_figure(r["result"], p.id, self.view_key(), preview=True)
+            else:
+                fig = raw_figure(p, preview=True)
+            self.plot_message.pack_forget()
+            self.canvas = FigureCanvasTkAgg(fig, master=self.plot_area)
+            self.canvas.get_tk_widget().pack(fill="both", expand=True)
+            self.canvas.draw_idle()
+        except InputError as exc:
+            self.plot_message.configure(text=str(exc))
+
+    def view_key(self):
+        return {"Corrected": "centered", "Background fit": "background",
+                "Processing steps": "stages", "Raw": "raw"}[self.view.get()]
+
+    def apply_settings(self, record, cfg):
+        if not self.guard_baseline(close=True):
+            return False
+        obj = read_raw(record["path"], cfg["profile"])
+        configured = configure_acquisition(obj, cfg["acquisition"])
+        record.update(raw=obj, obj=configured, cfg=cfg, result=None, saved=None,
+                      state="Settings changed; subtract background again", error="")
+        self.update_file(record)
+        self.refresh_selected()
+        return True
+
+    def file_settings(self):
+        r = self.selected()
+        if self.busy or not r or not r.get("raw") or not self.guard_baseline(close=True):
+            return
+        self.settings_dialog = AcquisitionDialog(self, r, list(self.passes.selection()))
+
+    def range_settings(self):
+        self.file_settings()
+        if hasattr(self, "settings_dialog"):
+            self.settings_dialog.entries["range_min"].focus_set()
+
+    def apply_background(self):
+        r, p = self.selected(), self.selected_pass()
+        if self.busy or not r or not p or p.zero or not self.guard_baseline(close=True):
+            return
+        try:
+            pid = self.background.get().split(":")[0]
+            bg = next((b for b in r["obj"].candidates(p) if b.id == pid), None)
+            if bg is None or bg.issue or p.issue:
+                raise InputError((bg.issue if bg else "") or p.issue or "Select a background at the same experimental temperature.")
+            cfg = copy.deepcopy(r["cfg"])
+            cfg["overrides"].setdefault(p.id, {}).update(identity=p.identity, background=bg.id, source="Explicit GUI background selection")
+            cfg["support_exceptions"] = [e for e in cfg["support_exceptions"] if e.get("signal_id") != p.id]
+            if self.extrapolate.get():
+                cfg["support_exceptions"].append(support_permission(r["obj"], p, bg, "Explicit GUI extrapolation permission"))
+            self.apply_settings(r, cfg)
+        except (ValueError, OSError) as exc:
+            self.show_error(exc)
 
     def process_all(self):
-        if not self.guard_baseline(close=True):
+        if self.busy or not self.records or not self.guard_baseline(close=True):
             return
-        if self.busy or not self.records:
-            return
-        snapshots = [(key, r["path"], copy.deepcopy(r["cfg"])) for key, r in self.records.items()]
-        for r in self.records.values():
-            self.invalidate(r)
-            r["state"] = "Processing..."
-            self.update_file(r)
+        snapshots = [(k, r["path"], copy.deepcopy(r["cfg"])) for k, r in self.records.items()]
         def job():
             results = []
             for key, path, cfg in snapshots:
                 try:
                     if cfg is None:
-                        raise InputError("Resolve the import error in File settings first.")
-                    results.append((key, run_entry(path, cfg, allow_stale_review=True), ""))
+                        raise InputError("Resolve the import error first.")
+                    results.append((key, run_entry(path, cfg, allow_stale_review=True, partial=True), ""))
                 except Exception as exc:
                     results.append((key, None, str(exc)))
             return results
         def done(results):
             for key, result, error in results:
                 r = self.records[key]
-                r.update(result=result, error=error, state=(f"Processed {result['rows']} rows" if result["exportable"] else "STALE BASELINE: export blocked") if result else "FAILED: " + error)
+                r.update(result=result, error=error, saved=None,
+                         state=f"{result['rows']} treated points" + (f"; {len(result['export_blockers'])} unresolved scans" if not result["exportable"] else "") if result else error)
                 self.update_file(r)
             self.refresh_selected()
-            self.status.set(f"Processing complete: {sum(v is not None for _, v, _ in results)} succeeded; {sum(bool(e) for _, _, e in results)} failed. Select a file for details.")
-        self.submit("Processing all inputs with one worker...", job, done)
+            self.status.set("Background subtraction complete.")
+        self.submit("Subtracting background…", job, done)
 
-    def export_all(self):
-        if not self.guard_baseline(close=True):
+    def export_all(self, path=None):
+        if self.busy or not self.guard_baseline(close=True):
             return
-        if self.busy:
-            return
-        ready = [(key, r["result"]) for key, r in self.records.items() if r.get("result")]
-        if not ready:
-            self.show_error("Process current settings before export.")
-            return
-        if any(not r["exportable"] for _, r in ready):
-            self.show_error("Stale active baseline overrides block export. Review and Apply, Remove override, or disable the checkbox.")
-            return
-        output = self.output.get()
-        if not output.strip():
-            self.show_error("Choose an output folder.")
-            return
-        def job():
-            exports = []
-            for key, result in ready:
-                try:
-                    exports.append((key, export_run(result, output), ""))
-                except Exception as exc:
-                    exports.append((key, None, str(exc)))
-            return exports
-        def done(exports):
-            for key, folder, error in exports:
-                r = self.records[key]
-                r.update(saved=folder, error=error, state="Exported " + Path(folder).name if folder else "EXPORT FAILED: " + error)
-                self.update_file(r)
-            failed_inputs = [{"input": r["path"], "status": "failed", "error": r["error"]}
-                             for r in self.records.values() if not r.get("result")]
-            report = {"exports": [{"input": self.records[k]["path"], "run": f, "error": e} for k, f, e in exports],
-                      "not_exported": failed_inputs}
-            import uuid
-            atomic_json(Path(output) / f"batch_{uuid.uuid4().hex[:8]}.json", report)
-            self.status.set(f"Exported {sum(bool(f) for _, f, _ in exports)} runs to {output}. {len(failed_inputs)} inputs unavailable; batch report saved.")
-        self.submit("Writing complete run directories and verifying raw hashes...", job, done)
+        r = self.selected()
+        if not r or not r.get("result"):
+            return self.show_error("Subtract the background before saving.")
+        if not r["result"]["exportable"]:
+            return self.show_error("Resolve the listed scans or explicitly exclude them in Acquisition settings before saving.")
+        path = path or filedialog.asksaveasfilename(parent=self.root, title="Save treated data",
+            initialfile=Path(r["path"]).stem + "_treated.dat", defaultextension=".dat", filetypes=[("DAT", "*.dat")])
+        if path:
+            def done(saved):
+                r["saved"] = saved
+                self.status.set("Saved " + saved)
+            self.submit("Saving treated data…", lambda: save_dat(r["result"], path), done)
 
     def save_configuration(self, path=None):
-        if not self.guard_baseline(close=True):
+        if self.busy or not self.guard_baseline(close=True):
             return
-        if self.busy or not self.records:
-            return
-        path = path or filedialog.asksaveasfilename(parent=self.root, title="Save session configuration", defaultextension=".json", filetypes=[("JSON", "*.json")])
+        path = path or filedialog.asksaveasfilename(parent=self.root, title="Save settings", defaultextension=".json", filetypes=[("JSON", "*.json")])
         if path:
             try:
                 if any(r["cfg"] is None for r in self.records.values()):
-                    raise InputError("Resolve failed imports before saving their settings.")
-                if Path(path).resolve() in [Path(r["path"]) for r in self.records.values()]:
-                    raise InputError("Configuration cannot overwrite a raw input.")
+                    raise InputError("Resolve failed imports before saving settings.")
                 save_session(path, [(r["path"], r["cfg"]) for r in self.records.values()])
-                self.status.set("Configuration saved: " + str(path))
+                self.status.set("Settings saved.")
             except (ValueError, OSError) as exc:
                 self.show_error(exc)
 
     def load_configuration(self, path=None):
-        if not self.guard_baseline(close=True):
+        if self.busy or not self.guard_baseline(close=True):
             return
-        if self.busy:
-            return
-        path = path or filedialog.askopenfilename(parent=self.root, title="Load session configuration", filetypes=[("JSON", "*.json")])
+        path = path or filedialog.askopenfilename(parent=self.root, title="Load settings", filetypes=[("JSON", "*.json")])
         if not path:
             return
         def job():
-            imported = []
+            imports = []
             for raw, cfg in load_session(path):
-                obj = read_raw(raw, cfg["profile"])
-                validate_config(obj, cfg)
-                imported.append((raw, obj, cfg, ""))
-            return imported
-        def done(imported):
+                obj, cfg = load_entry(raw, cfg)
+                if cfg["input_sha256"] != obj.sha256:
+                    raise InputError("Settings do not match this raw file.")
+                imports.append((raw, obj, cfg, ""))
+            return imports
+        def done(imports):
             self.records.clear()
             self.files.delete(*self.files.get_children())
-            keys = [self.add_record(*item) for item in imported]
+            keys = [self.add_record(*item) for item in imports]
             if keys:
                 self.files.selection_set(keys[0])
             self.refresh_selected()
-            self.status.set("Loaded saved configuration. Process to calculate current results.")
-        self.submit("Checking saved fingerprints and pass identities...", job, done)
+            notes = [n for r in self.records.values() for n in r["cfg"].get("migration_notes", [])]
+            self.status.set(" ".join(notes) if notes else "Settings loaded. Subtract background to calculate results.")
+        self.submit("Loading settings…", job, done)
 
-    def validation_summary(self, met):
-        if not met:
-            return ""
-        lines = [f"Exact rows: {met['exact_rows']} / {met['rows']}",
-                 f"Exact passes: {met['exact_passes']} / {met['pass_count']}",
-                 "Exact cells: " + ", ".join(f"{c}: {n}/{met['rows']}" for c, n in met["exact_cells"].items()),
-                 f"Headers match: {met['header_equal']}; file bytes identical: {met['byte_identical']}", ""]
-        for column, unit in (("D", "N m"), ("E", "N m/mol")):
-            if column in met:
-                metrics = met[column]
-                lines.extend([f"{column} residual (saved output - reference), {unit}",
-                              f"  Maximum absolute error: {metrics['max_abs']:.9g}",
-                              f"  RMSE: {metrics['RMSE']:.9g}",
-                              f"  Mean residual: {metrics['mean_residual']:.9g}",
-                              f"  Largest error / own pass range: {metrics['max_error_over_own_pass_range']}", ""])
-        lines.append("Pass       Exact rows")
-        lines.extend(f"{p['id']:10s} {p['exact_rows']} / {p['rows']}" for p in met["passes"])
-        return "\n".join(lines)
-
-    def validate_saved(self, reference=None):
-        record = self.selected()
-        if self.busy:
+    def show_details(self):
+        r = self.selected()
+        if not r:
             return
-        if not record or not record.get("saved") or not record.get("result"):
-            self.show_error("Export the current processed result before loading a treated reference.")
-            return
-        reference = reference or filedialog.askopenfilename(parent=self.root, title="Select treated reference", filetypes=[("DAT", "*.dat")])
-        if not reference:
-            return
-        saved = record["saved"]
-        def job():
-            met = compare(Path(saved) / "treated.dat", reference)
-            rows, _ = read_treated(reference)
-            return met, rows
-        def done(value):
-            record["validation"], record["reference"] = value
-            self.refresh_selected()
-            self.tabs.select(2)
-            met = value[0]
-            self.status.set(f"Exact saved-output comparison: {met['exact_rows']}/{met['rows']} rows, {met['exact_passes']}/{met['pass_count']} passes. Residual view is available in Preview.")
-        self.submit("Comparing saved values without changing processing...", job, done)
+        win = tk.Toplevel(self.root)
+        win.title("Processing details")
+        text = tk.Text(win, width=100, height=32, wrap="word")
+        text.pack(fill="both", expand=True)
+        text.insert("1.0", font_status() + "\n\n" + json_text(r.get("result") or r.get("cfg")))
+        text.configure(state="disabled")
 
     def save_plot(self):
-        if not self.guard_baseline(close=True):
+        r, p = self.selected(), self.selected_pass()
+        if not r or not p or not r.get("result"):
             return
-        record, p = self.selected(), self.selected_pass()
-        if self.busy:
-            return
-        if not record or not record.get("result") or not p or p.zero:
-            self.show_error("Select a processed signal pass.")
-            return
-        folder = filedialog.askdirectory(parent=self.root, title="Choose plot folder (existing filenames are protected)")
+        folder = filedialog.askdirectory(parent=self.root, title="Save figure")
         if folder:
-            view = self.view.get()
-            def done(paths):
-                self.status.set("Saved " + " and ".join(Path(x).name for x in paths))
-            self.submit("Exporting scientific PDF and PNG...",
-                        lambda: export_figure(record["result"], p.id, folder, view, record.get("reference")), done)
-
-    def file_settings(self):
-        if not self.guard_baseline(close=True):
-            return
-        record = self.selected()
-        if self.busy or not record:
-            return
-        original = copy.deepcopy(record.get("cfg"))
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Settings for " + Path(record["path"]).name)
-        dialog.transient(self.root)
-        dialog.grab_set()
-        panel = ttk.Frame(dialog, padding=14)
-        panel.pack(fill="both", expand=True)
-        panel.columnconfigure(1, weight=1)
-        cfg = original or {"profile": asdict(PROFILES["fractional"]), "centering": "midrange",
-                           "molar": {"mode": "torque"}, "export_format": "canonical", "overrides": {},
-                           "support_exceptions": [], "input_sha256": sha256(record["path"])}
-        profile_doc = copy.deepcopy(cfg["profile"])
-        profile_name = tk.StringVar(value=profile_doc["name"])
-        center = tk.StringVar(value=cfg["centering"])
-        format_name = tk.StringVar(value=cfg["export_format"])
-        molar = cfg["molar"]
-        values = {key: tk.StringVar(value=molar.get(key) or default) for key, default in [
-            ("mode", "torque"), ("factor", ""), ("amount_mol", ""), ("mass", ""),
-            ("mass_unit", "mg"), ("molar_mass_g_mol", ""), ("source", "")]}
-        clear_overrides = tk.BooleanVar(value=False)
-        chosen_preset = tk.StringVar(value="")
-        preset_used = [None]
-
-        def add_row(number, label, variable, options=None):
-            ttk.Label(panel, text=label).grid(row=number, column=0, sticky="w", padx=(0, 12), pady=5)
-            widget = ttk.Combobox(panel, textvariable=variable, values=options, state="readonly") if options else ttk.Entry(panel, textvariable=variable, width=48)
-            widget.grid(row=number, column=1, sticky="ew", pady=5)
-            return widget
-
-        profile_combo = add_row(0, "Profile", profile_name, tuple(dict.fromkeys([*PROFILES, profile_doc["name"]])))
-        def load_profile():
-            nonlocal profile_doc
-            path = filedialog.askopenfilename(parent=dialog, title="Load explicit profile", filetypes=[("JSON", "*.json")])
-            if path:
-                try:
-                    profile_doc = asdict(profile_from(load_config(path)))
-                    profile_combo.configure(values=tuple(dict.fromkeys([*PROFILES, profile_doc["name"]])))
-                    profile_name.set(profile_doc["name"])
-                except (ValueError, OSError) as exc:
-                    messagebox.showerror("Profile", str(exc), parent=dialog)
-        ttk.Button(panel, text="Load explicit profile JSON...", command=load_profile).grid(row=1, column=1, sticky="w")
-        add_row(2, "Centering (file default)", center, ("midrange", "mean"))
-        add_row(3, "Export formatting", format_name, ("canonical", "previous", "new_rot1", "new_rot2"))
-        add_row(4, "Molar output", values["mode"], ("torque", "multiplier", "amount", "mass"))
-        ttk.Label(panel, text="torque = A-D only; multiplier = documented k; amount/mass = sample metadata",
-                  wraplength=570).grid(row=5, column=0, columnspan=2, sticky="w", pady=4)
-        add_row(6, "Multiplier k (mol^-1)", values["factor"])
-        add_row(7, "Amount n (mol)", values["amount_mol"])
-        add_row(8, "Sample mass", values["mass"])
-        add_row(9, "Mass unit", values["mass_unit"], ("mg", "g"))
-        add_row(10, "Molar mass (g/mol)", values["molar_mass_g_mol"])
-        add_row(11, "Metadata source / note", values["source"])
-        calculation = tk.StringVar()
-        ttk.Label(panel, textvariable=calculation, wraplength=570).grid(row=12, column=0, columnspan=2, sticky="w", pady=5)
-        def update_amount(*unused):
             try:
-                meta = molar_settings({k: v.get() for k, v in values.items()})
-                calculation.set("Torque only: no molar factor." if meta["factor_mol_inverse"] is None else
-                                f"k = {meta['factor_mol_inverse']} mol^-1\nAmount = {meta.get('amount_mol_calculated') or 'not established by documented multiplier'}")
-            except InputError as exc:
-                calculation.set(str(exc))
-        for variable in values.values():
-            variable.trace_add("write", update_amount)
-        update_amount()
-        add_row(13, "Reference preset (explicit)", chosen_preset, tuple(PRESET_LABELS))
-        def set_preset():
-            nonlocal cfg, profile_doc
-            try:
-                name = chosen_preset.get()
-                cfg = apply_preset(cfg, name)
-                profile_doc = copy.deepcopy(cfg["profile"])
-                profile_name.set(profile_doc["name"])
-                format_name.set(cfg["export_format"])
-                for key in values:
-                    values[key].set(cfg["molar"].get(key, "mg" if key == "mass_unit" else ""))
-                preset_used[0] = name
-            except InputError as exc:
-                messagebox.showerror("Reference preset", str(exc), parent=dialog)
-        ttk.Button(panel, text="Fill documented preset", command=set_preset).grid(row=14, column=1, sticky="w")
-        ttk.Label(panel, text="Reference multipliers: 911.63 / 1575.45 mol^-1; physical basis unverified.", wraplength=570).grid(row=15, column=0, columnspan=2, sticky="w", pady=4)
-        ttk.Checkbutton(panel, text="Clear this file's deliberate per-pass overrides", variable=clear_overrides).grid(row=16, column=0, columnspan=2, sticky="w", pady=5)
-
-        def apply():
-            try:
-                selected_profile = profile_doc if profile_name.get() == profile_doc["name"] else asdict(PROFILES[profile_name.get()])
-                obj = read_raw(record["path"], selected_profile)
-                new = copy.deepcopy(cfg) if original else default_config(obj)
-                new.update(profile=asdict(obj.profile), centering=center.get(), centering_source="Explicit GUI file setting",
-                           export_format=format_name.get(), molar={k: v.get() for k, v in values.items()})
-                if preset_used[0]:
-                    new["support_exceptions"] = cfg["support_exceptions"]
-                    new["note"] = cfg["note"]
-                if clear_overrides.get():
-                    new["overrides"] = {}
-                validate_config(obj, new)
-                record.update(obj=obj, cfg=new)
-                self.invalidate(record)
-                dialog.destroy()
-                self.refresh_selected()
-                self.status.set("File settings applied. Previous results were invalidated; process again.")
+                if self.view.get() == "Raw":
+                    raise InputError("Choose Corrected, Background fit or Processing steps for figure export.")
+                export_figure(r["result"], p.id, folder, self.view_key())
+                self.status.set("Figure saved as PDF and PNG.")
             except (ValueError, OSError) as exc:
-                messagebox.showerror("File settings", str(exc), parent=dialog)
-        footer = ttk.Frame(panel)
-        footer.grid(row=17, column=0, columnspan=2, sticky="e", pady=8)
-        ttk.Button(footer, text="Apply settings", command=apply).pack(side="left", padx=5)
-        ttk.Button(footer, text="Cancel", command=dialog.destroy).pack(side="left")
-
-    def pass_settings(self):
-        if not self.guard_baseline(close=True):
-            return
-        record, selected = self.selected(), self.selected_pass()
-        if self.busy or not record or not selected:
-            return
-        if selected.zero:
-            self.show_error("Select a signal pass to choose its centering and background.")
-            return
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Pass settings: " + selected.id)
-        dialog.transient(self.root)
-        dialog.grab_set()
-        panel = ttk.Frame(dialog, padding=16)
-        panel.pack(fill="both", expand=True)
-        old = record["cfg"].get("overrides", {}).get(selected.id, {})
-        mode = tk.StringVar(value=old.get("centering", "File default"))
-        background = tk.StringVar(value=old.get("background", "Automatic (unique only)"))
-        source = tk.StringVar(value=old.get("source", "Explicit GUI per-pass selection"))
-        ttk.Label(panel, text=f"{selected.id}: {selected.T} K; {selected.field_label} T; {len(selected.rows)} observed rows").pack(anchor="w", pady=4)
-        ttk.Label(panel, text="Centering").pack(anchor="w")
-        ttk.Combobox(panel, textvariable=mode, state="readonly", values=("File default", "midrange", "mean"), width=42).pack(fill="x", pady=4)
-        candidates = record["obj"].candidates(selected)
-        ttk.Label(panel, text="Background: same input and nominal temperature only").pack(anchor="w", pady=4)
-        ttk.Combobox(panel, textvariable=background, state="readonly", values=["Automatic (unique only)"] + [p.id for p in candidates], width=42).pack(fill="x")
-        for p in candidates:
-            order = "before" if p.rows[-1].line < selected.rows[0].line else "after"
-            ttk.Label(panel, text=f"{p.id}: {len(p.rows)} samples, lines {p.rows[0].line}-{p.rows[-1].line}, {order}").pack(anchor="w")
-        ttk.Label(panel, text="Selection source / note").pack(anchor="w", pady=(12, 2))
-        ttk.Entry(panel, textvariable=source, width=65).pack(fill="x")
-        def apply():
-            new = copy.deepcopy(record["cfg"])
-            override = {"identity": selected.identity, "source": source.get()}
-            if mode.get() != "File default":
-                override["centering"] = mode.get()
-            if background.get() != "Automatic (unique only)":
-                override["background"] = background.get()
-            if len(override) == 2:
-                new["overrides"].pop(selected.id, None)
-            else:
-                new["overrides"][selected.id] = override
-            try:
-                validate_config(record["obj"], new)
-                record["cfg"] = new
-                self.invalidate(record)
-                dialog.destroy()
-                self.refresh_selected()
-                self.status.set("Pass settings applied and bound to this input fingerprint/acquisition identity.")
-            except InputError as exc:
-                messagebox.showerror("Pass settings", str(exc), parent=dialog)
-        ttk.Button(panel, text="Apply pass settings", command=apply).pack(anchor="e", pady=(14, 0))
+                self.show_error(exc)
 
     def guard_baseline(self, close=False):
         if self.editor:
@@ -728,57 +459,122 @@ class App:
         return True
 
     def commit_baseline(self, record, cfg):
-        result = refinalize(record["result"], cfg, allow_stale_review=True) if record.get("result") else None
-        record.update(cfg=cfg, result=result, saved=None, reference=None, validation=None,
-                      state=("Processed: accepted settings updated" if result["exportable"] else "STALE BASELINE: export blocked")
-                            if result else "Settings changed: process again", error="")
-        self.update_file(record)
+        result = refinalize(record["result"], cfg, allow_stale_review=True)
+        record.update(cfg=cfg, result=result, saved=None)
         self.refresh_selected()
 
-    def toggle_baseline(self):
-        record = self.selected()
-        if not record or not record.get("cfg"):
-            self.baseline_enabled.set(False)
-            return
-        if self.busy or not self.guard_baseline(close=True):
-            self.baseline_enabled.set(record["cfg"].get("baseline_review", empty_review())["enabled"])
-            return
-        cfg = copy.deepcopy(record["cfg"])
-        cfg.setdefault("baseline_review", empty_review())["enabled"] = self.baseline_enabled.get()
-        try:
-            self.commit_baseline(record, cfg)
-            self.status.set("Interactive baseline adjustment enabled. Unreviewed passes keep their ordinary policy."
-                            if self.baseline_enabled.get() else "Interactive adjustments inactive; ordinary policies restored. Accepted records retained.")
-        except InputError as exc:
-            self.baseline_enabled.set(record["cfg"].get("baseline_review", empty_review())["enabled"])
-            self.show_error(exc)
-
     def review_baseline(self):
-        record, p = self.selected(), self.selected_pass()
-        if self.busy or not record or not p:
+        r, p = self.selected(), self.selected_pass()
+        if self.busy or not r or not p or not self.guard_baseline(close=True):
             return
-        if not record.get("result") or p.zero:
-            self.show_error("Process the input, then select an acquired signal pass.")
-            return
-        if not record["cfg"].get("baseline_review", empty_review())["enabled"]:
-            self.show_error("Enable Interactive baseline adjustment to review a pass.")
-            return
-        if not self.guard_baseline(close=True):
-            return
-        self.editor = BaselineEditor(self, record, p.id)
+        if not any(v["pass_id"] == p.id for v in (r.get("result") or {}).get("passes", [])):
+            return self.show_error("Choose a signal scan with a processed background.")
+        # Opening an editor does not activate retained settings or commit a draft.
+        self.editor = BaselineEditor(self, r, p.id)
 
     def close(self):
         if not self.guard_baseline(close=True):
             return
         self.closed = True
+        self.clear_plot()
         self.executor.shutdown(wait=False, cancel_futures=True)
         self.root.destroy()
+
+
+class AcquisitionDialog:
+    def __init__(self, app, record, selected):
+        self.app, self.record, self.selected = app, record, selected
+        self.window = tk.Toplevel(app.root)
+        self.window.title("Acquisition settings")
+        self.window.transient(app.root)
+        self.window.grab_set()
+        panel = ttk.Frame(self.window, padding=16)
+        panel.pack(fill="both", expand=True)
+        self.values, self.entries = {}, {}
+        cfg = record["cfg"]
+        def entry(key, label, value, parent=panel):
+            frame = ttk.Frame(parent)
+            frame.pack(fill="x", pady=3)
+            ttk.Label(frame, text=label, width=32).pack(side="left")
+            self.values[key] = tk.StringVar(value=str(value))
+            self.entries[key] = ttk.Entry(frame, textvariable=self.values[key], width=40)
+            self.entries[key].pack(side="right", fill="x", expand=True)
+        entry("setpoints", "Temperature setpoints (K)", ", ".join(cfg["acquisition"]["temperature_setpoints_K"]))
+        entry("temperature_tolerance_K", "Allowed deviation (K)", cfg["profile"]["temperature_tolerance_K"])
+        limits = cfg["acquisition"]["angle_range_deg"]
+        ttk.Label(panel, text="Angle range for fit, centering and export (blank = all angles)").pack(anchor="w", pady=(12, 3))
+        entry("range_min", "Lower angle (deg)", limits[0] if limits else "")
+        entry("range_max", "Upper angle (deg)", limits[1] if limits else "")
+        scan_panel = ttk.LabelFrame(panel, text="Selected scans: " + ", ".join(selected), padding=8)
+        scan_panel.pack(fill="x", pady=10)
+        entry("scan_temperature", "Temperature setpoint (K)", "", scan_panel)
+        entry("scan_field", "Stable field setpoint (T)", "", scan_panel)
+        self.role = tk.StringVar(value="Keep current")
+        ttk.Combobox(scan_panel, textvariable=self.role, state="readonly",
+                     values=("Keep current", "Signal", "Background"), width=25).pack(anchor="w", pady=3)
+        self.include = tk.StringVar(value="Keep current")
+        ttk.Combobox(scan_panel, textvariable=self.include, state="readonly",
+                     values=("Keep current", "Include", "Exclude"), width=25).pack(anchor="w", pady=3)
+        advanced = ttk.Frame(panel)
+        self.advanced_visible = False
+        def show_advanced():
+            self.advanced_visible = not self.advanced_visible
+            advanced.pack(fill="x", before=footer) if self.advanced_visible else advanced.pack_forget()
+        ttk.Button(panel, text="More acquisition settings", command=show_advanced).pack(anchor="w")
+        for key, label in [("angle_step_deg", "Angle step (deg)"), ("angle_origin_deg", "Angle grid origin (deg)"),
+                           ("angle_tolerance_deg", "Allowed angle deviation (deg)"), ("field_step_T", "Field grid step (T)"),
+                           ("stable_field_tolerance_Oe", "Allowed field deviation (Oe)"),
+                           ("background_threshold_Oe", "Near-zero field limit (Oe)")]:
+            entry(key, label, cfg["profile"][key], advanced)
+        entry("scan_starts", "Scan starts (source row numbers)", ", ".join(map(str, cfg["acquisition"]["scan_starts"] or [])), advanced)
+        self.center = tk.StringVar(value=cfg["centering"])
+        ttk.Combobox(advanced, textvariable=self.center, values=("midrange", "mean"), state="readonly").pack(anchor="w")
+        footer = ttk.Frame(panel)
+        footer.pack(fill="x", pady=(12, 0))
+        ttk.Button(footer, text="Apply", command=self.apply).pack(side="right")
+        ttk.Button(footer, text="Cancel", command=self.window.destroy).pack(side="right", padx=6)
+        self.error = tk.StringVar()
+        ttk.Label(panel, textvariable=self.error, wraplength=540, foreground="#963a24").pack(fill="x")
+
+    def apply(self):
+        try:
+            cfg = copy.deepcopy(self.record["cfg"])
+            for key in cfg["profile"]:
+                if key in self.values:
+                    cfg["profile"][key] = self.values[key].get().strip()
+            cfg["profile"] = asdict(profile_from(cfg["profile"]))
+            values = self.values["setpoints"].get().strip()
+            cfg["acquisition"]["temperature_setpoints_K"] = [v.strip() for v in values.split(",")] if values else []
+            cfg["acquisition"]["source"] = "Explicit GUI experimental setpoints"
+            lo, hi = self.values["range_min"].get().strip(), self.values["range_max"].get().strip()
+            cfg["acquisition"]["angle_range_deg"] = [lo, hi] if lo or hi else None
+            starts = self.values["scan_starts"].get().strip()
+            cfg["acquisition"]["scan_starts"] = [int(v.strip()) for v in starts.split(",")] if starts else None
+            cfg.update(centering=self.center.get(), centering_source="Explicit GUI acquisition setting")
+            for pid in self.selected:
+                scan = next(s for s in self.record["obj"].passes if s.id == pid)
+                updates = {}
+                if self.values["scan_temperature"].get().strip():
+                    updates["temperature_K"] = self.values["scan_temperature"].get().strip()
+                if self.values["scan_field"].get().strip():
+                    updates["field_T"] = self.values["scan_field"].get().strip()
+                if self.role.get() != "Keep current":
+                    updates["role"] = self.role.get().lower()
+                if self.include.get() != "Keep current":
+                    updates["exclude"] = self.include.get() == "Exclude"
+                if updates:
+                    cfg["acquisition"]["scans"].setdefault(pid, {}).update(
+                        identity=scan.identity, source="Explicit GUI scan setting", **updates)
+            if self.app.apply_settings(self.record, cfg):
+                self.window.destroy()
+        except (ValueError, OSError) as exc:
+            self.error.set(str(exc))
 
 
 def main():
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--session", help="Load an explicit saved session at startup")
+    parser.add_argument("--session")
     args = parser.parse_args()
     root = tk.Tk()
     app = App(root)
@@ -789,4 +585,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

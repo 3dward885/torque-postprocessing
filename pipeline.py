@@ -11,7 +11,8 @@ import hashlib
 import inspect
 import numpy as np
 from numpy.polynomial import Polynomial
-from io_profiles import InputError, decimal_value, read_raw, _nominal
+from io_profiles import (InputError, read_raw, _nominal, profile_from, check_deviation,
+                         acquisition_defaults, configure_acquisition, split_scans)
 from baseline import empty_review, review_settings, make_binding, resolve, finalize_pass
 
 RECIPE = {
@@ -20,57 +21,43 @@ RECIPE = {
     "angles": "nominal", "weights": "unweighted", "input_significant_digits": 6,
     "input_rounding": "Decimal nearest, ties to even, then binary64",
     "order": "subtract_then_center", "intermediate_rounding": None,
-    "D_export": "binary64 format .8g", "E_export": "exact Decimal(exported D) * k",
+    "D_export": "binary64 format .8g",
 }
 
 
 def default_config(acquisition):
     return {
-        "version": "1.0", "input_sha256": acquisition.sha256,
+        "version": "1.2", "input_sha256": acquisition.sha256,
         "profile": asdict(acquisition.profile), "centering": "midrange",
         "centering_source": "Application default: midrange",
-        "molar": {"mode": "torque", "source": "No sample amount supplied"},
-        "export_format": "canonical", "overrides": {}, "support_exceptions": [],
-        "note": "", "baseline_review": empty_review(),
+        "acquisition": acquisition_defaults(), "overrides": {}, "support_exceptions": [],
+        "note": "", "migration_notes": [], "baseline_review": empty_review(),
     }
 
 
-def molar_settings(settings):
-    mode = settings.get("mode", "torque")
-    if mode == "torque":
-        return {"mode": mode, "factor_mol_inverse": None, "source": settings.get("source", "")}
-    source = settings.get("source", "").strip()
-    if not source:
-        raise InputError("Molar output needs a source note for the multiplier or sample metadata.")
-    with localcontext() as ctx:
-        ctx.prec = 50
-        if mode == "multiplier":
-            factor = decimal_value(settings.get("factor", ""), "Multiplier k (mol^-1)", True)
-            amount = None
-        elif mode == "amount":
-            amount = decimal_value(settings.get("amount_mol", ""), "Sample amount (mol)", True)
-            factor = 1 / amount
-        elif mode == "mass":
-            mass = decimal_value(settings.get("mass", ""), "Sample mass", True)
-            molar_mass = decimal_value(settings.get("molar_mass_g_mol", ""), "Molar mass (g/mol)", True)
-            unit = settings.get("mass_unit")
-            if unit not in ("g", "mg"):
-                raise InputError("Mass unit must be g or mg; molar mass must be in g/mol.")
-            mass_g = mass if unit == "g" else mass / 1000
-            amount = mass_g / molar_mass
-            factor = molar_mass / mass_g
-        else:
-            raise InputError("Molar mode must be torque, multiplier, amount, or mass.")
-        decimal_value(factor, "Calculated multiplier", True)
-    return {**settings, "factor_mol_inverse": str(factor), "amount_mol_calculated": str(amount) if amount is not None else None,
-            "arithmetic_precision": 50, "physical_validation": "User-supplied metadata; not independently verified"}
+def migrate_config(config):
+    cfg = copy.deepcopy(config)
+    legacy = cfg.get("version") == "1.0"
+    if cfg.get("version") == "1.0":
+        cfg["version"] = "1.2"
+        cfg.setdefault("acquisition", acquisition_defaults())
+        cfg.setdefault("migration_notes", []).append(
+            "Older settings loaded: assign experimental temperatures in Acquisition settings; torque-only output.")
+        cfg["profile"] = asdict(profile_from(cfg["profile"]))
+    if "molar" in cfg or "export_format" in cfg:
+        if not legacy:
+            raise InputError("Molar conversion and export-format settings are not supported in version 1.2. Remove those fields.")
+        cfg.pop("molar", None)
+        cfg.pop("export_format", None)
+        cfg.setdefault("migration_notes", []).append("Molar conversion and historical header choices removed; output is torque in N m.")
+    return cfg
 
 
 def validate_config(acquisition, config):
     expected = set(default_config(acquisition))
     if set(config) - expected:
         raise InputError(f"Unknown configuration fields: {sorted(set(config)-expected)}.")
-    if config.get("version") != "1.0":
+    if config.get("version") != "1.2":
         raise InputError("Unsupported configuration version.")
     if config.get("input_sha256") != acquisition.sha256:
         raise InputError("Saved configuration fingerprint does not match this raw file. Import it as a new file and set its own settings.")
@@ -80,8 +67,6 @@ def validate_config(acquisition, config):
         raise InputError("Centering must be mean or midrange.")
     if not config.get("centering_source", "").strip():
         raise InputError("Centering selection needs a source note.")
-    if config.get("export_format") not in ("canonical", "previous", "new_rot1", "new_rot2"):
-        raise InputError("Unknown export format.")
     passes = {p.id: p for p in acquisition.passes}
     for pid, override in config.get("overrides", {}).items():
         if set(override) - {"identity", "centering", "background", "source"}:
@@ -95,12 +80,17 @@ def validate_config(acquisition, config):
         if "background" in override and override["background"] not in [p.id for p in acquisition.candidates(passes[pid])]:
             raise InputError(f"{pid}: selected background is not in this input at the same nominal temperature.")
     for exception in config.get("support_exceptions", []):
-        if set(exception) != {"input_sha256", "temperature_K", "outside_angles_deg", "background_support_deg", "source"}:
-            raise InputError("Malformed support permission.")
+        legacy = {"input_sha256", "temperature_K", "outside_angles_deg", "background_support_deg", "source"}
+        scoped = legacy | {"signal_id", "signal_identity", "background_id", "background_identity"}
+        if set(exception) not in (legacy, scoped):
+            raise InputError("Malformed background extrapolation permission.")
         if exception["input_sha256"] != acquisition.sha256 or not exception["source"].strip():
-            raise InputError("Support permission fingerprint/source mismatch; select an explicit general support policy.")
+            raise InputError("Background extrapolation permission does not match this input.")
+        if "signal_id" in exception:
+            signal, bg = passes.get(exception["signal_id"]), passes.get(exception["background_id"])
+            if not signal or not bg or signal.identity != exception["signal_identity"] or bg.identity != exception["background_identity"]:
+                raise InputError("Background extrapolation scan identity changed.")
     review_settings(config, {p.id for p in acquisition.passes if not p.zero})
-    molar_settings(config["molar"])
 
 
 def select_background(acquisition, signal, config):
@@ -112,6 +102,8 @@ def select_background(acquisition, signal, config):
         raise InputError(f"{signal.id}, {signal.T} K: missing same-input, same-temperature background. Supply it in this acquisition.")
     if len(candidates) != 1:
         raise InputError(f"{signal.id}, {signal.T} K: multiple backgrounds ({', '.join(p.id for p in candidates)}). Select Background for this pass and save the association.")
+    if candidates[0].issue:
+        raise InputError(candidates[0].issue)
     return candidates[0]
 
 
@@ -159,11 +151,21 @@ def check_support(acquisition, signal, background, config):
         return info
     for permission in config.get("support_exceptions", []):
         if (permission["input_sha256"] == acquisition.sha256
+                and ("signal_id" not in permission or (permission["signal_id"] == signal.id and permission["background_id"] == background.id))
                 and Decimal(permission["temperature_K"]) == signal.T
                 and permission["background_support_deg"] == [low, high]
                 and set(outside) <= set(permission["outside_angles_deg"])):
-            return {**info, "policy": "explicit fingerprint-bound reference permission", "source": permission["source"]}
-    raise InputError(f"{signal.id}: angles {outside} exceed {background.id} measured support [{low},{high}] deg. Choose a supported background or load a documented profile with an explicit extrapolation allowance.")
+            return {**info, "policy": "explicit background extrapolation permission", "source": permission["source"]}
+    raise InputError(f"{signal.id}: signal angles [{min(r.angle for r in signal.rows)},{max(r.angle for r in signal.rows)}] exceed background {background.id} support [{low},{high}] deg. Select another background or explicitly allow extrapolation.")
+
+
+def support_permission(acquisition, signal, background, source):
+    low, high = min(r.angle for r in background.rows), max(r.angle for r in background.rows)
+    return {"input_sha256": acquisition.sha256, "temperature_K": str(signal.T),
+            "signal_id": signal.id, "signal_identity": signal.identity,
+            "background_id": background.id, "background_identity": background.identity,
+            "outside_angles_deg": [r.angle for r in signal.rows if r.angle < low or r.angle > high],
+            "background_support_deg": [low, high], "source": source}
 
 
 def prepare_signal(signal, fit):
@@ -173,19 +175,19 @@ def prepare_signal(signal, fit):
     return x, r6, b, r6 - b
 
 
-# Only code that defines u participates; plotting, timestamps, molar settings
+# Only code that defines u participates; plotting and timestamps
 # and the centering/finalization implementation do not invalidate N m choices.
 UPSTREAM_IMPLEMENTATION = hashlib.sha256("\n".join(inspect.getsource(f) for f in
-    (read_raw, _nominal, q6, fit_background, prepare_signal, select_background, check_support)).encode()).hexdigest()
+    (read_raw, split_scans, configure_acquisition, check_deviation, _nominal, q6, fit_background, prepare_signal, select_background, check_support)).encode()).hexdigest()
 
 
-def finalize_prediction(pred, config, factor, allow_stale_review=False):
+def finalize_prediction(pred, config, allow_stale_review=False):
     ordinary = config.get("overrides", {}).get(pred["pass_id"], {})
     mode = ordinary.get("centering", config["centering"])
     offset, review = resolve(config, pred["baseline_binding"], pred["subtracted_Nm"], allow_stale_review)
     if review["status"] == "active" and RECIPE["order"] != "subtract_then_center":
         raise InputError("Interactive baselines support subtract_then_center only.")
-    finalized = finalize_pass(pred["subtracted_Nm"], mode, factor, offset)
+    finalized = finalize_pass(pred["subtracted_Nm"], mode, accepted_offset=offset)
     effective = review["accepted_record"]["origin"] if review["status"] == "active" else mode
     if review["status"] == "stale":
         effective = "stale override - export blocked"
@@ -194,12 +196,12 @@ def finalize_prediction(pred, config, factor, allow_stale_review=False):
                                   else ordinary.get("source", config["centering_source"])),
                 centering_constant_Nm=finalized["offset"],
                 centered_internal_Nm=finalized["values"].tolist(),
-                D=finalized["D"], E=finalized["E"], baseline_review=review)
+                D=finalized["D"], baseline_review=review)
     return finalized
 
 
 def review_summary(result):
-    blockers = [p["pass_id"] for p in result["passes"] if p["baseline_review"]["status"] == "stale"]
+    blockers = list(result.get("processing_errors", {})) + [p["pass_id"] for p in result["passes"] if p["baseline_review"]["status"] == "stale"]
     result["exportable"] = not blockers
     result["export_blockers"] = blockers
     return result
@@ -216,8 +218,9 @@ def baseline_ledger(pred):
 
 def refinalize(result, config, allow_stale_review=False):
     """Replay committed choices from cached u; never reread raw data or refit."""
-    review_settings(config, {p["pass_id"] for p in result["passes"]})
-    for key in ("input_sha256", "profile", "support_exceptions"):
+    config = migrate_config(config)
+    review_settings(config, {p["id"] for p in result["inventory"] if p["role"] == "signal"})
+    for key in ("input_sha256", "profile", "acquisition", "support_exceptions"):
         if config.get(key) != result["config"].get(key):
             raise InputError("Upstream settings changed; process again before reviewing the baseline.")
     old, new = result["config"].get("overrides", {}), config.get("overrides", {})
@@ -226,110 +229,108 @@ def refinalize(result, config, allow_stale_review=False):
             raise InputError("Background changed; process again before baseline review.")
     updated = copy.deepcopy(result)
     updated["config"] = copy.deepcopy(config)
-    updated["molar"] = molar_settings(config["molar"])
     ledger = {r["line"]: r for r in updated["ledger"]}
     for pred in updated["passes"]:
-        finalize_prediction(pred, config, updated["molar"]["factor_mol_inverse"], allow_stale_review)
+        finalize_prediction(pred, config, allow_stale_review)
         for i, line in enumerate(pred["baseline_binding"]["source_lines"]):
             row = updated["output_rows"][pred["output_start"] + i]
-            updated["output_rows"][pred["output_start"] + i] = row[:3] + [pred["D"][i]] + ([pred["E"][i]] if pred["E"] else [])
+            updated["output_rows"][pred["output_start"] + i] = row[:3] + [pred["D"][i]]
             ledger[line].update(**baseline_ledger(pred), centered_internal_Nm=pred["centered_internal_Nm"][i],
-                                exported_D_Nm=pred["D"][i], exported_E_Nm_per_mol=pred["E"][i] if pred["E"] else None)
+                                exported_D_Nm=pred["D"][i])
     return review_summary(updated)
 
 
 def verify_export(result):
     if result.get("exportable") is False:
-        raise InputError("Stale active baseline overrides block export: " + ", ".join(result["export_blockers"]))
+        raise InputError("Resolve unprocessed scans or stale adjustments before saving: " + ", ".join(result["export_blockers"]))
     if "baseline_review" in result["config"]:
-        review_settings(result["config"], {p["pass_id"] for p in result["passes"]})
+        review_settings(result["config"], {p["id"] for p in result["inventory"] if p["role"] == "signal"})
         for pred in result["passes"]:
             checked = copy.deepcopy(pred)
-            finalize_prediction(checked, result["config"], result["molar"]["factor_mol_inverse"])
-            if any(checked[k] != pred[k] for k in ("D", "E", "centering_constant_Nm", "centered_internal_Nm")):
+            finalize_prediction(checked, result["config"])
+            if any(checked[k] != pred[k] for k in ("D", "centering_constant_Nm", "centered_internal_Nm")):
                 raise InputError("Processed output differs from committed baseline settings. Process again.")
             if "output_rows" in result:
                 rows = result["output_rows"][pred["output_start"]:pred["output_start"]+pred["rows"]]
-                expected = [[d]+([pred["E"][i]] if pred["E"] else []) for i, d in enumerate(pred["D"])]
+                expected = [[d] for d in pred["D"]]
                 if [r[3:] for r in rows] != expected:
                     raise InputError("Export rows differ from committed values. Process again.")
 
 
-def process(acquisition, config, allow_stale_review=False):
-    """Pure shared GUI/CLI computation. Does not read or write any files."""
+def process(acquisition, config, allow_stale_review=False, partial=False):
+    """Shared computation; partial review never permits silently incomplete export."""
+    config = migrate_config(config)
+    acquisition = configure_acquisition(acquisition, config["acquisition"])
     validate_config(acquisition, config)
-    molar = molar_settings(config["molar"])
-    factor = molar["factor_mol_inverse"]
-    signals = [p for p in acquisition.passes if not p.zero]
+    fits, predictions, output_rows, stages, errors = {}, [], [], {}, {}
+    signals = [p for p in acquisition.passes if not p.zero and not p.excluded]
     if not signals:
-        raise InputError("No signal passes above the selected near-zero threshold.")
-    fits = {}
-    for bg in acquisition.passes:
-        if bg.zero:
-            fits[bg.id] = fit_background(bg)
-    predictions, output_rows, stages = [], [], {}
-    for bg in acquisition.passes:
-        if bg.zero:
-            _, info = fits[bg.id]
-            for i, row in enumerate(bg.rows):
-                stages[row.line] = {
-                    "q6_background_Nm": info["q6_background_Nm"][i],
-                    "fit_at_sample_Nm": info["fit_at_samples_Nm"][i],
-                    "fit_residual_Nm": info["fit_residual_Nm"][i],
-                }
+        raise InputError("No included signal scans.")
     for signal in signals:
-        bg = select_background(acquisition, signal, config)
-        support = check_support(acquisition, signal, bg, config)
-        fit, fit_info = fits[bg.id]
-        x, r6, b, u = prepare_signal(signal, fit)
-        timing = "before" if bg.rows[-1].line < signal.rows[0].line else "after"
-        gap = None
-        if bg.rows[0].tokens[1] and signal.rows[0].tokens[1]:
-            gap = str(Decimal(signal.rows[0].tokens[1]) - Decimal(bg.rows[-1].tokens[1])) if timing == "before" else str(Decimal(bg.rows[0].tokens[1]) - Decimal(signal.rows[-1].tokens[1]))
-        pred = {
-            "pass_id": signal.id, "identity": signal.identity, "background_id": bg.id,
-            "background_order": timing, "background_time_gap_s": gap, "support": support,
-            "angles_deg": x.tolist(),
-            "baseline_binding": make_binding(acquisition, signal, bg, u, RECIPE, UPSTREAM_IMPLEMENTATION),
-            "raw_Nm": [float(r.tokens[12]) for r in signal.rows], "q6_signal_Nm": r6.tolist(),
-            "background_Nm": b.tolist(), "subtracted_Nm": u.tolist(),
-            "output_start": len(output_rows), "rows": len(signal.rows),
-        }
-        finalized = finalize_prediction(pred, config, factor, allow_stale_review)
-        y, d, e = finalized["values"], pred["D"], pred["E"]
-        for i, row in enumerate(signal.rows):
-            output_rows.append([str(row.T), str(row.B), str(row.angle), d[i]] + ([e[i]] if e else []))
-            stages[row.line] = {
-                "background_id": bg.id, "q6_signal_Nm": float(r6[i]),
-                "evaluated_background_Nm": float(b[i]), "subtracted_Nm": float(u[i]),
-                **baseline_ledger(pred),
-                "centered_internal_Nm": float(y[i]), "exported_D_Nm": d[i],
-                "exported_E_Nm_per_mol": e[i] if e else None,
+        try:
+            if signal.issue:
+                raise InputError(signal.issue)
+            bg = select_background(acquisition, signal, config)
+            if bg.id not in fits:
+                fits[bg.id] = fit_background(bg)
+            support = check_support(acquisition, signal, bg, config)
+            fit, fit_info = fits[bg.id]
+            for i, row in enumerate(bg.rows):
+                stages[row.line] = {"q6_background_Nm": fit_info["q6_background_Nm"][i],
+                                    "fit_at_sample_Nm": fit_info["fit_at_samples_Nm"][i],
+                                    "fit_residual_Nm": fit_info["fit_residual_Nm"][i]}
+            x, r6, b, u = prepare_signal(signal, fit)
+            timing = "before" if bg.rows[-1].line < signal.rows[0].line else "after"
+            gap = None
+            acquired_bg, acquired_signal = bg.acquired_rows, signal.acquired_rows
+            if acquired_bg[0].tokens[1] and acquired_signal[0].tokens[1]:
+                gap = str(Decimal(acquired_signal[0].tokens[1]) - Decimal(acquired_bg[-1].tokens[1])) if timing == "before" else str(Decimal(acquired_bg[0].tokens[1]) - Decimal(acquired_signal[-1].tokens[1]))
+            pred = {
+                "pass_id": signal.id, "identity": signal.identity, "background_id": bg.id,
+                "background_order": timing, "background_time_gap_s": gap,
+                "support": support, "angles_deg": x.tolist(),
+                "baseline_binding": make_binding(acquisition, signal, bg, u, RECIPE, UPSTREAM_IMPLEMENTATION),
+                "raw_Nm": [float(r.tokens[12]) for r in signal.rows], "q6_signal_Nm": r6.tolist(),
+                "background_Nm": b.tolist(), "subtracted_Nm": u.tolist(),
+                "output_start": len(output_rows), "rows": len(signal.rows),
             }
-        predictions.append(pred)
+            finalized = finalize_prediction(pred, config, allow_stale_review)
+            y, d = finalized["values"], pred["D"]
+            for i, row in enumerate(signal.rows):
+                output_rows.append([str(row.T), str(row.B), str(row.angle), d[i]])
+                stages[row.line] = {"background_id": bg.id, "q6_signal_Nm": float(r6[i]),
+                    "evaluated_background_Nm": float(b[i]), "subtracted_Nm": float(u[i]),
+                    **baseline_ledger(pred), "centered_internal_Nm": float(y[i]), "exported_D_Nm": d[i]}
+            predictions.append(pred)
+        except InputError as exc:
+            if not partial:
+                raise
+            errors[signal.id] = str(exc)
     ledger = []
+    passes = {p.id: p for p in acquisition.passes}
     for row in acquisition.rows:
-        ledger.append({
-            **asdict(row), "T": str(row.T), "B": str(row.B),
-            "role": "background" if row.zero else "signal",
-            "retention": "background fit only; excluded from treated DAT" if row.zero else "retained in treated DAT",
+        p = passes[row.pass_id]
+        ledger.append({**asdict(row), "T": str(row.T), "B": str(row.B),
+            "role": "background" if p.zero else "signal",
+            "retention": "explicitly excluded" if p.excluded else "outside selected angle range" if row.line not in {r.line for r in p.rows} else "retained in treated DAT" if row.line in stages and not p.zero else "background fit only" if row.line in stages else "unprocessed",
             "measured_temperature_K": row.tokens[3], "measured_field_Oe": row.tokens[4],
             "measured_angle_deg": row.tokens[5], "raw_torque_Nm": row.tokens[12],
-            "record_width": len(row.source_tokens), **stages[row.line],
-        })
+            "record_width": len(row.source_tokens), **stages.get(row.line, {})})
     return review_summary({
-        "recipe": copy.deepcopy(RECIPE), "config": copy.deepcopy(config), "molar": molar,
+        "recipe": copy.deepcopy(RECIPE), "config": copy.deepcopy(config),
+        "reference_settings": acquisition.reference_metadata,
+        "processing_errors": errors,
         "input": {"path": acquisition.path, "filename": acquisition.path.replace("\\", "/").rsplit("/", 1)[-1],
                   "sha256": acquisition.sha256, "bytes": acquisition.bytes, "schema": acquisition.schema,
-                  "header": acquisition.header, "units": acquisition.units,
-                  "nonmeasurement_records": acquisition.metadata},
+                  "header": acquisition.header, "units": acquisition.units, "nonmeasurement_records": acquisition.metadata},
         "inventory": [{"id": p.id, "identity": p.identity, "order": p.order, "T_K": str(p.T),
-                       "field_T": p.field_label, "role": "background" if p.zero else "signal",
-                       "first_line": p.rows[0].line, "last_line": p.rows[-1].line, "rows": len(p.rows),
+                       "measured_T_K": p.measured_temperature, "field_T": p.field_label,
+                       "role": "background" if p.zero else "signal", "excluded": p.excluded,
+                       "issue": p.issue, "first_line": p.acquired_rows[0].line, "last_line": p.acquired_rows[-1].line,
+                       "rows": len(p.rows), "acquired_rows": len(p.acquired_rows),
                        "missing_angles_deg": p.missing, "changing_field": p.trajectory}
                       for p in acquisition.passes],
         "fits": {key: info for key, (_, info) in fits.items()},
         "passes": predictions, "output_rows": output_rows, "ledger": ledger,
         "reference_inputs": [], "rows": len(output_rows), "raw_rows": len(ledger),
     })
-

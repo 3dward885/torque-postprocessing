@@ -9,6 +9,27 @@ from io_profiles import InputError
 from plots import baseline_figure, font_status
 
 
+def dispose_canvas(canvas):
+    """Release Tk images on the UI thread before a worker can collect the figure."""
+    widget = canvas.get_tk_widget()
+    pending = getattr(canvas, "_idle_draw_id", None)
+    if pending:
+        widget.after_cancel(pending)
+        canvas._idle_draw_id = None
+    toolbar = getattr(canvas, "toolbar", None)
+    if toolbar:
+        for button in toolbar._buttons.values():
+            for name in ("_ntimage", "_ntimage_alt", "var"):
+                if hasattr(button, name):
+                    setattr(button, name, None)
+        toolbar.message = None
+        canvas.toolbar = None
+    widget.destroy()
+    canvas._tkphoto = None
+    canvas.figure.clear()
+    canvas.figure.set_canvas(None)
+
+
 class ReviewToolbar(NavigationToolbar2Tk):
     toolitems = tuple(item for item in NavigationToolbar2Tk.toolitems if item[0] != "Save")
 
@@ -22,7 +43,7 @@ class BaselineEditor:
         self.loading = False
         self.force_dirty = False
         self.window = tk.Toplevel(app.root)
-        self.window.title("Baseline review - Torque Postprocessing 1.1")
+        self.window.title("Center zero")
         self.window.geometry("1050x820")
         self.window.minsize(880, 740)
         self.window.transient(app.root)
@@ -38,7 +59,7 @@ class BaselineEditor:
         self.notice = tk.StringVar()
         header = ttk.Frame(panel)
         header.pack(fill="x")
-        ttk.Label(header, text="Acquired signal pass").pack(side="left")
+        ttk.Label(header, text="Scan").pack(side="left")
         self.pass_box = ttk.Combobox(header, textvariable=self.pass_var, width=12, state="readonly",
             values=[p["pass_id"] for p in record["result"]["passes"]])
         self.pass_box.pack(side="left", padx=8)
@@ -49,11 +70,11 @@ class BaselineEditor:
         self.view_box.pack(side="left", padx=8)
         self.view_box.bind("<<ComboboxSelected>>", lambda e: self.draw_new())
         ttk.Label(panel, textvariable=self.effective, wraplength=1000).pack(fill="x", pady=5)
-        ttk.Label(panel, text="Offsets are in N m. Drag the baseline upward to move corrected values downward. All retained samples define the midrange.",
+        ttk.Label(panel, text="Drag the baseline or enter an offset. Centering uses the selected angular range.",
                   wraplength=1000).pack(fill="x")
         controls = ttk.Frame(panel)
         controls.pack(fill="x", pady=6)
-        ttk.Label(controls, text="Delta (N m)").pack(side="left")
+        ttk.Label(controls, text="Offset from midrange (N m)").pack(side="left")
         self.entry = ttk.Entry(controls, textvariable=self.delta, width=28)
         self.entry.pack(side="left", padx=8)
         self.buttons = {}
@@ -64,7 +85,6 @@ class BaselineEditor:
         ttk.Label(panel, textvariable=self.readouts, font=("Consolas", 10)).pack(fill="x", pady=3)
         ttk.Label(panel, textvariable=self.notice, foreground="#8b3517", wraplength=1000).pack(fill="x", pady=4)
         self.plot_area = ttk.Frame(panel)
-        ttk.Label(panel, text=font_status(), wraplength=1000).pack(side="bottom", fill="x")
         self.plot_area.pack(fill="both", expand=True)
         self.canvas = self.toolbar = None
         self.delta.trace_add("write", self.edited)
@@ -85,12 +105,11 @@ class BaselineEditor:
         self.delta.set(repr(self.original_delta))
         self.loading = False
         self.dirty = self.force_dirty = False
-        self.notice.set("Stale setting: review and Apply, Remove override, or disable the checkbox." if pred["baseline_review"]["status"] == "stale"
-                        else "Viewing does not accept an override. Apply commits this pass only.")
+        self.notice.set("Saved adjustment is stale. Apply a new offset or remove it." if pred["baseline_review"]["status"] == "stale" else "")
         inventory = next(p for p in self.record["result"]["inventory"] if p["id"] == pid)
         state = pred["baseline_review"]["status"]
-        self.effective.set(f"{pid} | {inventory['T_K']} K | {inventory['field_T']} T | {pred['rows']} actual samples | "
-                           f"Export: {pred['centering']}; offset {pred['centering_constant_Nm']:.11g} N m | Review: {state}")
+        self.effective.set(f"{pid} | {inventory['T_K']} K | {inventory['field_T']} T | {pred['rows']} points | "
+                           f"Saved zero offset: {pred['centering_constant_Nm']:.11g} N m")
         self.draw_new()
 
     def edited(self, *unused):
@@ -111,7 +130,7 @@ class BaselineEditor:
     def draw_new(self):
         if self.canvas:
             self.toolbar.destroy()
-            self.canvas.get_tk_widget().destroy()
+            dispose_canvas(self.canvas)
         try:
             stats = preview_values(self.cache.u, self.delta.get())
         except InputError:
@@ -133,7 +152,7 @@ class BaselineEditor:
             self.edited()
 
     def update_plot(self, stats):
-        self.readouts.set(f"c_mid = {stats['c_mid']:.11g}   c_final = {stats['c_final']:.11g} N m\n"
+        self.readouts.set(f"Midrange = {stats['c_mid']:.11g}   Baseline = {stats['c_final']:.11g} N m\n"
                           f"Corrected min = {stats['minimum']:.11g}   max = {stats['maximum']:.11g}   "
                           f"signed imbalance (max + min) = {stats['imbalance']:.11g} N m")
         if self.view.get() == "Corrected":
@@ -168,7 +187,8 @@ class BaselineEditor:
     def require_clean(self):
         if self.dirty:
             self.notice.set("Apply or Cancel the draft in this editor before continuing.")
-            self.window.lift()
+            if self.app.root.state() != "withdrawn":
+                self.window.lift()
             return False
         return True
 
@@ -183,9 +203,15 @@ class BaselineEditor:
         try:
             cfg = copy.deepcopy(self.record["cfg"])
             block = cfg["baseline_review"]
+            if block["schema_version"] == 1:
+                block["active_passes"] = list(block["overrides"]) if block["enabled"] else []
+                block["schema_version"] = 2
+            block["enabled"] = True
             previous = block["overrides"].get(self.pid)
             block["overrides"][self.pid] = accepted_record(self.cache.binding, self.cache.u,
                                                            self.delta.get(), previous)
+            if self.pid not in block["active_passes"]:
+                block["active_passes"].append(self.pid)
             self.app.commit_baseline(self.record, cfg)
             self.load_pass(self.pid)
             self.notice.set("Applied to this pass. Export now uses the accepted offset.")
@@ -205,6 +231,8 @@ class BaselineEditor:
             return
         cfg = copy.deepcopy(self.record["cfg"])
         cfg["baseline_review"]["overrides"].pop(self.pid, None)
+        if self.pid in cfg["baseline_review"].get("active_passes", []):
+            cfg["baseline_review"]["active_passes"].remove(self.pid)
         self.app.commit_baseline(self.record, cfg)
         self.load_pass(self.pid)
         self.notice.set("Override removed. Export uses this pass's ordinary policy.")
@@ -213,7 +241,8 @@ class BaselineEditor:
         if not force and not self.require_clean():
             return False
         self.window.grab_release()
+        dispose_canvas(self.canvas)
+        self.canvas = None
         self.window.destroy()
         self.app.editor = None
         return True
-

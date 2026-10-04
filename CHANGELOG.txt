@@ -1,3 +1,16 @@
+1.2 — 4 October 2026
+- Experimental temperature references are user/metadata settings; no fixed T grid.
+- Raw import precedes acquisition validation; support full observed angle spans.
+- Lean Open / Subtract background / Center zero / Save treated data workflow.
+- Optional angular interval selects rows before background fitting, centering,
+  preview and output, excluding unwanted endpoint artifacts from the zero level.
+- Torque-only four-column DAT; remove production molar conversion/header choices.
+- Explicit per-scan background extrapolation; incomplete/stale results cannot save.
+- Baseline schema 2 activates only the selected scan, retaining inactive choices.
+- Fix Tk image cleanup during background processing and dynamic plot limits.
+- 37 focused tests; exact historical A–D regression; GUI/CLI parity; protected inputs unchanged.
+- Background GUI tests passed; full-window visual inspection not performed.
+
 Torque Postprocessing GUI v1.1 | 2 October 2026
 
 - Added optional per-acquisition baseline editor with immutable cached u,
@@ -31,4 +44,3 @@ Torque Postprocessing GUI v1.0 | 2 October 2026
 
 No numerical retuning, automatic mixed selector, source modification, web
 deployment, database or installer was introduced.
-

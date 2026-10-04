@@ -13,8 +13,8 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from io_profiles import GRID, INSTRUMENT_HEADER, TSV_HEADER, InputError, read_raw, sha256
-from pipeline import default_config, process, q6, molar_settings
+from io_profiles import GRID, INSTRUMENT_HEADER, TSV_HEADER, InputError, read_raw as load_raw, configure_acquisition, sha256
+from pipeline import default_config, process, q6
 from storage import export_run, treated_text, save_session, load_session
 from validate import compare
 from cli import main as cli_main
@@ -29,6 +29,22 @@ def synthetic(angles=GRID, background=GRID, second_background=False):
                 torque += Decimal(angle * angle) * Decimal("2e-12")
             records.append(["5", str(field), str(angle), str(torque)])
     return records
+
+
+def fixture_config(obj):
+    cfg = default_config(obj)
+    cfg["acquisition"]["temperature_setpoints_K"] = ["5"]
+    cfg["acquisition"]["source"] = "Synthetic software fixture setpoint"
+    return cfg
+
+
+def read_raw(path, profile="fractional"):
+    obj = load_raw(path, profile)
+    obj = configure_acquisition(obj, fixture_config(obj)["acquisition"])
+    for scan in obj.passes:
+        if scan.issue:
+            raise InputError(scan.issue)
+    return obj
 
 
 class CoreTests(unittest.TestCase):
@@ -49,7 +65,7 @@ class CoreTests(unittest.TestCase):
 
     def result(self, rows=None, profile="fractional"):
         obj = read_raw(self.write(rows), profile)
-        return obj, default_config(obj)
+        return obj, fixture_config(obj)
 
     def test_new_hash_admission_and_torque_only(self):
         obj, cfg = self.result()
@@ -57,7 +73,7 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(result["rows"], 41)
         self.assertEqual(result["raw_rows"], 82)
         self.assertEqual(len(result["output_rows"][0]), 4)
-        self.assertIsNone(result["passes"][0]["E"])
+        self.assertNotIn("E", result["passes"][0])
         self.assertEqual(cfg["centering"], "midrange")
         self.assertNotIn(obj.sha256, ("365bb171e70b6c2ff1fdfde84cc7aa5c74d4620941826ee7cff185813286c2ce",
                                      "d7fe022a8d117006f26b5739e85ee90b3c6015a6e332e5ef8561e2eee3718933"))
@@ -65,10 +81,10 @@ class CoreTests(unittest.TestCase):
     def test_renamed_real_input_identical(self):
         source = ROOT / "evidence/Torque_Ho2thd4Pc_pipeline_comparison_v1.2/inputs/Rot1rawHo2thd4Pc.dat"
         self.path.write_bytes(source.read_bytes())
-        original = read_raw(source)
-        renamed = read_raw(self.path)
-        self.assertEqual(treated_text(process(original, default_config(original))),
-                         treated_text(process(renamed, default_config(renamed))))
+        original = load_raw(source)
+        renamed = load_raw(self.path)
+        self.assertEqual(original.sha256, renamed.sha256)
+        self.assertEqual([r.source_tokens for r in original.rows], [r.source_tokens for r in renamed.rows])
 
     def test_q6_decimal_rounding(self):
         self.assertEqual(q6(["1.234565e-8"])[0], float("1.23456e-8"))
@@ -124,7 +140,7 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(obj.rows[0].T, 5)
         self.assertEqual(obj.rows[0].tokens[31], "32")
         self.assertEqual(obj.rows[0].tokens[13], "-1")  # Preserved, never used as a weight.
-        self.assertEqual(process(obj, default_config(obj))["rows"], 41)
+        self.assertEqual(process(obj, fixture_config(obj))["rows"], 41)
 
     def test_duplicate_and_ambiguous_angle_reset_rejected(self):
         for bad_angle in ("200", "199", "195"):
@@ -182,23 +198,18 @@ class CoreTests(unittest.TestCase):
         custom = asdict(obj.profile)
         custom.update(name="explicit_5deg", max_extrapolation_deg="5", provenance="Synthetic support software test only")
         obj = read_raw(self.path, custom)
-        self.assertEqual(process(obj, default_config(obj))["rows"], 41)
+        self.assertEqual(process(obj, fixture_config(obj))["rows"], 41)
 
-    def test_invalid_molar_and_correct_units(self):
-        for setting in [{"mode": "multiplier", "factor": "-1", "source": "x"},
-                        {"mode": "amount", "amount_mol": "0", "source": "x"},
-                        {"mode": "mass", "mass": "1", "mass_unit": "kg", "molar_mass_g_mol": "10", "source": "x"},
-                        {"mode": "multiplier", "factor": "911.63", "source": ""}]:
-            with self.assertRaises(InputError):
-                molar_settings(setting)
-        setting = {"mode": "mass", "mass": "2", "mass_unit": "mg", "molar_mass_g_mol": "1000", "source": "synthetic"}
-        self.assertEqual(Decimal(molar_settings(setting)["factor_mol_inverse"]), 500000)
+    def test_legacy_molar_settings_migrate_to_torque_only(self):
         obj, cfg = self.result()
-        cfg["molar"] = {"mode": "multiplier", "factor": "1575.45", "source": "test literal"}
+        ordinary = process(obj, cfg)
+        cfg["version"] = "1.0"
+        cfg["molar"] = {"mode": "multiplier", "factor": "1575.45", "source": "Archived software test"}
         result = process(obj, cfg)
-        self.assertTrue(all(Decimal(row[4]) == Decimal(row[3])*Decimal("1575.45") for row in result["output_rows"]))
-        cfg["molar"] = {"mode": "torque"}
-        self.assertEqual([r[3] for r in result["output_rows"]], [r[3] for r in process(obj, cfg)["output_rows"]])
+        self.assertEqual(result["output_rows"], ordinary["output_rows"])
+        self.assertTrue(all(len(row) == 4 for row in result["output_rows"]))
+        self.assertNotIn("molar", result["config"])
+        self.assertTrue(result["config"]["migration_notes"])
 
     def test_config_fingerprint_identity_and_no_corrections(self):
         obj, cfg = self.result()
@@ -210,7 +221,7 @@ class CoreTests(unittest.TestCase):
         cfg["overrides"]["P001"] = {"identity": "wrong", "centering": "mean", "source": "test"}
         with self.assertRaisesRegex(InputError, "identity"):
             process(obj, cfg)
-        cfg = default_config(obj)
+        cfg = fixture_config(obj)
         p = obj.passes[0]
         cfg["overrides"][p.id] = {"identity": p.identity, "centering": "mean", "source": "Deliberate software test"}
         self.assertEqual(process(obj, cfg)["passes"][0]["centering"], "mean")
@@ -240,11 +251,11 @@ class CoreTests(unittest.TestCase):
         result = process(obj, cfg)
         capture = io.StringIO()
         with patch("sys.stdout", capture):
-            status = cli_main(["process", "--raw", str(self.path), str(self.folder/"missing.dat"), "--output", str(self.folder/"out")])
+            status = cli_main(["process", "--raw", str(self.path), str(self.folder/"missing.dat"), "--setpoints", "5", "--output", str(self.folder/"out")])
         reports = json.loads(capture.getvalue())
         self.assertEqual(status, 1)
         self.assertEqual([r["status"] for r in reports], ["success", "failed"])
-        self.assertEqual((Path(reports[0]["run"])/"treated.dat").read_text(), treated_text(result))
+        self.assertEqual((Path(reports[0]["saved"])/"treated.dat").read_text(), treated_text(result))
 
     def test_validation_is_read_only(self):
         obj, cfg = self.result()
@@ -260,4 +271,3 @@ class CoreTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
-

@@ -1,0 +1,60 @@
+TORQUE POSTPROCESSING 1.2 — IMPLEMENTATION REPORT
+4 October 2026
+
+Implemented in the active local checkout. Base commit: b9517f489a35dcf3984ea48356fc3d12956e7c5c.
+No commit or push performed. The pre-existing README/state location changes were retained.
+Before-edit source/doc snapshots and the original 26 passing tests are in validation/import_workflow_v1.2/before/ and before_tests.txt.
+
+CHANGES
+Temperature checks now compare each scan with supplied experimental setpoints, not an integer-K grid. The original absolute-deviation arithmetic was correct; the inferred 2 K reference was inappropriate for the user-confirmed 2.5 K condition. The 0.2 K tolerance remains configurable. No experimental T targets are built into production code.
+Raw reading preserves all supported measurements before scan validation. The existing CSV/TSV schemas remain supported. Angular sweeps are identified in acquisition order, with explicit source-row starts available for ambiguous cases. Nominal angle/field treatment is retained without the former 0–200 degree admission restriction.
+The main GUI provides Open data, Subtract background, Center zero and Save treated data. Raw preview appears on import; acquisition settings, angular bounds, background assignment and diagnostics are available without molar fields or header-format choices.
+An optional inclusive angular interval is applied to actual signal and background rows before fitting, centering and export. Excluded endpoint torque values cannot bias the retained fit or midrange zero. No automatic anomaly detection, smoothing, averaging or fabricated points were introduced. Bounds use nominal angle coordinates; original measured angles remain in the ledger.
+Molar conversion was removed from GUI/CLI/core/export. Four-column torque-only output and its details folder use existing transactional run export. Old molar settings migrate with a notice; obsolete new options fail explicitly.
+Baseline schema 2 preserves per-scan accepted offsets and independent active IDs. Applying one scan does not activate another retained inactive setting. Range changes invalidate upstream bindings; dirty drafts block navigation/save. UI-thread image disposal fixes Tk cleanup during background work.
+
+CONFIRMED EXPERIMENT SETTINGS
+The user confirmed 2.5, 5, 10, 25, 50, 100, 150, 200 and 250 K; nine near-zero-field backgrounds; and extrapolation of the approximately 100 K background for P022–P024. These values are saved experiment data, not program constants.
+Raw file SHA-256: 04edb7daae1c04a4330cb49a2cd46de5111ee00c643cef8e6e510b1be258e04c; 269380 bytes.
+Observed: 1754 raw rows, 34 scans, 458 background rows, 1296 full-range signal rows.
+Example 0–200-degree selection: 1023 signal rows and 368 background rows retained; 363 raw rows outside the range. No background extrapolation is needed for this selection.
+No independently treated reference was supplied for Ho2sq3. Its results are validated against processing invariants and GUI/CLI replay, not claimed as exact agreement with an unavailable reference.
+
+OBSERVED GATES
+PASS — 37 unit tests: tolerance/reference distinction; inclusive boundaries; noninteger/nonuniform setpoints; metadata precedence; malformed input; scan/field handling; angular selection; endpoint artifacts; background support; baseline state/binding; preservation/collisions.
+PASS — Six historical A–D regressions: 5405 case rows exactly match pre-change outputs, covering 3519 distinct reference rows and 4869 distinct raw rows. Headers and E output intentionally changed; old full-file byte equality is not claimed.
+PASS — Actual Tk widgets and Matplotlib events: import, preview, settings, partial processing, explicit extrapolation, invalid offset, Apply/Cancel/Reset/Remove, pan/zoom, stable drag limits, independent inactive records, range changes, save/load and export.
+PASS — GUI/CLI byte-identical treated DAT for the same committed settings.
+PASS — CLI replay with unrelated data/reference reads denied; the reference probe was rejected separately.
+PASS — Three PDF/300-dpi PNG pairs: Arial Regular resolved to C:/Windows/Fonts/arial.ttf; embedded ArialMT in PDFs; dimensions, labels, tick/axis styling, fit styling and clipping checked. Representative background and corrected PNGs visually inspected.
+PASS — 193 protected raw/evidence files unchanged by SHA-256.
+NOT PERFORMED — Full-window visual inspection/screenshots. All GUI test windows remained withdrawn to keep the desktop free. Widget/event checks and inspected plot renders are distinguished from manual UI acceptance.
+The restricted sandbox could not initialize Tcl. The successful GUI harness ran outside it, still with every window withdrawn and no pointer/keyboard automation. Intermediate failed test logs remain for transparency; gui_final/report.json is the final result.
+
+HISTORICAL REFERENCE COMPARISON (D, N m)
+new_rot1_midrange: 818/818 exact D rows; max |D-reference| = 0E-13 N m; A–D versus pre-change = 818/818.
+new_rot2_midrange: 938/938 exact D rows; max |D-reference| = 0E-14 N m; A–D versus pre-change = 938/938.
+previous_rot1_DIAGNOSTIC: 943/943 exact D rows; max |D-reference| = 0E-12 N m; A–D versus pre-change = 943/943.
+previous_rot1_mean: 615/943 exact D rows; max |D-reference| = 3.010934E-7 N m; A–D versus pre-change = 943/943.
+previous_rot1_midrange: 328/943 exact D rows; max |D-reference| = 3.242307E-7 N m; A–D versus pre-change = 943/943.
+previous_rot2_midrange: 820/820 exact D rows; max |D-reference| = 0E-13 N m; A–D versus pre-change = 820/820.
+
+The previous Rot1 diagnostic choices remain reference-selected (15 mean, 8 midrange), not an autonomous production selector. Historical uniqueness, physical molar normalization and scientific transfer claims remain separate unresolved issues.
+
+COMMANDS (PowerShell in this repository)
+Launch: .\.venv\Scripts\python.exe app.py --session examples\Ho2sq3_0_to_200.json
+Replay: .\.venv\Scripts\python.exe cli.py process --session examples\Ho2sq3_0_to_200.json --dat runs\another_treated.dat
+Tests: .\.venv\Scripts\python.exe -m unittest discover -s tests -v
+Full background GUI, regression, isolation and figure commands are in README.md. Use unused output directories. Tests always leave raw/reference files untouched.
+
+DELIVERABLES
+Current application: app.py, cli.py, io_profiles.py, pipeline.py, baseline.py, baseline_editor.py, plots.py, storage.py.
+Current state: Torque_GUI_project_state_v1.0.json (version field 1.2).
+Example sessions: examples/Ho2sq3_full_range.json, Ho2sq3_0_to_200.json, Ho2sq3_manual_demo.json.
+Representative DAT: runs/Ho2sq3_0_to_200_v1.2.dat and its .dat.details folder.
+Observed evidence: validation/import_workflow_v1.2/{unit_tests_final.txt,regression_final/report.json,gui_final/report.json,isolation_final/report.json,figures_final/figure_checks.json,preservation_final.json}.
+Current source hashes: validation/import_workflow_v1.2/source_hashes.json.
+The manual demo offset is an automated software test, not an experimental calibration.
+Tested only on Windows 11 build 26300 / Python 3.12.14 / NumPy 2.3.5 / Matplotlib 3.10.8 / Tk 8.6.12.
+
+Portable source/evidence archive: Torque_Postprocessing_v1.2_source.zip. Its example sessions point to the included raw fixture; the historical raw/reference files and frozen regression fixtures required by the current tests are included. The workspace continues to use the original raw-file location.

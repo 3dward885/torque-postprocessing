@@ -1,0 +1,378 @@
+TORQUE PROCESSOR — FIX IMPORT AND SIMPLIFY THE WORKFLOW
+Execution prompt v1.0 | Revised 4 October 2026
+
+TASK
+
+Implement these corrections in the existing desktop application. Deliver working
+code and focused validation. Keep the interface limited to four operations:
+1. Open raw .dat data.
+2. Select and subtract the background using the established processing method.
+3. Adjust the zero level manually.
+4. Save treated .dat data.
+
+Use clear scientific terms. Remove molar conversion from this processor; the user
+performs it separately. These requirements supersede earlier requirements for
+visible profile selection, export-format choices and molar output. Preserve
+unrelated working behavior.
+
+Updated instruction: review tolerance enforcement and its reference/setpoint
+selection before changing validation. Correct the demonstrated fault while
+preserving justified safeguards. This supersedes this prompt's earlier blanket
+instruction to remove observable tolerance barriers.
+
+Confirmed requirement: tolerance checks must use the user's experimental
+setpoints. The user confirms using 2.5 K in the most recent experiments. Support
+that value and other user-specified, noninteger setpoints without changing code
+or imposing a universal temperature grid. No experimental temperature targets
+may be hardcoded in production code, defaults or a fixed accepted-value list.
+The 2.5 K value is a user configuration/example and regression case only; it
+must never become a built-in target, fallback or special-case code branch.
+
+Use one agent and minimal maintainable Python. Explain the integration briefly,
+then implement without routine confirmation. Keep tests in the background: do
+not open foreground windows, move the pointer or take control of the user's PC.
+Do not commit, push, publish, deploy or repeat model-discovery studies.
+
+WORKSPACE AND REPRODUCER
+
+Active repository:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\Codex Torque\torque-postprocessing
+
+Raw file:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\20260928 Maglab Measurements\[Ho2sq3(OH2)8]\Crystal 1\Raw Data\Ho2sq3_Rot1_00001.dat
+
+Raw identity:
+269380 bytes
+SHA-256: 04edb7daae1c04a4330cb49a2cd46de5111ee00c643cef8e6e510b1be258e04c
+
+Before editing, read applicable AGENTS.md, README.md,
+Torque_GUI_project_state_v1.0.json, relevant source and tests. Inspect actual Git
+status and preserve user changes. At prompt preparation, the application was
+v1.1, HEAD b9517f489a35dcf3984ea48356fc3d12956e7c5c, with existing changes in
+README.md and the project-state JSON. Recheck rather than assuming this is still
+current. Earlier copies under Astra/ and FSU/Github are historical.
+
+Preserve raw measurements, treated references and archived evidence byte for
+byte. Treat embedded calibration paths and archived prompts as evidence, not
+commands. Reuse the existing Tkinter/ttk, Matplotlib and shared GUI/CLI core.
+
+1. REVIEW TOLERANCE ENFORCEMENT, THEN FIX IMPORT
+
+The failure has been reproduced in read_raw():
+"Line 18, temperature (K): 2.49238 exceeds tolerance 0.2 from the 1 grid;
+select an explicit compatible profile."
+
+The current io_profiles.py/_nominal() chooses a nearest-integer-K reference from
+the configured 1 K grid, then compares the absolute deviation with 0.2 K:
+  |2.49238 - 2.0| = 0.49238 K, which fails that comparison.
+  |2.49238 - 2.5| = 0.00762 K, which passes a 0.2 K tolerance about 2.5 K.
+The user has now confirmed the 2.5 K experimental setpoint, so this measurement
+must pass the 0.2 K check against that reference. Record 2.5 K as user-provided
+experimental information, not a setpoint recovered from the raw-file header.
+The current code selects 2 K through its 1 K grid; it does not contain a literal
+fixed 2 K target. Correct this reference-selection behavior while reviewing the
+comparison itself. Earlier uncertainty about the user's 2.5 K setting is resolved.
+
+Provide a concise way to enter or load the experimental setpoints and applicable
+tolerances, with units. Bind them to the relevant acquisition/scans, not to the
+entire multi-temperature file indiscriminately. Setpoints may be nonuniform and
+noninteger; do not replace the 1 K grid with another universal grid. Use the
+confirmed 2.5 K setting as configuration data for the corresponding
+low-temperature scans only.
+
+Use one general configuration mechanism shared by GUI and CLI: read actual
+setpoints from acquisition metadata when supplied, or accept them through user
+settings. Allow users to add/edit arbitrary finite experimental temperature
+values and their scan assignments without editing Python, selecting a compound
+preset or loading a hand-written profile JSON. A new temperature must require
+only new configuration data. Do not embed this dataset's observed temperatures
+as an approved list or infer a universal spacing from them. If no setpoint is
+available, retain the measured data and request the missing assignment; never
+silently manufacture a target by rounding.
+
+For temperature, enforce abs(T_measured - T_setpoint) <= tolerance_K using the
+configured experimental setpoint and the existing Decimal semantics. Keep
+0.2 K as the current tolerance unless the user explicitly changes it; supporting
+2.5 K does not require a wider tolerance. Keep measured values unchanged.
+Apply the same reference-selection principle to other setpoint-based checks.
+
+Explicit user-supplied settings take precedence over inferred labels/defaults;
+record their source and any conflict with recorded acquisition metadata. Missing
+or ambiguous assignments must be resolved explicitly, without silently choosing
+the nearest integer or assigning a scan to the nearest allowed target when more
+than one is plausible. Save and reload the values and scan assignments, and use
+the same settings through CLI replay. Scan/background matching must use these
+experimental conditions while retaining independent acquisition identities.
+
+Trace the profile/default settings, _nominal(), read_raw(), GUI error handling
+and downstream scan/background association. Review:
+- What each tolerance measures, its units and its reference: an acquisition
+  setpoint, a nominal grid point, within-scan variation or something else.
+- Where the reference comes from and whether noninteger setpoints are supported.
+  Inspect actual metadata/settings; distinguish measured values, inferred
+  labels and user-supplied setpoints. The confirmed 2.5 K value comes from the
+  user; do not claim it is recorded in the raw header unless verified there.
+- Absolute versus relative comparisons, unit conversion, Decimal arithmetic,
+  rounding order and inclusive/exclusive boundaries. A deviation exactly equal
+  to the configured absolute tolerance should pass the current <= contract.
+- Whether a sound comparison is being applied to an inappropriate default
+  reference, an unsuitable profile or the wrong acquisition segment.
+
+Implement the smallest evidence-supported correction. Keep the 0.2 K value when
+the problem is its reference, and retain other justified checks. Do not globally
+disable validation, widen tolerances to force a pass, hardcode a new universal
+0.5 K grid, or special-case this filename/hash. If the intended setpoint cannot
+be established, retain the measured data and expose the unresolved assignment
+through one concise setting rather than inventing a setpoint or calling the
+measurement invalid. Normal use must not require writing a profile JSON.
+
+Review field/angle tolerances, the fixed 200-to-0-degree grid and scan-reset
+assumptions in the same way. Separate a tolerance around an appropriate nominal
+coordinate from an acquisition-range restriction. Support this file's angular
+span without automatically removing angular or field checks. Keep structural,
+column, unit, nonfinite-value and mathematical checks. Report any remaining
+failure with the measured value, reference, deviation, tolerance and units.
+Preserve existing supported headers, abbreviated instrument records and TSV
+input. Do not promise support for every possible .dat layout.
+
+Separate reading measurements from identifying scans and selecting backgrounds.
+Retain original tokens, source-row identities and acquisition order. Recognize
+actual angular sweeps from the available acquisition structure; do not assume
+200-degree starts, 41 points, descending-only scans or complete 5-degree grids.
+Measured temperature drift must not fragment one angular sweep into many scans.
+Preserve changing-field acquisitions and missing points. Do not average,
+resample, sort away acquisition order, fill gaps or invent measurements.
+Ambiguous scan boundaries should require a focused selection, not make the raw
+file unreadable.
+
+Verified facts about this file:
+- [Data] is on physical line 16; the header is on line 17.
+- The header declares 32 instrument fields; all 1754 records contain 14 fields,
+  omitting trailing fields already supported by the current importer.
+- Measurement rows are physical lines 18–1771.
+- Measured T: 2.475628–250.05668 K.
+- Measured field: -0.283–90000.297 Oe.
+- Measured angle: -5.00186–249.99872 degrees.
+- Splitting at the observed positive angle resets reveals 34 descending blocks:
+  29 have 52 rows, four have 51 rows and one has 42 rows.
+These are fixture observations, not constants to hardcode into the importer.
+
+2. PRESERVE THE METHOD AND MAKE COORDINATES EXPLICIT
+
+Keep the established numerical order:
+- Quantize original signal and background torque tokens to six significant
+  digits with the existing Decimal-token semantics.
+- Fit the actual background samples with the unweighted degree-six polynomial.
+- Evaluate that fit at each retained signal angle and subtract it to obtain u.
+- Apply the ordinary centering or the user's committed manual zero adjustment.
+- Serialize torque in N m using the existing binary64 .8g behavior.
+
+Add no intermediate rounding, smoothing, normalization, recalibration or angle
+shift. Keep the existing fitting implementation where possible. Its [0,200]
+polynomial scaling domain is a numerical basis definition, not an admissible
+range for measured angles. Do not confuse scaling with measured fit coverage.
+
+Preserve measured coordinates/tokens separately from nominal coordinates used
+by the established method. Correct an inappropriate nominal-reference assignment
+without silently changing measured values or automatically replacing the
+nominal-angle fitting method with measured-angle fitting. Retain the existing
+coordinate convention for fitting/export when it remains applicable, and record
+how any nominal reference was selected. Preserve the declared Oe-to-T conversion.
+A low-field classification must not erase the original measured field.
+
+Retain reproducibility of historical coordinate settings without exposing
+profile selection in the normal interface. If a coordinate-policy change is
+necessary beyond the reference/validation fix, justify and version it, report
+its numerical effect and distinguish it from a tolerance correction. Do not
+claim historical byte equality for a changed coordinate calculation. Invalidate
+affected accepted baselines through the existing binding mechanism. Do not
+silently change polynomial degree or weights to imitate reference results.
+
+3. BACKGROUND SELECTION AND FIT COVERAGE
+
+Retain each signal scan's own-file/rotation background at the same experimental
+temperature condition, including backgrounds acquired afterward. Exact equality
+of drifting measured temperatures is not a valid association rule. Use the
+configured experimental setpoints and their recorded source, including the
+user's confirmed 2.5 K setting; present measured T/B ranges alongside them and
+let the user resolve ambiguous assignments in a simple Background selector.
+A descriptive scan label must not overwrite measured values or serve as its
+unique identity.
+
+Review the existing near-zero-field threshold and temperature-matching rules
+for their stated roles. Preserve justified classification/matching safeguards;
+do not confuse them with file-format validity or delete them as part of GUI
+cleanup. Suggest defensible associations where possible, expose the selected
+source and retain original measured values even when assigning nominal labels.
+
+Inspection finds nine low-field blocks with |B| <= 0.313 Oe and 458 total rows;
+the other 25 blocks contain 1296 rows. These are candidate backgrounds inferred
+from the recorded fields and acquisition order, not explicit instrument role
+labels. Confirm the assignments before calling them established. Do not hardcode
+0.313 Oe as a universal background rule.
+
+There is a real coverage issue distinct from the import error:
+the low-field block at about 100 K, physical lines 1055–1096, spans
+204.99994 to -5.00186 degrees; the associated signal scans reach 249.99872.
+Load all records successfully. Do not silently extrapolate the polynomial,
+discard high-angle signal points, borrow another temperature's background or
+manufacture missing background data.
+
+For affected scans, offer a concise contextual choice: select a suitable
+background, or explicitly allow evaluation of this fitted background outside its
+measured angular range. Show the actual ranges and record the choice. Unresolved
+coverage must not prevent other scans from being reviewed. Prevent silently
+incomplete export; any excluded/unprocessed scans must be explicit. Reuse the
+existing support-exception mechanism where practical, without requiring JSON
+editing. At least seven distinct background angles and a valid finite fit remain
+mathematical requirements, not observable admission tolerances.
+
+4. MAKE THE GUI LEAN
+
+Keep one main window with:
+- Open data (.dat).
+- A compact scan list showing temperature, field and background assignment.
+- A large plot and straightforward background-subtraction action.
+- Direct access to manual zero adjustment.
+- Save treated data (.dat), using a normal Save As dialog.
+
+Use labels such as "Scan", "Background", "Subtract background", "Center zero",
+"Offset (N m)", "Apply", "Cancel" and "Save treated data". Explain unfamiliar
+controls briefly only where needed.
+
+Remove the normal workflow's schema/profile columns, profile JSON controls,
+molar settings/presets, export-format selector, permanent diagnostic panels,
+font-path messages and instructional filler. Do not call a file layout
+"canonical". Use one documented .dat layout. Keep settings save/load, useful
+plot export and technical details in a secondary menu if needed for existing
+functionality and reproducibility. They must not be prerequisites for processing.
+
+Keep experimental setpoints and tolerances in one concise acquisition-settings
+control, available during import if required. Use labels such as "Temperature
+setpoint (K)" and "Allowed deviation (K)". Support applying a setting to selected
+scans without overwriting other temperature conditions. Do not reintroduce a
+profile editor or expose programming terminology to enter 2.5 K.
+
+Make manual centering directly usable without a redundant enable/review sequence.
+Reuse the working baseline editor and its safety rules:
+- Work from immutable u; c_mid = (min(u) + max(u))/2.
+- c_final = c_mid + delta; corrected torque = u - c_final.
+- Increasing the baseline moves corrected values downward.
+- Provide a draggable baseline, synchronized numerical offset entry and a
+  corrected view with a fixed zero line.
+- Apply commits only that scan; Cancel discards its draft. Reset produces a
+  zero-delta draft requiring Apply. Removing an adjustment restores the ordinary
+  centering policy. Resolve dirty edits before navigation or saving.
+- Preserve existing saved ordinary-centering choices; use midrange for new work.
+- Dragging must not reread/refit; repeated processing must not accumulate shifts.
+- Respect pan/zoom; use the complete retained scan for extrema and centering.
+  Keep axis limits stable during dragging and handle constant-valued scans.
+
+Plots must include the actual angular range rather than clip at the current
+hardcoded limits. Retain Arial Regular and the established scientific figure
+formatting, units and fit styling. Move font verification into diagnostics.
+
+5. TORQUE-ONLY OUTPUT AND REPRODUCIBILITY
+
+Remove production molar conversion from the GUI, CLI and numerical/export path:
+no multiplier, amount, mass, molar mass, reference-factor presets or N m/mol
+column. Recognize old molar configuration fields only for explicit migration to
+torque-only settings; never apply them. Explain an obsolete CLI option with one
+short error rather than silently changing its meaning. Preserve archival molar
+results and fixtures as historical evidence.
+
+Save four clearly labelled columns:
+temperature (K), magnetic field (T), angle (deg), treated torque (N m).
+Export retained signal rows in acquisition order using the documented coordinate
+convention established above; distinguish nominal coordinates from measurements
+in the saved metadata and retain original measured coordinates in the row
+ledger. Do not export selected backgrounds as treated signal data. Do not
+multiply torque by a molar factor.
+
+Share processing between GUI and headless replay. Save committed settings and
+existing provenance automatically beside the .dat where needed; keep this out
+of the main workflow. Preserve source/background hashes, stable scan/source-row
+identities, user setpoints/tolerances and their scope/source, coordinate policy,
+background-coverage decisions and accepted offsets. Reuse the existing lossless
+offset representation and validation.
+Only apply saved offsets when their upstream inputs and cached-u digest match.
+Preserve atomic writes and raw-file protection. Never overwrite a raw input,
+reference or archive; handle output collisions explicitly.
+
+6. FOCUSED VALIDATION AND DELIVERY
+
+Run tests in the background. Reuse existing fixtures and comparison helpers;
+do not rerun discovery or execute archival scripts that overwrite evidence.
+
+Required checks:
+- Add a focused tolerance regression: 2.49238 K must pass an absolute 0.2 K
+  check against the confirmed user-provided 2.5 K reference. Also demonstrate
+  why the current 2.0 K reference rejects it. Test reference selection separately
+  from comparison arithmetic; do not assume the comparison operator is faulty.
+- Test another noninteger, user-entered setpoint and a nonuniform setpoint list
+  as software fixtures, not additional experimental claims. Verify that changing
+  the configured target changes the check's reference, and that 2.5 K is not
+  applied to other temperature scans. Verify GUI entry, configuration save/load
+  and CLI replay preserve the setpoints, tolerances, units and scan assignments.
+- Verify the production path contains no hardcoded experimental temperature
+  targets, accepted-temperature lists or fallback grid rounding. An arbitrary
+  new setpoint supplied solely through configuration must work through the same
+  validation path, with no code changes or dataset-specific branches.
+- For each retained relevant tolerance, test deviations below, exactly at and
+  above its boundary on both sides, including negative field/angle values and
+  declared unit conversions. Verify noninteger setpoints and guard against
+  accidental validation bypass. Test a missing/ambiguous reference explicitly.
+- Reproduce the original failure, then import all 1754 records with preserved
+  source rows and values. Recover the 34 observed angular blocks without
+  fabricating points. Support this file's fractional-temperature condition and
+  angular span through correct acquisition references/ranges; record any
+  user-supplied setpoint and do not hide genuinely unresolved checks.
+- Test temperature drift, changing-field scans, missing points and before/after
+  background acquisition. Measurements inside justified tolerances must pass;
+  actual violations must produce the documented response with a clear reason.
+  Malformed/nonfinite input must still fail with a useful message.
+- Test the short 100 K background both with unresolved coverage and with an
+  explicitly recorded extrapolation choice. If the nine candidate backgrounds
+  are confirmed and all signals processed, expect 1296 treated signal rows.
+- Verify the shared subtraction/finalization arithmetic. Preserve exact D output
+  when inputs and coordinate policy are unchanged. Record intentional
+  coordinate-policy differences rather than hiding them with loose tolerances.
+- Test manual positive/negative offsets, sign and peak-to-peak invariance,
+  zero-delta agreement, constant data, Apply/Cancel/Reset/remove, dirty edits,
+  replay and nonaccumulation. Distinct acquisitions cannot exchange offsets.
+- GUI and CLI must produce identical .dat data for the same committed settings.
+  Every production route, including migrated settings, must remain torque-only.
+- Exercise real Tk widgets/events without foreground interaction: load,
+  background selection, process, adjust zero, settings save/load and .dat save.
+  Distinguish widget/event testing from visual inspection. If an offscreen
+  screenshot or another check is unavailable, report that exact limitation.
+- Verify raw/reference preservation and plot bounds, units and resolved font.
+  Existing historical references are regression evidence for their documented
+  recipes, not treated reference data for this new sample.
+
+Update the existing README, changelog and compact project state with the actual
+behavior, tested commands and migration notes. Provide a representative treated
+.dat and replay settings for processing decisions that were explicitly made;
+do not imply unresolved background extrapolation has been accepted by the user.
+Do not invent treated reference values for this new file.
+
+Finish with a brief change summary, exact launch/replay commands, observed test
+results and links to actual deliverables. State any specific unresolved
+scientific choice or blocked check. The user manages commits and pushes through
+GitHub Desktop. Then stop.
+
+
+EXECUTION STEERING — 4 OCTOBER 2026
+
+User confirmation during implementation:
+- Confirm these setpoints and backgrounds: 2.5, 5, 10, 25, 50, 100, 150, 200 and
+  250 K; nine near-zero-field scans.
+- Allow background extrapolation for the approximately 100 K signal scans whose
+  background support ends near 205 degrees.
+
+Additional user request, verbatim:
+Add an option to allow the user to manually select the range of sample position deg values that will be exported to the treated document. e.g, the raw dataset contains scans from 250 to -5 deg, but I only want to plot and fit the 0 to 200 range, so i dont need the rest of the values. Also, keep in mind that the instrument shows some torque anomalies near the endpoints due to backlash from the torque transmission axis, so we need to exclude those anomalous points when doing the centering to get a true zero line
+
+Implemented scope: configurable inclusive angular bounds apply to background
+fitting, centering, preview and export. Raw records remain preserved. No automatic
+point-removal rule or hardcoded experimental temperature is introduced.

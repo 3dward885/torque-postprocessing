@@ -1,0 +1,106 @@
+{
+  "files": [
+    {
+      "path": "..\\..\\..\\20260928 Maglab Measurements\\[Ho2sq3(OH2)8]\\Crystal 1\\Raw Data\\Ho2sq3_Rot1_00001.dat",
+      "settings": {
+        "acquisition": {
+          "angle_range_deg": [
+            "0",
+            "200"
+          ],
+          "scan_starts": null,
+          "scans": {
+            "P006": {
+              "identity": "40845fb7751408a3ca617794baa57b9ac19d582289dc8598f66149a6198cca94",
+              "role": "background",
+              "source": "User confirmed near-zero-field background assignment on 4 October 2026"
+            },
+            "P007": {
+              "identity": "914f776c73c00cf981a7aaf286e2c472a99b3e861d9879c4e7370666d86b80d4",
+              "role": "background",
+              "source": "User confirmed near-zero-field background assignment on 4 October 2026"
+            },
+            "P014": {
+              "identity": "eb71f86b9ec84e5d29513695981f2137d15bbaafc1406b71860c2f700aa6a97e",
+              "role": "background",
+              "source": "User confirmed near-zero-field background assignment on 4 October 2026"
+            },
+            "P015": {
+              "identity": "ed785786c9e9528ca111fb36d1e003b0c0ae86b0d35c9cc615c5b83c613fb8ef",
+              "role": "background",
+              "source": "User confirmed near-zero-field background assignment on 4 October 2026"
+            },
+            "P020": {
+              "identity": "1d457b10dceaf4f37f97239ca54dc01143bd46e20e4a0e52ad7177166d08b824",
+              "role": "background",
+              "source": "User confirmed near-zero-field background assignment on 4 October 2026"
+            },
+            "P021": {
+              "identity": "be018b58f5774fb505d5457c8a2dff193f9f399fc2ef4822b35f2956b0e7154a",
+              "role": "background",
+              "source": "User confirmed near-zero-field background assignment on 4 October 2026"
+            },
+            "P027": {
+              "identity": "7dfb9d6d4d36ee33fe609cdb94e1a47666eedfc5f0648a2e76ce2338298c2a3e",
+              "role": "background",
+              "source": "User confirmed near-zero-field background assignment on 4 October 2026"
+            },
+            "P028": {
+              "identity": "84aeae5115e669735df7970571f8b90fd378e2f689fee9e2ab4ab82e846b8e84",
+              "role": "background",
+              "source": "User confirmed near-zero-field background assignment on 4 October 2026"
+            },
+            "P034": {
+              "identity": "0335340b589f631394e1ed392e668043d6387968331805596139a9e4a583ee8a",
+              "role": "background",
+              "source": "User confirmed near-zero-field background assignment on 4 October 2026"
+            }
+          },
+          "schema_version": 1,
+          "source": "User confirmed experimental setpoints and nine near-zero backgrounds on 4 October 2026",
+          "temperature_setpoints_K": [
+            "2.5",
+            "5",
+            "10",
+            "25",
+            "50",
+            "100",
+            "150",
+            "200",
+            "250"
+          ]
+        },
+        "baseline_review": {
+          "active_passes": [],
+          "enabled": false,
+          "overrides": {},
+          "schema_version": 2
+        },
+        "centering": "midrange",
+        "centering_source": "Application default: midrange",
+        "input_sha256": "04edb7daae1c04a4330cb49a2cd46de5111ee00c643cef8e6e510b1be258e04c",
+        "migration_notes": [],
+        "note": "Example angular range requested by the user; endpoints outside 0–200 degrees excluded before background fitting and centering.",
+        "overrides": {},
+        "profile": {
+          "allow_background_gaps": true,
+          "allow_signal_gaps": true,
+          "angle_origin_deg": "0",
+          "angle_step_deg": "5",
+          "angle_tolerance_deg": "0.05",
+          "background_threshold_Oe": "1",
+          "field_step_T": "0.01",
+          "max_extrapolation_deg": "0",
+          "name": "fractional",
+          "provenance": "Fractional-field DAT profile; observed ordered gaps and monotonic field trajectories allowed.",
+          "stable_field_tolerance_Oe": "1",
+          "temperature_tolerance_K": "0.2",
+          "trajectory": "monotonic"
+        },
+        "support_exceptions": [],
+        "version": "1.2"
+      }
+    }
+  ],
+  "session_version": "1.0"
+}

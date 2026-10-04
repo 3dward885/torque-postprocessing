@@ -59,7 +59,7 @@ def make_figure(result, pass_id, view="stages", reference=None, preview=False):
         if view == "background":
             info = result["fits"][pred["background_id"]]
             ax.plot(info["fit_angles_deg"], info["q6_background_Nm"], "o", color="black",
-                    markersize=7.5, linestyle="none", label="Background samples (Q6)")
+                    markersize=7.5, linestyle="none", label="Background samples")
             fit = Polynomial(info["coefficients_scaled"], domain=[0, 200], window=[-1, 1])
             support = info["support_deg"]
             dense = np.linspace(support[0], support[1], 600)
@@ -93,7 +93,7 @@ def make_figure(result, pass_id, view="stages", reference=None, preview=False):
                 ax.plot(x, pred[key], "o", color=color, markersize=3.5, linestyle="none", label=name)
             ax.set_ylabel("Torque (N m)")
         ax.set_xlabel("Sample position (deg)")
-        ax.set_xlim(-5, 205)
+        angle_limits(ax, x)
         ax.xaxis.set_minor_locator(AutoMinorLocator(2))
         if view != "residual":
             ax.yaxis.set_minor_locator(AutoMinorLocator(2))
@@ -112,10 +112,35 @@ def baseline_figure(angles, uncentered, offset, corrected=False, preview=False):
                 markersize=3.5, linestyle="none", label="Corrected" if corrected else "Uncentered")
         ax.axhline(0 if corrected else offset, color="#0072B2", linewidth=1.2,
                    label="Fixed zero" if corrected else "Baseline")
-        ax.set(xlabel="Sample position (deg)", ylabel="Torque (N m)", xlim=(-5, 205))
+        ax.set(xlabel="Sample position (deg)", ylabel="Torque (N m)")
+        angle_limits(ax, angles)
         ax.xaxis.set_minor_locator(AutoMinorLocator(2))
         ax.yaxis.set_minor_locator(AutoMinorLocator(2))
         ax.legend(frameon=False, loc="best")
+        return fig
+
+
+def angle_limits(ax, angles):
+    if not len(angles):
+        raise InputError("No samples in the selected angle range.")
+    low, high = min(angles), max(angles)
+    margin = (high-low)*.025 or 1
+    ax.set_xlim(low-margin, high+margin)
+
+
+def raw_figure(scan, preview=False):
+    if not scan.rows:
+        raise InputError("No samples in the selected angle range.")
+    with mpl.rc_context(style(preview)):
+        fig = Figure(figsize=(8, 6), dpi=100)
+        fig.subplots_adjust(left=.19, bottom=.18, right=.96, top=.94)
+        ax = fig.add_subplot()
+        x = [float(r.tokens[5]) for r in scan.rows]
+        ax.plot(x, [float(r.tokens[12]) for r in scan.rows], "o", color="black", markersize=3.5, linestyle="none")
+        ax.set(xlabel="Measured sample position (deg)", ylabel="Raw torque (N m)")
+        angle_limits(ax, x)
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
         return fig
 
 
@@ -134,4 +159,3 @@ def export_figure(result, pass_id, folder, view="stages", reference=None):
         for path in paths:
             fig.savefig(path, dpi=300, facecolor="white")
     return [str(p) for p in paths]
-
