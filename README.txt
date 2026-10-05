@@ -13,3 +13,7 @@ USABILITY_IMPLEMENTATION_REPORT_v1.3.txt.
 
 Help > User guide or F1 opens the local guide. Hover help appears after one second.
 Temperature lists accept spaces or commas. Position correction remains deferred.
+
+Newly extracted copies need Setup_Windows.cmd in that same folder first.
+Wait for Setup complete, then run Launch_GUI.cmd. Setup and startup errors are
+saved in setup.log and launch.log. See STARTUP_FIX_v1.3.txt.

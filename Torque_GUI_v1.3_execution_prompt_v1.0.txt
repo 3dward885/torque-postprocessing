@@ -1,0 +1,385 @@
+TORQUE POSTPROCESSING v1.3 — EXECUTION PROMPT
+Version 1.0 | 4 October 2026
+
+TASK AND AUTHORIZATION
+
+Implement, run and validate the seven changes below in the existing desktop
+application, and deliver Torque Postprocessing v1.3. Deliver working software,
+focused tests, documentation and local update archives.
+
+This is the execution instruction for the previously recorded next-patch work.
+“Recorded only”, “not implemented”, and “next patch” in the project state describe
+the earlier planning stage; they are not stopping instructions during execution.
+The explicitly requested sample-position correction supersedes the earlier
+prohibition on angle shifts only for this optional user-provided correction.
+
+Use one agent and minimal maintainable Python. Reuse Tkinter/ttk, Matplotlib,
+the shared GUI/CLI core and existing configuration/provenance mechanisms.
+Explain the integration briefly, then implement without routine confirmation.
+Keep the main workflow lean: Open data → Subtract background → optional Center
+zero → Save treated data. Preserve unrelated working behavior.
+
+Run tests in the background. Do not open foreground windows, move the pointer,
+send desktop keystrokes, close or control the user's running app, or otherwise
+interrupt the PC. Use withdrawn Tk windows and programmatic widget/events.
+Do not commit, push, publish, deploy, rerun model discovery or modify archives.
+The user will copy the update and commit/push through GitHub Desktop.
+
+1. ESTABLISH THE ACTUAL BASELINE
+
+Active working repository:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\Codex Torque\torque-postprocessing
+
+Read applicable AGENTS.md, README.md, Torque_GUI_project_state_v1.0.json
+(including pending_next_patch), CHANGELOG.txt, the current source and relevant
+tests before editing. Inspect Git status, HEAD, runtime and existing changes.
+
+At preparation, this checkout contains v1.2 working changes on base commit:
+b9517f489a35dcf3984ea48356fc3d12956e7c5c
+Do not reset to that commit: it predates the working v1.2 implementation.
+The user has separately reported manually updating the GitHub-folder checkout.
+Recheck actual state instead of assuming that both checkouts share the same HEAD.
+
+The GitHub destination is:
+D:\OneDrive - Florida State University\FSU\Github\torque-postprocessing
+It is a manual delivery destination, not the active development copy. Do not
+write there. If useful, inspect it read-only when preparing a compatible update.
+
+Capture a compact pre-patch snapshot of relevant v1.2 source, settings, hashes
+and representative outputs in a new validation directory. Preserve user changes.
+Reuse WORKFLOW_IMPLEMENTATION_REPORT_v1.2.txt and validation/import_workflow_v1.2/
+as earlier evidence; run new checks into new directories without overwriting it.
+
+Relevant current integration points, to verify rather than assume:
+- app.py: AcquisitionDialog, plot selection, task worker, activity bar.
+- io_profiles.py: raw rows, scan identity, configure_acquisition(), _nominal().
+- pipeline.py: configuration migration, fitting, coverage, processing.
+- baseline.py / baseline_editor.py: bound accepted offsets and manual review.
+- cli.py, storage.py, plots.py: replay, serialization, provenance and views.
+- tests/test_workflow.py, tests/workflow_gui.py, tests/workflow_regression.py,
+  tests/workflow_isolation.py, tests/figures.py and existing unit tests.
+
+2. IMPLEMENT THE SEVEN REQUESTED CHANGES
+
+A. Clear temperature-field labels
+
+Rename the general list:
+  Temperatures in this file (K)
+Rename the optional selected-scan assignment:
+  Override selected scan temperature (K)
+
+Preserve scope and precedence. The general list supplies experimental setpoints
+for the file; each scan needs a unique match within its configured tolerance.
+An explicit override applies only to the selected scan(s). Leaving the override
+blank preserves existing explicit assignments. Explain this briefly in help.
+Do not turn the general list into one temperature applied to every scan.
+
+B. Flexible temperature-list entry
+
+Accept whitespace-separated, comma-separated and mixed temperature lists,
+including decimal values, using one small shared parser for GUI and CLI input.
+For example, these must represent the same user settings:
+  2.5 5 10 25 50 100 150 200 250
+  2.5, 5, 10, 25, 50, 100, 150, 200, 250
+
+Retain Decimal semantics and existing invalid/nonfinite/duplicate-value checks.
+Preserve blank-list/missing-assignment behavior and saved configuration lists.
+Use a concise hint such as “Separate values with spaces or commas”.
+Document quoting of a whitespace list in the CLI. Do not hardcode experimental
+temperature targets, broaden tolerances or add a fallback temperature grid.
+
+C. Plot selection must agree with the displayed data
+
+Currently, changing settings can clear processed results while the View box
+still says Corrected and the graph displays raw torque. Fix this inconsistency.
+
+Display Raw whenever the graph shows original measurements. Only offer/select
+processed views when the selected scan has a valid corresponding result. Handle
+initial import, background scans, scan/file changes, partial processing, failures,
+and invalidation after changing acquisition settings, angle limits or correction.
+After successful processing, make the processed views available without silently
+mislabeling or substituting data. Retain a sensible selection when still valid.
+
+The view selector changes visualization only. Saving treated DAT must continue
+to export committed corrected torque, independently of the chosen plot view.
+Keep stale-result/export safeguards. Do not add a new diagnostic panel.
+
+D. Activity indicator only while busy
+
+Start with the activity bar hidden. Show and animate it during background work,
+including loading, processing and saving through the existing worker.
+Stop/reset and hide it after completion or failure, and after cancellation if
+already supported. Avoid toolbar layout jumps and leftover animation callbacks.
+Retain useful textual status. This remains an indeterminate activity indicator;
+do not imply a percentage completed or add a fabricated progress estimate.
+
+E. Contextual hover help
+
+Show concise help after 1 second (1000 ms) over a control or its labelled area.
+This replaces the earlier 5-second proposal. It is the accepted design choice,
+not a claim of a universal industry standard.
+
+Keep the tooltip visible while the pointer is over its control or the tooltip,
+without a reading timeout. Dismiss on leaving both, Esc, interaction or window
+closure. Esc must not immediately reopen it under a stationary pointer or also
+close the parent dialog. Cancel pending callbacks when their target disappears.
+Tooltips must not take focus, change settings or obstruct operation.
+
+Cover exposed controls in the main window, acquisition settings (including
+expanded settings), plot views, background selection/extrapolation, sample-position
+correction and manual torque centering. Explain disabled actions and their
+enabling conditions. Explain purpose, units, scope and input syntax as relevant.
+Use Tk event scheduling, not blocking sleeps. Keep descriptions brief; detailed
+instructions belong in Help. Help must also be accessible without hovering.
+
+F. Help menu and expandable guide
+
+Add Help alongside File and Tools. Open a local help viewer with an expandable/
+collapsible topic tree and readable text. Use existing Tk widgets, without a web
+service, browser dependency or new framework. Include:
+
+- Summary: supported inputs, processing method, units and output files.
+- Workflow: import, experimental conditions, angle limits, position correction,
+  background selection/subtraction, automatic centering, optional manual zero
+  adjustment, and saving data/settings.
+- Control reference: every exposed option, including both temperature fields,
+  tolerances, field settings, inclusion/exclusion, views, extrapolation, sign
+  controls and relevant advanced acquisition settings.
+- Worked examples: temperature entry/override; 2.49238 K compared with a
+  user-provided 2.5 K setpoint and 0.2 K deviation; selecting 0–200 degrees;
+  background coverage ending near 205 degrees versus signal reaching 250;
+  adding/subtracting an illustrative position correction; manual torque-offset
+  sign, Apply/Cancel/Reset/Remove; configuration save/load and CLI replay.
+- Troubleshooting: disabled controls, reprocessing after settings changes,
+  ambiguous/missing conditions, invalid input, coverage, stale offsets and
+  existing output filenames.
+
+Distinguish measurements, fitted predictions and user settings. Explain that
+Subtract background also applies the selected ordinary centering policy
+(midrange by default); Center zero is optional fine-tuning. Do not imply that
+midrange centering establishes an independently calibrated absolute torque zero.
+
+Reuse control descriptions between tooltips and Help where practical. Store help
+resources with the application and resolve their paths independently of the
+launching directory. Include them in both release archives.
+
+G. Optional uniform sample-position correction
+
+Add a file-level “Apply sample-position correction” checkbox, unchecked by
+default. When checked, reveal:
+  Correction value (deg)
+  Add (+) / Subtract (−)
+
+The magnitude must be finite and nonnegative. Zero is valid; reject a negative
+magnitude because direction is selected separately. When unchecked, use no
+correction, regardless of retained inactive values. Do not apply one file's
+setting to other loaded files without explicit user action.
+
+Define the signed correction d:
+  Add:      d = +magnitude_deg
+  Subtract: d = -magnitude_deg
+  corrected measured position = original measured position + d
+
+Apply this same d once to every acquired row in that raw dataset, including all
+signal and background scans, regardless of T, B or position. Always calculate
+from immutable original positions; never accumulate shifts on reprocess.
+No per-scan offset, automatic calibration, angle normalization, wrapping,
+interpolation, regridding or inferred magnitude is authorized.
+
+No actual probe-error magnitude has been supplied. This does not block feature
+implementation. Use synthetic examples for nonzero corrections; do not claim
+any example value is a measured correction for the supplied sample.
+
+Coordinate integration is essential:
+- Preserve raw files, original position tokens, measured torque, source-row
+  identities and acquisition order. Keep original measured, corrected measured
+  and processing/nominal coordinates distinguishable in the existing ledger.
+- Preserve the established nominal-angle method. Conceptually, if theta_nom is
+  the existing validated nominal coordinate, use theta_nom + d for processing.
+  An equivalent implementation may validate corrected measured positions against
+  the original grid shifted by d. Do not snap a corrected angle back onto the
+  unshifted grid, thereby removing the correction or causing false deviations.
+- Preserve angular deviation tolerances. Translate the reference and measurement
+  consistently; a known constant coordinate correction does not widen tolerance.
+  Use Decimal settings/token arithmetic through coordinate construction and
+  comparisons, then the existing binary64 numerical core without extra rounding.
+- Apply angle-range selection in the corrected nominal coordinate system before
+  fitting and centering. The bounds mean corrected positions when enabled.
+  Recompute actual retained rows and describe any changed membership.
+- Fit backgrounds and evaluate signals at consistently corrected nominal angles.
+  Retain the degree-six polynomial and its [0,200] scaling domain; that domain
+  defines the numerical basis, not the admissible acquisition range.
+- Use corrected coordinates consistently for coverage, processed plots and
+  treated DAT. Keep Raw as the original measured-coordinate view and label the
+  distinction clearly. Do not alter source scan identity because its coordinates
+  were translated.
+- A common shift does not itself expand background support relative to signals.
+  Re-evaluate coverage after range selection and preserve explicit extrapolation
+  requirements. Do not silently extrapolate or discard newly unsupported points.
+- A changed effective correction requires reprocessing and validation of saved
+  torque-baseline bindings. Preserve dirty-editor protections and block stale
+  exports.
+
+Persist enabled state, magnitude, operation, units, effective signed offset and
+user-provided origin in shared GUI/CLI settings and existing provenance. Keep
+lossless decimal settings and check redundant values if stored. The correction
+is a user setting, not a discovered calibration constant. Distinguish position
+correction in degrees from manual torque offset in N m throughout the GUI/help.
+
+Old configurations must load with correction disabled. Disabled and zero
+correction must preserve v1.2 numerical values, row selection and treated DAT
+data exactly. New metadata may document v1.3, but do not change ordinary headers,
+column order, units or numeric formatting gratuitously.
+
+3. PRESERVE THE NUMERICAL AND REPLAY CONTRACT
+
+Keep the existing order after corrected-coordinate selection:
+1. Quantize original retained signal/background torque tokens to six significant
+   digits using the verified Decimal semantics.
+2. Fit actual retained background samples with the unweighted degree-six model.
+3. Evaluate at retained signal angles and subtract to obtain immutable u.
+4. Apply the ordinary centering or the committed manual torque baseline once.
+5. Serialize torque in N m with the existing binary64 .8g behavior.
+
+For ordinary midrange:
+  c_mid = (min(u) + max(u)) / 2
+For accepted manual adjustment:
+  c_final = c_mid + delta
+  treated torque = u - c_final
+
+Use all retained points, never the plot zoom window. Preserve mean policies
+already chosen in saved configurations, per-scan Apply/Cancel/Reset/Remove,
+nonaccumulation, constant-data handling and pan/zoom behavior.
+No molar conversion, smoothing, averaging, synthetic points or reference-derived
+correction. Output remains four columns: temperature (K), field (T), sample
+position (deg), treated torque (N m). Explain corrected/nominal coordinates in
+the existing metadata; retain original measurements in the ledger.
+
+Use one shared processing/configuration path for GUI and CLI. Version and
+migrate changed schemas explicitly; continue rejecting unknown versions and
+invalid records. Include effective position correction and coordinate policy
+in upstream identity. Exclude tooltip/help/view choices from numerical identity.
+Retain lossless torque-offset representation and recomputed-u digest checks.
+
+Never rewrite an accepted record's binding merely to make it validate. Preserve
+valid older settings; if existing source/environment binding makes a v1.2 manual
+offset stale, report the reason and use the established review/reaccept/removal
+workflow. Numerical compatibility alone is not permission to forge acceptance.
+
+Preserve same-file/rotation and experimental-temperature background associations,
+including backgrounds acquired afterward; retain changing-field acquisitions,
+gaps and source order. Keep mathematical fit-rank, finite-value and coverage
+checks, atomic writes, output collision handling and raw-file protection.
+
+Update application/version displays to 1.3 and configuration readers as needed.
+Do not globally replace “1.2”: historical recipe IDs, archive paths, reports and
+fixture identities must retain their actual versions.
+
+4. IMPLEMENTATION ORDER AND FOCUSED VALIDATION
+
+First freeze the current v1.2 behavior. Then implement coordinate/configuration
+support in the shared core, GUI controls, view/activity fixes, parsing, and help.
+Avoid unrelated refactors or dependency upgrades.
+
+Reuse existing tests/helpers; add targeted coverage for changed behavior.
+Run the current unit suite and relevant regression/replay/GUI checks once the
+patch is integrated. Repeat only when changes or failures justify it.
+
+Required gates:
+A. Compatibility: old configurations, correction disabled, and enabled zero
+   retain exact v1.2 DAT numeric rows/format and raw/source-row accounting.
+   Retain all existing meaningful unit-test coverage.
+B. Temperatures: comma/space/mixed input agrees in GUI/CLI; arbitrary noninteger
+   and nonuniform lists work; malformed/nonfinite/duplicate input and missing/
+   ambiguous assignments retain their documented responses. Verify selected-scan
+   override precedence and unchanged inclusive Decimal tolerance boundaries.
+C. Position correction: test Add/Subtract, zero/off, arbitrary fractional values,
+   invalid magnitude/sign, uniform signal/background application across T/B,
+   original-token preservation and repeated process/toggle/save/load behavior.
+   Use a fractional shift not divisible by the angle step to expose grid errors.
+   Verify corrected range boundaries, retention, coverage and nominal references.
+D. Numerical integration: off/zero regressions remain exact. With a nonzero
+   shift, compare the fit/subtraction against an independently constructed shifted
+   software fixture. Where retained rows stay unchanged, examine translation
+   consistency and report actual numerical/serialized differences rather than
+   masking them with a loose tolerance. Do not promise unchanged DAT bytes when
+   angles or retained samples intentionally change.
+E. Replay/binding: GUI and CLI produce identical DAT for the same settings;
+   active correction/range changes invalidate affected baselines/results; help,
+   view selection and tooltip timing do not. Include accepted manual-baseline
+   replay, sign, zero-delta and nonaccumulation checks.
+F. Actual hidden Tk events: field labels/parser, correction checkbox and revealed
+   fields, help-tree navigation, 1000 ms timer/cancellation, persistent tooltip,
+   Esc dismissal, disabled controls, accurate view selection, busy/idle/error
+   indicator states, load/process/adjust/settings save-load/DAT save. Exercise
+   partial/failed processing as well as success. No desktop input or visible
+   test windows. Distinguish widget/event checks from visual inspection.
+G. Preservation/release: raw/archive hashes unchanged, torque-only output,
+   correct coordinate labels and plot bounds, existing Arial Regular scientific
+   formatting retained, package manifests verified and extracted replay works.
+
+Use offscreen render/screenshot inspection where available without capturing
+the user's desktop. If whole-window rendering or another check cannot run,
+report that precise limitation. Do not substitute numerical tests for GUI tests,
+or claim a passed gate from an old report.
+
+Regression fixture:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\20260928 Maglab Measurements\[Ho2sq3(OH2)8]\Crystal 1\Raw Data\Ho2sq3_Rot1_00001.dat
+Bytes: 269380
+SHA-256: 04edb7daae1c04a4330cb49a2cd46de5111ee00c643cef8e6e510b1be258e04c
+
+Existing confirmed settings are in examples/Ho2sq3_full_range.json and
+examples/Ho2sq3_0_to_200.json. The user confirmed 2.5, 5, 10, 25, 50, 100, 150,
+200 and 250 K and nine background scans. Full-range extrapolation for P022–P024
+was explicitly authorized; do not ask for the same permission again or silently
+extend it to unrelated coverage.
+
+With position correction off/zero, expected observed accounting remains:
+- 1754 raw rows and 34 scans.
+- 458 background rows and 1296 full-range signal rows.
+- 0–200-degree selection: 1023 signal rows, 368 background rows, 363 outside.
+- Six historical A–D regression cases remain unchanged: 5405 case rows, covering
+  3519 distinct reference rows and 4869 distinct raw rows.
+
+Reuse immutable historical fixtures and comparison logic. Do not execute frozen
+archival validation mains that overwrite evidence or disable their hash guards.
+No independent treated reference exists for Ho2sq3; do not manufacture one.
+Reference-selected historical centering choices are diagnostic evidence, not an
+automatic production selector.
+
+5. DELIVER v1.3, RECORD RESULTS, THEN STOP
+
+Update README.md, README.txt if needed, CHANGELOG.txt and the existing compact
+project state. Explain launch/setup for a novice programmer, actual behavior,
+coordinate/sign conventions, migration and the exact tested commands. Preserve
+historical results as historical. Mark pending items implemented only when their
+required work is complete, and document any remaining limitation.
+
+Provide:
+- Working v1.3 source, focused tests, local Help resources and GUI/CLI entry points.
+- Representative real-data output/settings with position correction off or zero;
+  a clearly labelled synthetic nonzero-correction example and reproducible replay.
+- A concise implementation/validation report with observed PASS/FAIL/BLOCKED
+  gates, platform/runtime, relevant input/source hashes and test output locations.
+- Available offscreen figure/UI evidence, labelled according to what was actually
+  inspected. Preserve current scientific figure style and Arial verification.
+- This execution prompt and a versioned source/test/help ZIP using the project's
+  existing packaging approach. Preserve all v1.2 archives.
+- A separate GitHub-update ZIP containing only changed/new version-controlled
+  project files needed to update v1.2, preserving relative paths. Include resources,
+  documentation and tests; exclude .git, .venv, caches, personal sessions, raw
+  research files and generated runs/evidence. Supply an explicit removal list if
+  any obsolete files genuinely need deletion.
+
+Build the update relative to the actual pre-patch v1.2 working contents, not only
+the older Git HEAD. Inspect a copied/extracted package to verify resource presence,
+manifest hashes and launch/replay dependencies. Include required fixtures in the
+appropriate local evidence package or provide precise immutable paths/hashes.
+Do not copy into the GitHub checkout, commit or push.
+
+Finish with a brief change summary, exact tested launch/replay/test commands,
+compact observed gate results, absolute links to actual deliverables, specific
+remaining limitations, and a suggested GitHub commit summary/description.
+Clearly state if an actual probe correction is still unspecified; this must not
+prevent delivering the optional feature. Then stop.
+

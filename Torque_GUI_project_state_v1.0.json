@@ -46,7 +46,7 @@
     "pipeline.py": "cec5705d093ea5591cc2a0874ebbcbdf8cf8b573089b58794f1efd3f09c16d35",
     "plots.py": "b0410b9a3ec775d99d06907d744c7b4d9256691e9dd5fa755d8a23fa7eb33b57",
     "presets.py": "9ee51f73ccc1f0a557b78b694b13afa464ea673658cdbcd0a4f9ef5a7ac1cee2",
-    "setup_environment.py": "f6f8e9fd48b345b5b2c833744b6bf3070c51871bd2a8a572a35b03488dcde6d3",
+    "setup_environment.py": "130eb2d3b98cf7781eba4e013f5eee48e0a0978a8aeadb2133dc37f2eb332ab2",
     "storage.py": "4334b654a8a4696ebc2f5d7ffa46243da08c68b73c706bd30ac984c041c4328e",
     "ui_help.py": "16d6b949e1ed89204ac55b6243b6e07824418480205fb6ef2285548f55a96e67",
     "validate.py": "416c8d822068a9e8a7942bdf39a9263490e998b92dd7ec613b5e16194a679660"
@@ -85,7 +85,10 @@
     "source_zip": "Torque_Postprocessing_v1.3_source.zip",
     "github_update_zip": "Torque_Postprocessing_v1.3_GitHub_update.zip",
     "update_instructions": "UPDATE_v1.3.txt",
-    "package_validation": "validation/usability_v1.3/package_checks_final.json"
+    "package_validation": "validation/usability_v1.3/package_checks_final.json",
+    "github_ready_folder": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\Torque_Postprocessing_v1.3_GitHub_ready_2026-10-05\\torque-postprocessing",
+    "github_ready_zip": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\Torque_Postprocessing_v1.3_GitHub_ready_2026-10-05.zip",
+    "github_compared_commit": "f444708dc8425181652daa5addc55add183a31da"
   },
   "derived_quantities": [
     "Retained actual rows in the optional angle range",
@@ -145,7 +148,7 @@
     "verified_rows": 818,
     "historical_record": true
   },
-  "next_step": "User may copy the v1.3 GitHub update and review/commit/push manually. Position correction stays deferred until explicitly revisited.",
+  "next_step": "User may copy the prepared GitHub-ready project into the existing GitHub checkout, preserving .git and local data, then review/commit/push manually. The package includes the startup fix.",
   "objective": "Complete six v1.3 usability changes while preserving all v1.2 numerical/settings contracts.",
   "provided_settings": [
     "Experimental temperature setpoints and per-scan assignments, with source",
@@ -182,7 +185,7 @@
     "Historical previous-Rot1 autonomous centering selection remains unresolved; diagnostic choices remain reference-selected.",
     "Historical algorithm uniqueness and transfer claims remain unestablished; physical molar normalization is outside this torque-only processor."
   ],
-  "updated_utc": "2026-10-05T02:53:29.143304+00:00",
+  "updated_utc": "2026-10-05T12:35:52.406308+00:00",
   "verified_results": {
     "unit_tests": 42,
     "historical_cases_A_D_exact": 6,
@@ -365,7 +368,7 @@
     "state_before_v1_3": "validation/usability_v1.3/before/source/Torque_GUI_project_state_v1.0.json",
     "report": "WORKFLOW_IMPLEMENTATION_REPORT_v1.2.txt",
     "results": {
-      "unit_tests": 42,
+      "unit_tests": 37,
       "historical_cases_A_D_exact": 6,
       "historical_case_rows_A_D_exact": 5405,
       "historical_distinct_reference_rows": 3519,
@@ -378,14 +381,27 @@
       "GUI_windows_withdrawn": true,
       "reference_denied_CLI": true,
       "Arial_figure_pairs": 3,
-      "protected_files_unchanged": 196,
-      "reports_directory": "validation/usability_v1.3",
-      "whole_window_visual_inspection": "Not performed: all GUI test windows withdrawn",
-      "v12_example_DATs_byte_identical": 3,
-      "all_example_upstream_bindings_unchanged": true,
-      "usability_widget_checks": 7,
-      "workflow_widget_checks": 8
+      "protected_files_unchanged": 193,
+      "reports_directory": "validation/import_workflow_v1.2",
+      "whole_window_visual_inspection": "Not performed: all GUI test windows withdrawn"
     }
   },
-  "current_help_sha256": "08dbe71b6c54c044242ea3be3fdf4c58e663caddc71a9b80375b5fcb0788d27e"
+  "current_help_sha256": "08dbe71b6c54c044242ea3be3fdf4c58e663caddc71a9b80375b5fcb0788d27e",
+  "startup_fix": {
+    "date": "2026-10-05",
+    "reported_copy": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\torque-postprocessing\\Torque_Postprocessing_v1.3_source",
+    "finding": "Extracted copy had no .venv. Original setup completed successfully when executed; earlier reason for not completing setup is unknown.",
+    "repair": "Installed the existing pinned dependencies in the extracted copy; added setup/launch logs, preserved exit codes/launch arguments, and strengthened hidden startup check.",
+    "validation": "validation/startup_fix_v1.3/cmd_checks/report.json",
+    "real_CMD_checks_passed": 5,
+    "numeric_source_changed": false,
+    "foreground_testing": false,
+    "report": "STARTUP_FIX_v1.3.txt",
+    "update_zip": "Torque_Postprocessing_v1.3_startup_fix.zip",
+    "applied_to": [
+      "active working copy",
+      "user-identified extracted copy"
+    ],
+    "old_release_archives": "Preserved; apply the startup-fix ZIP to another v1.3 copy."
+  }
 }

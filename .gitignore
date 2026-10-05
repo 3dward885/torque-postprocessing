@@ -4,6 +4,8 @@ venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+setup.log
+launch.log
 
 # Original research data, generated results and personal sessions remain local.
 evidence/

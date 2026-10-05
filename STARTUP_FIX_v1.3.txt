@@ -1,0 +1,45 @@
+Torque Postprocessing v1.3 — Windows startup fix, 5 October 2026
+
+The user-identified Torque_Postprocessing_v1.3_source folder had no .venv.
+The original Setup_Windows.cmd was run and completed successfully, installing
+the existing pinned dependencies. The reason setup had not previously completed
+is unknown; there was no recorded earlier setup error.
+
+The active working source and the user's extracted copy now have:
+- Setup_Windows.cmd: persistent setup.log, visible failure message and preserved
+  exit status, including the bundled-Python branch. --no-pause supports tests.
+- Launch_GUI.cmd: persistent launch.log, waits for Python's exit status, reports
+  errors visibly, and forwards arguments such as --version or --session.
+- setup_environment.py: verifies the actual App and local Help with withdrawn
+  windows, rather than testing dependency imports alone.
+- Windows CRLF line endings for the two CMD files.
+
+No numerical application code or pinned dependency versions changed.
+The source ZIP excludes Python environments by design. Each newly extracted copy
+must run Setup_Windows.cmd in its own folder. Do not copy another folder's .venv.
+The launch command window stays open while the GUI runs and can be minimized.
+Logs are replaced on the next run.
+
+Repair already applied to:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\Codex Torque\torque-postprocessing\Torque_Postprocessing_v1.3_source
+
+You can now double-click Launch_GUI.cmd in that folder. Setup has already passed.
+
+Observed validation:
+PASS — Setup using the extracted copy's new environment; actual App/Help hidden.
+PASS — Real pythonw launch through CMD returns version 1.3.
+PASS — Invalid launch arguments produce an error log and nonzero exit code.
+PASS — Missing environment reports that setup must run in the same folder.
+PASS — Simulated setup failure retains its log and exact exit code.
+No foreground window, desktop capture, mouse movement or desktop keystroke was used.
+Whole-window visible launch was left to the user.
+
+Reproduce (PowerShell from the active project folder; choose a new output path):
+.\.venv\Scripts\python.exe tests\startup_windows.py --application Torque_Postprocessing_v1.3_source --output validation\startup_recheck
+Report and captured CMD logs: validation/startup_fix_v1.3/cmd_checks/
+
+For another v1.3 copy, extract Torque_Postprocessing_v1.3_startup_fix.zip over
+that copy, preserving relative paths. No removals are required. Run setup there
+if its environment is absent. PACKAGE_MANIFEST.json lists the delivered hashes.
+Do not delete raw data, saved sessions or .git. No GitHub copy/commit/push was made.
+The original v1.3 source/update ZIPs remain unchanged; this ZIP supplements them.

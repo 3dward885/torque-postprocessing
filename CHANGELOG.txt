@@ -1,3 +1,10 @@
+1.3 startup fix — 5 October 2026
+- Complete setup in the user's newly extracted source folder; its .venv was absent.
+- Preserve setup/launch logs and failure exit codes; show launch errors instead
+  of detaching silently. Forward launch arguments and use Windows CMD line endings.
+- Setup verifies the actual App and local Help with withdrawn windows.
+- Five real Windows CMD startup/failure checks passed. Numerical code unchanged.
+
 1.3 — 4 October 2026
 - Clarify file temperature list versus selected-scan override; accept spaces,
   commas or mixed separators through one Decimal-preserving GUI/CLI parser.

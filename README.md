@@ -19,9 +19,20 @@ To open the supplied file with its confirmed setpoints and example 0–200° ran
 .\.venv\Scripts\python.exe app.py --session examples\Ho2sq3_0_to_200.json
 ```
 
-For a fresh checkout, run **Setup_Windows.cmd** first. It creates a local Python
-environment (the `.venv` directory) and installs `requirements.txt`. Python 3.12
-with Tkinter is required. No server or browser is involved.
+For a fresh checkout or newly extracted source ZIP, run **Setup_Windows.cmd**
+inside that same folder first. Each copy needs its own `.venv` directory; the
+source ZIP deliberately does not include one. Wait for **Setup complete** before
+running **Launch_GUI.cmd**. Python 3.12 with Tkinter is required. Setup installs
+the pinned `requirements.txt` packages and checks the actual application and Help
+using hidden windows. No server or browser is involved.
+
+Setup writes `setup.log`; the launcher writes `launch.log`. If either fails, the
+command window displays the error and waits. The launch command window stays open
+while the app runs; it can be minimized. Logs are replaced on the next run.
+For a background setup check use `Setup_Windows.cmd --no-pause`; the script still
+returns its success/failure code. `Launch_GUI.cmd --version` verifies the launcher
+without opening the GUI. These startup checks passed for the extracted v1.3 copy.
+See `STARTUP_FIX_v1.3.txt` for the repair and copy instructions.
 
 Tested: Windows 11 build 26300, Python 3.12.14, NumPy 2.3.5, Matplotlib 3.10.8,
 Tk 8.6.12. Other platforms have not been tested.
