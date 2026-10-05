@@ -31,7 +31,7 @@ def dispose_canvas(canvas):
 
 
 class ReviewToolbar(NavigationToolbar2Tk):
-    toolitems = tuple(item for item in NavigationToolbar2Tk.toolitems if item[0] != "Save")
+    toolitems = tuple((item[0], None, item[2], item[3]) for item in NavigationToolbar2Tk.toolitems if item[0] != "Save")
 
 
 class BaselineEditor:
@@ -49,6 +49,7 @@ class BaselineEditor:
         self.window.transient(app.root)
         self.window.grab_set()
         self.window.protocol("WM_DELETE_WINDOW", self.close)
+        self.hover = app.help_for(self.window)
         panel = ttk.Frame(self.window, padding=10)
         panel.pack(fill="both", expand=True)
         self.pass_var = tk.StringVar()
@@ -64,11 +65,13 @@ class BaselineEditor:
             values=[p["pass_id"] for p in record["result"]["passes"]])
         self.pass_box.pack(side="left", padx=8)
         self.pass_box.bind("<<ComboboxSelected>>", self.navigate)
+        self.hover.attach(self.pass_box, "baseline_scan")
         ttk.Label(header, text="View").pack(side="left", padx=(20, 0))
         self.view_box = ttk.Combobox(header, textvariable=self.view, state="readonly",
             values=("Uncentered", "Corrected"), width=16)
         self.view_box.pack(side="left", padx=8)
         self.view_box.bind("<<ComboboxSelected>>", lambda e: self.draw_new())
+        self.hover.attach(self.view_box, "baseline_view")
         ttk.Label(panel, textvariable=self.effective, wraplength=1000).pack(fill="x", pady=5)
         ttk.Label(panel, text="Drag the baseline or enter an offset. Centering uses the selected angular range.",
                   wraplength=1000).pack(fill="x")
@@ -77,11 +80,13 @@ class BaselineEditor:
         ttk.Label(controls, text="Offset from midrange (N m)").pack(side="left")
         self.entry = ttk.Entry(controls, textvariable=self.delta, width=28)
         self.entry.pack(side="left", padx=8)
+        self.hover.attach(self.entry, "baseline_delta")
         self.buttons = {}
         for name, command in (("Apply", self.apply), ("Cancel", self.cancel),
                               ("Reset", self.reset), ("Remove override", self.remove), ("Close", self.close)):
             self.buttons[name] = ttk.Button(controls, text=name, command=command)
             self.buttons[name].pack(side="left", padx=3)
+            self.hover.attach(self.buttons[name], "baseline_" + {"Remove override": "remove"}.get(name, name.lower()))
         ttk.Label(panel, textvariable=self.readouts, font=("Consolas", 10)).pack(fill="x", pady=3)
         ttk.Label(panel, textvariable=self.notice, foreground="#8b3517", wraplength=1000).pack(fill="x", pady=4)
         self.plot_area = ttk.Frame(panel)
@@ -143,6 +148,9 @@ class BaselineEditor:
         self.toolbar = ReviewToolbar(self.canvas, self.plot_area, pack_toolbar=False)
         self.toolbar.pack(side="bottom", fill="x")
         self.canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
+        self.hover.attach(self.canvas.get_tk_widget(), "baseline_plot")
+        for name, button in self.toolbar._buttons.items():
+            self.hover.attach(button, "baseline_" + name.lower())
         self.canvas.mpl_connect("button_press_event", self.press)
         self.canvas.mpl_connect("motion_notify_event", self.motion)
         self.canvas.mpl_connect("button_release_event", self.release)

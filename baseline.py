@@ -10,10 +10,9 @@ import platform
 import struct
 import sys
 import numpy as np
-from io_profiles import InputError
+from io_profiles import APP_VERSION, InputError
 
 SCHEMA_VERSION = 2
-APP_VERSION = "1.2"
 BINDING_FIELDS = (
     "input_sha256", "profile_id", "rotation", "pass_id", "pass_identity",
     "source_lines", "nominal_angles", "displayed_T_and_fields",

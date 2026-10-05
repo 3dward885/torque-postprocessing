@@ -1,0 +1,41 @@
+Torque Postprocessing v1.3 — manual update
+
+Active development folder:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\Codex Torque\torque-postprocessing
+
+Manual GitHub destination (not modified by this task):
+D:\OneDrive - Florida State University\FSU\Github\torque-postprocessing
+
+1. When convenient, close the older application yourself before replacing its
+   files. This update does not control or close your running application.
+2. Extract Torque_Postprocessing_v1.3_GitHub_update.zip to a temporary folder.
+   Copy the project files into your v1.2 GitHub checkout, preserving directories.
+   Review overlapping local edits before replacing files. PACKAGE_MANIFEST.json
+   lists delivered SHA-256 values and the actual pre-patch v1.2 baseline hashes.
+3. No removals are required. Keep .git, .venv, your raw research data, personal
+   settings, evidence and previous runs. They are absent from the update ZIP.
+   PACKAGE_MANIFEST.json describes the delivery and need not be committed.
+4. Launch with Launch_GUI.cmd or .\.venv\Scripts\python.exe app.py. The title
+   and --version output should say 1.3. No dependency installation is added.
+5. Review the changes in GitHub Desktop, then commit/push manually when ready.
+
+The separate source ZIP includes current source/tests/help and local scientific
+fixtures/evidence for replay. Do not copy its research data into GitHub by mistake.
+Its example paths are portable; update-ZIP examples use the verified local raw
+file in the renamed 20260928 Maglab Measurements - SCM6 directory.
+
+Six changes: clearer temperature labels; spaces/commas in GUI/CLI lists; accurate
+View selection; activity hidden at idle; one-second hover help; local Help/F1.
+Scientific values, angle-range behavior, numerical recipe and configuration
+schemas are unchanged. Existing integrity checks still apply to saved baselines.
+The deferred position correction in degrees is not implemented.
+
+Suggested GitHub commit summary:
+Release v1.3 usability improvements and local Help
+
+Suggested description:
+Clarify file and scan temperature settings and accept space/comma lists in the
+GUI and CLI. Synchronize plot views with valid results, hide idle activity, and
+add one-second hover help plus an expandable local Help guide. Preserve v1.2
+numerical output, angle-range selection and saved torque offsets. Add focused
+widget/replay tests and documentation. Sample-position correction stays deferred.

@@ -1,4 +1,4 @@
-# Torque Postprocessing 1.2
+# Torque Postprocessing 1.3
 
 Active checkout: this folder under
 `D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\Codex Torque\torque-postprocessing`.
@@ -30,11 +30,12 @@ Tk 8.6.12. Other platforms have not been tested.
 
 1. **Open data…** loads the raw DAT and shows a raw preview.
 2. In **Acquisition settings…**, enter the experimental temperature setpoints,
-   separated by commas. These are experiment settings, not values embedded in
+   separated by spaces, commas, or both. These are experiment settings, not values embedded in
    the program. Multiple scans can share a setpoint. A scan is assigned
    automatically only when all its temperatures match exactly one supplied
-   setpoint within the allowed deviation. Use a selected-scan setpoint to
-   resolve ambiguity. The current temperature deviation is 0.2 K; it is editable.
+   setpoint within the allowed deviation. Use **Override selected scan temperature (K)** to
+   resolve ambiguity for highlighted scans only. The general list is labelled
+   **Temperatures in this file (K)**. A blank override preserves saved assignments. The current temperature deviation is 0.2 K; it is editable.
 3. Optionally use **Angle range…**. Blank bounds retain all angles. Bounds such
    as 0 and 200 select the inclusive interval in the pipeline's nominal-angle
    coordinates. This interval applies to **background fitting, zero centering,
@@ -46,7 +47,9 @@ Tk 8.6.12. Other platforms have not been tested.
    Background coverage problems appear on the affected scans; other scans can
    still be reviewed. **Allow background extrapolation** is an explicit choice
    for the selected signal/background pair.
-5. **Center zero…** opens the selected signal scan. Drag the baseline or enter an
+   Subtraction also applies the saved automatic centering policy: midrange by
+   default, or mean when explicitly selected.
+5. Optionally, **Center zero…** opens the selected signal scan. Drag the baseline or enter an
    offset from its midrange. **Apply** saves that scan's adjustment; **Cancel**
    discards the draft; **Reset** creates a zero-offset draft requiring Apply;
    **Remove override** restores ordinary centering. Dirty drafts must be applied
@@ -66,7 +69,29 @@ Existing output files are never overwritten. Unresolved scans and stale active
 adjustments block saving; explicit exclusions are available in acquisition
 settings and recorded in the ledger.
 
-## What changed scientifically
+## Usability in v1.3
+
+**View** always identifies the displayed data. Unprocessed or invalidated scans
+show **Raw**. Processed views become available for the selected signal after
+subtraction; a stale manual baseline cannot be shown as a valid corrected result.
+The previous preferred view returns when valid. Viewing Raw never changes treated
+DAT output. The activity bar appears only during a task, without implying a
+percentage complete.
+
+Hover over a control for one second for brief help, including disabled actions.
+The explanation stays while the pointer is over the control or tooltip. Leaving,
+clicking, typing or pressing Esc dismisses it. **Help > User guide**, or **F1**
+from the main window/settings/zero editor, opens an expandable local topic tree
+with control descriptions, worked examples and troubleshooting.
+
+This release preserves the numerical method, angle-range behavior, configuration
+version 1.2 and baseline schema 2. The numerical implementation fingerprint is
+unchanged; accepted v1.2 example offsets replay without reacceptance in the tested
+environment. The existing source/data/environment checks still apply elsewhere.
+Sample-position offset correction, shifted endpoint rules and new angular
+rounding remain deferred. Torque zero adjustment in N m remains available.
+
+## Scientific method and v1.2 import correction
 
 The previous import failure came from selecting a reference on a fixed 1 K grid.
 For the user's 2.5 K setting, 2.49238 K differs by 0.00762 K and passes a 0.2 K
@@ -122,7 +147,10 @@ and extrapolation of the approximately 100 K background where needed.
 - `examples/Ho2sq3_manual_demo.json`: an automated software-test offset on P001,
   not a measured calibration or a recommended physical correction.
 
-These JSON files refer to the original local raw file. If you relocate it, change
+These JSON files refer to the verified local raw file under
+`20260928 Maglab Measurements - SCM6`. That directory was renamed; the
+269380-byte file still has SHA-256
+`04edb7daae1c04a4330cb49a2cd46de5111ee00c643cef8e6e510b1be258e04c`. If you relocate it, change
 the session's file path; its SHA-256 identity must still match. Reusable temperature
 values are saved as configuration data, not compiled into the processor.
 
@@ -134,7 +162,9 @@ values are saved as configuration data, not compiled into the processor.
 
 For another experiment, enter its own settings in the GUI and save them for
 replay. CLI `--setpoints`, `--temperature-tolerance` and `--angle-range MIN MAX`
-also accept explicit settings; `--allow-extrapolation P001` requires a deliberate
+also accept explicit settings. Quote a whitespace list as one argument, for
+example `--setpoints "7.375 13.625"`; these are illustrative values, not defaults.
+Comma/mixed lists use the same Decimal parser. No target grid is inferred; `--allow-extrapolation P001` requires a deliberate
 choice for the named scan. No treated reference is accessed during processing.
 
 Older configurations retain ordinary centering and recorded baseline choices.
@@ -145,45 +175,67 @@ molar outputs and archival packages remain unchanged.
 
 ## Validation
 
-Observed results are in `WORKFLOW_IMPLEMENTATION_REPORT_v1.2.txt` and
-`validation/import_workflow_v1.2/`.
+Current evidence: `USABILITY_IMPLEMENTATION_REPORT_v1.3.txt` and
+`validation/usability_v1.3/`. The actual pre-patch v1.2 files/settings/hashes and
+three representative outputs were saved before editing.
 
-- 37 unit/regression tests passed, including tolerance boundaries, arbitrary
-  noninteger setpoints, range selection, endpoint-artifact exclusion, independent
-  offsets, dirty edits, stale binding checks and output preservation.
-- All six frozen historical cases retain exact A–D values: 5405 case rows,
-  covering 3519 distinct reference rows and 4869 distinct raw rows.
-  Historical D reference counts remain 818/818, 938/938, 820/820, and previous
-  Rot1 mean 615/943, midrange 328/943, diagnostic choices 943/943.
-- Actual Tk widgets and Matplotlib mouse events passed with all windows
-  withdrawn. GUI/CLI DAT exports match byte for byte.
-- CLI replay passed with unrelated data/reference reads denied.
-- Arial Regular, embedded PDF fonts, 300-dpi PNG dimensions, scientific figure
-  styling and clipping checks passed; representative plot images were inspected.
-- Full-window visual inspection was not performed, to leave the desktop free.
+- 42 unit tests passed (37 existing plus 5 new).
+- Hidden real Tk checks passed for list entry/scope, all view states, busy/error
+  cleanup, hover timer/events/disabled controls, Help tree and modal access.
+- The complete hidden workflow passed: load, settings, process, manual zero,
+  save/load and byte-identical GUI/CLI export. Draft guards, drag/pan/zoom,
+  zero-delta, independent settings and nonaccumulation remain intact.
+- Three current example DATs are byte-identical to pre-patch v1.2; every saved
+  upstream binding remains identical. 196 protected files are unchanged.
+- Six historical cases retain exact A–D values across 5405 case rows, covering
+  3519 distinct reference rows and 4869 distinct raw rows. Reference D matches:
+  818/818, 938/938, 820/820, and previous Rot1 mean 615/943, midrange 328/943,
+  diagnostic choices 943/943. These differences are unchanged.
+- The new sample retains 1754 raw rows/34 scans: 1296 full-range signal rows and
+  458 background rows. The 0–200° example retains 1023 signal/368 background rows,
+  with 363 rows outside the interval recorded in the ledger.
+- Isolated CLI processing passed with unrelated data/reference reads denied.
+- Three Arial Regular PDF/300-dpi PNG pairs passed font embedding, size/style
+  and clipping checks. Background and corrected images were inspected offscreen.
+- Extracted source and v1.2+update copies replay all three examples exactly and
+  load Help in withdrawn windows from an unrelated working directory.
+- No full-window screenshot or visible desktop interaction was performed.
 
-Reproduce from this folder, using unused output directories:
+Reproduce from this folder; each output directory/filename must be unused:
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe tests\workflow_regression.py --raw "D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\20260928 Maglab Measurements\[Ho2sq3(OH2)8]\Crystal 1\Raw Data\Ho2sq3_Rot1_00001.dat" --output validation\replay_v12
-.\.venv\Scripts\python.exe tests\workflow_gui.py --raw "D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\20260928 Maglab Measurements\[Ho2sq3(OH2)8]\Crystal 1\Raw Data\Ho2sq3_Rot1_00001.dat" --output validation\replay_gui_v12
-.\.venv\Scripts\python.exe tests\workflow_isolation.py --session examples\Ho2sq3_manual_demo.json --output validation\replay_isolation_v12
+$raw = (Get-Content examples\Ho2sq3_0_to_200.json -Raw | ConvertFrom-Json).files[0].path
+if (-not [IO.Path]::IsPathRooted($raw)) { $raw = [IO.Path]::GetFullPath((Join-Path (Join-Path $PWD 'examples') $raw)) }
+.\.venv\Scripts\python.exe tests\usability_gui.py --raw "$raw" --output validation\replay_usability_v13
+.\.venv\Scripts\python.exe tests\workflow_gui.py --raw "$raw" --output validation\replay_workflow_v13
+.\.venv\Scripts\python.exe tests\workflow_regression.py --raw "$raw" --output validation\replay_regression_v13
+.\.venv\Scripts\python.exe tests\workflow_isolation.py --session examples\Ho2sq3_manual_demo.json --output validation\replay_isolation_v13
+.\.venv\Scripts\python.exe tests\usability_preservation.py --before validation\usability_v1.3\before.json --output validation\replay_preservation_v13.json
 .\.venv\Scripts\python.exe -m pip install -r requirements-validation.txt
-.\.venv\Scripts\python.exe tests\figures.py --session examples\Ho2sq3_0_to_200.json --output validation\replay_figures_v12
+.\.venv\Scripts\python.exe tests\figures.py --session examples\Ho2sq3_0_to_200.json --output validation\replay_figures_v13
 ```
 
-The GUI harness always withdraws its windows and uses no desktop input. The
-restricted execution sandbox could not initialize Tcl; the successful GUI checks
-ran outside that sandbox with windows still withdrawn. The existing bundled
-pypdf 6.10.0 was copied into this project's environment for PDF validation; no
-download was needed for this run.
+Both GUI harnesses withdraw all windows and use no desktop input. Hidden keyboard
+checks invoke the actual registered Tcl event callback because withdrawn windows
+cannot receive physical keyboard focus. These are widget/event tests, not a
+whole-window visual review. Tcl initialization failed inside the restricted
+sandbox; hidden GUI checks passed outside it. One isolated-run directory rename
+was denied in the sandbox; replay passed outside it with its audit guard intact.
+No dependency changes were required.
 
-The frozen historical regression requires local
-`evidence/Torque_Ho2thd4Pc_pipeline_comparison_v1.2/` and
-`validation/regression/<case>/`. Tests never overwrite those fixtures.
-Earlier standalone regression/GUI scripts and release reports describe v1.0/1.1;
-use the commands above for v1.2.
+The source archive includes the raw/historical fixtures for current regression
+checks. The GitHub update intentionally excludes research data and generated
+validation; keep those local. The preservation test additionally verifies the
+original absolute protected paths recorded in `before.json`. It is intended for
+the original workspace; use packaged hashes and regression/replay when relocated.
+Package verification (requires both ZIPs and the pre-patch snapshot):
+
+```powershell
+.\.venv\Scripts\python.exe tests\usability_package.py --archives . --output validation\replay_packages_v13
+```
+
+Older standalone scripts/reports describe their named historical versions.
 
 ## Limits
 
@@ -194,8 +246,12 @@ algorithm uniqueness and physical molar normalization remain unresolved scientif
 questions outside this torque-only release.
 
 This working tree is based on commit
-`b9517f489a35dcf3984ea48356fc3d12956e7c5c`; v1.2 changes are uncommitted.
+`b9517f489a35dcf3984ea48356fc3d12956e7c5c`; v1.2 and v1.3 working changes remain uncommitted in this active checkout.
 The project-state filename remains `Torque_GUI_project_state_v1.0.json` for
-continuity; its current version field is 1.2.
+continuity; its current version field is 1.3.
 
-Portable source/evidence archive: Torque_Postprocessing_v1.2_source.zip. Its example sessions point to the included raw fixture; the historical raw/reference files and frozen regression fixtures required by the current tests are included. The workspace continues to use the original raw-file location.
+Portable source/test/help archive: `Torque_Postprocessing_v1.3_source.zip`.
+Its example paths point to the included raw fixture. The separate
+`Torque_Postprocessing_v1.3_GitHub_update.zip` contains changed/new project files
+relative to the saved v1.2 working contents. Read `UPDATE_v1.3.txt` before copying.
+No files were copied into the GitHub checkout and no commit/push was performed.

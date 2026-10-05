@@ -1,0 +1,374 @@
+[
+  {
+    "id": "summary",
+    "title": "Overview",
+    "text": "Torque Postprocessing 1.3 treats angular torque measurements from supported DAT files.\n\nThe workflow is Open data → Subtract background → optional Center zero → Save treated data. Temperatures come from experimental settings or explicit metadata. Backgrounds come from the same file and experimental temperature, including backgrounds acquired afterward.\n\nThe supported instrument CSV has the documented 32-field header with 14–32 recorded fields. The documented four-column TSV uses K, Oe, degrees and N m. This is not a universal DAT importer.\n\nThe established method uses six-significant-digit Decimal torque inputs, an unweighted degree-six background fit, subtraction, then centering. The [0,200] scaling domain is a polynomial basis definition, not a restriction on the acquisition span. No smoothing, interpolation, molar conversion or sample-position correction is applied.\n\nTreated DAT contains K, T, degrees and N m. Original measured values remain in the ledger. This release changes usability; it keeps the numerical method and existing angle-range behavior."
+  },
+  {
+    "id": "workflow",
+    "title": "How to use the software",
+    "text": "1. Open data and select the file.\n\n2. Open Acquisition settings. Enter the experimental temperatures separated by spaces or commas. Check the allowed deviation. Use a selected-scan override only when needed.\n\n3. Optionally select Angle range, for example 0 and 200 degrees. Samples outside it will not influence the fit or centering.\n\n4. Check Background for each signal scan. Select a candidate explicitly when needed; use Allow background extrapolation only when you intend to evaluate outside its measured angular coverage. Click Apply background after changing that choice.\n\n5. Click Subtract background. This also applies automatic centering using the saved policy, midrange by default. Changing upstream settings requires this calculation again.\n\n6. Optionally select a processed signal and click Center zero. Drag the baseline or enter an offset in N m, then Apply. This step is not mandatory.\n\n7. Save treated data to a new DAT filename. Keep its .dat.details audit folder. Use File > Save settings for later GUI/CLI replay.\n\nOpen Help with F1, including from an acquisition or zero-adjustment dialog. Hover over controls for one second for a short explanation. Press Esc to dismiss a tooltip."
+  },
+  {
+    "id": "options",
+    "title": "What each option does",
+    "text": "Expand this section and select a control. Each description states its scope and effect. Hover help uses the same descriptions. File and Tools menu commands are included here.",
+    "children": [
+      {
+        "id": "open",
+        "title": "Open data",
+        "tip": "Load supported raw DAT files and inspect their scans. No treatment is applied yet.",
+        "text": "Open one or more supported DAT files. Import preserves measured values, original tokens, source rows and acquisition order. A raw preview is available before subtraction. Each loaded file has independent settings."
+      },
+      {
+        "id": "process",
+        "title": "Subtract background",
+        "tip": "Fit and subtract each selected background, then apply the saved zero-centering policy.",
+        "text": "Process all loaded files using their current settings. Actual retained background samples are fitted with an unweighted degree-six polynomial and evaluated at signal positions. The fit is subtracted, then ordinary centering or an accepted manual torque offset is applied. Midrange is the default for new work. Resolve reported scans before saving their file."
+      },
+      {
+        "id": "center_zero",
+        "title": "Center zero",
+        "tip": "Fine-tune one processed signal scan. Requires background subtraction; this step is optional.",
+        "text": "Select a processed signal scan, then open Center zero. Review a baseline from the cached background-subtracted data, drag it or enter an offset in N m, and click Apply. Opening the editor alone does not change saved data. A background scan or unprocessed signal cannot be centered here."
+      },
+      {
+        "id": "save_dat",
+        "title": "Save treated data",
+        "tip": "Save corrected torque as DAT. Requires all included scans to be processed and saved adjustments to be valid.",
+        "text": "Save four columns in acquisition order: temperature (K), magnetic field (T), sample position (deg), torque (N m). Background scans are not exported as signal. A matching .dat.details folder records settings, a raw snapshot, row ledger, provenance and hashes. Existing filenames are not overwritten. The selected plot view does not change the data saved."
+      },
+      {
+        "id": "files",
+        "title": "Raw-file list",
+        "tip": "Select a loaded file to inspect its scans, settings and processing status.",
+        "text": "Select a loaded file to inspect its scans, settings and processing status."
+      },
+      {
+        "id": "settings",
+        "title": "Acquisition settings",
+        "tip": "Enter experimental temperatures and settings for the file or selected scans.",
+        "text": "File-level settings include the temperature list, allowed deviations, angle range and ordinary centering. The Selected scans section applies explicit overrides only to the highlighted scans. Changing settings clears processed results; click Subtract background again."
+      },
+      {
+        "id": "range",
+        "title": "Angle range",
+        "tip": "Choose the inclusive nominal-angle interval used for fitting, centering and export.",
+        "text": "Enter both lower and upper bounds in degrees, or leave both blank to retain all positions. Actual signal and background samples outside the interval are excluded before background fitting and zero centering. No interpolation or invented endpoint values are used. Original measurements remain in the ledger."
+      },
+      {
+        "id": "scans",
+        "title": "Scan list",
+        "tip": "Select a scan; Ctrl/Shift selects several for acquisition overrides. Points shows retained/acquired counts.",
+        "text": "Each row is one acquired angular scan, not merely a temperature/field label. T shows the assigned experimental setpoint when resolved; B describes the field; Points shows retained/acquired counts. Background, signal and excluded roles are shown. Settings applied to selected scans do not propagate to other scans."
+      },
+      {
+        "id": "background",
+        "title": "Background selector",
+        "tip": "Choose a background from the same file and experimental temperature; then Apply background.",
+        "text": "The selector identifies candidate background scans and their retained angular coverage. A background acquired after a signal is supported. Multiple plausible backgrounds require an explicit choice. A label is descriptive; scan/source-row identity controls the association."
+      },
+      {
+        "id": "extrapolation",
+        "title": "Allow background extrapolation",
+        "tip": "Permit the fitted background outside its measured angular coverage for this signal/background pair.",
+        "text": "Normally, signal positions must lie within the selected background's support. Checking this option and clicking Apply background explicitly permits polynomial evaluation outside that support. These are model predictions beyond measured coverage, not additional measurements. Permission is recorded for the selected pair. Leave unchecked when coverage is sufficient."
+      },
+      {
+        "id": "apply_background",
+        "title": "Apply background",
+        "tip": "Save this scan's background and extrapolation choice; subtract again to calculate the result.",
+        "text": "Save this scan's background and extrapolation choice; subtract again to calculate the result."
+      },
+      {
+        "id": "view",
+        "title": "Plot view",
+        "tip": "Choose Raw, Corrected, Background fit or Processing steps. This changes the plot only.",
+        "text": "Raw: original measured torque versus measured position for retained samples.\n\nCorrected: background-subtracted and centered torque.\n\nBackground fit: retained background samples and degree-six fitted curve.\n\nProcessing steps: raw torque, evaluated background, subtracted torque and centered torque together.\n\nProcessed views require a processed signal. When results are unavailable, the selector and plot both show Raw. Processed views use the established nominal angle convention. Save treated data always writes corrected torque."
+      },
+      {
+        "id": "activity",
+        "title": "Activity bar",
+        "tip": "Animation indicates a running task, not a percentage completed. Hidden when idle.",
+        "text": "Animation indicates a running task, not a percentage completed. Hidden when idle."
+      },
+      {
+        "id": "save_settings",
+        "title": "Save settings",
+        "tip": "Save input-file locations and committed settings for later GUI or CLI replay.",
+        "text": "Use File > Save settings. Apply or Cancel any draft baseline first. This saves settings, not a substitute for the raw data. Keep the raw input available at its saved location; the file hash must still match. View and tooltip choices are not numerical settings."
+      },
+      {
+        "id": "load_settings",
+        "title": "Load settings",
+        "tip": "Load saved files and committed settings; subtract background to calculate results.",
+        "text": "Load saved files and committed settings; subtract background to calculate results."
+      },
+      {
+        "id": "remove_file",
+        "title": "Remove selected file",
+        "tip": "Remove this file from the current session. The file on disk is not deleted.",
+        "text": "Remove this file from the current session. The file on disk is not deleted."
+      },
+      {
+        "id": "close_app",
+        "title": "Close application",
+        "tip": "Close the application. Apply or Cancel a dirty zero-adjustment draft first.",
+        "text": "Close the application. Apply or Cancel a dirty zero-adjustment draft first."
+      },
+      {
+        "id": "figure_export",
+        "title": "Export figure",
+        "tip": "Save the selected processed view as PDF and 300-dpi PNG. Requires valid results and Arial.",
+        "text": "Use Tools > Export figure after processing. Choose Corrected, Background fit or Processing steps; the Raw view is not exported by this command. Select an unused output folder/name combination. Scientific figures use the established Arial Regular formatting. Figure export does not change treated DAT values."
+      },
+      {
+        "id": "details",
+        "title": "Processing details",
+        "tip": "Read settings, provenance, processing details and the resolved scientific-plot font.",
+        "text": "Read settings, provenance, processing details and the resolved scientific-plot font."
+      },
+      {
+        "id": "temperature_list",
+        "title": "Temperatures in this file (K)",
+        "tip": "Enter experimental setpoints separated by spaces or commas. Each scan needs a unique match.",
+        "text": "Separate values with spaces or commas, or a mixture of both. These values describe the experimental temperatures used throughout this file. They can be noninteger and nonuniform. Each scan is assigned only if all of its measured temperatures match exactly one supplied setpoint within the allowed deviation. Existing explicit scan overrides take precedence. A blank list does not invent targets; explicit acquisition metadata or per-scan assignments may supply them."
+      },
+      {
+        "id": "temperature_tolerance_K",
+        "title": "Allowed deviation (K)",
+        "tip": "Maximum absolute difference between each measurement and its assigned temperature setpoint.",
+        "text": "The check is |measured T - assigned T| ≤ allowed deviation in kelvin, including equality at the boundary. The current default is 0.2 K; the user may change it. This is an assignment/validation limit, not a measurement uncertainty. Measured values are preserved."
+      },
+      {
+        "id": "scan_temperature",
+        "title": "Override selected scan temperature (K)",
+        "tip": "Optional explicit temperature for selected scans only. Blank keeps current assignments.",
+        "text": "Use this field to resolve a missing/ambiguous assignment or replace a previous explicit setpoint for selected scans. The configured temperature tolerance still applies. Changing the general list does not erase explicit scan assignments. Leave blank to keep them."
+      },
+      {
+        "id": "scan_field",
+        "title": "Stable field setpoint (T)",
+        "tip": "Optional nominal field for selected stable-field scans, in tesla. Blank keeps the current policy.",
+        "text": "The raw field is recorded in Oe; the declared conversion is 10000 Oe = 1 T. An explicit stable-field target is checked against measured values using the configured allowed field deviation in Oe. Do not use one stable target to conceal a changing-field acquisition."
+      },
+      {
+        "id": "range_min",
+        "title": "Lower angle (deg)",
+        "tip": "Inclusive lower nominal-angle bound. Set both bounds, or leave both blank.",
+        "text": "The lower bound must be smaller than the upper bound. Selection applies to actual signal and background samples before fitting, centering, preview and export. It is not the plot zoom limit."
+      },
+      {
+        "id": "range_max",
+        "title": "Upper angle (deg)",
+        "tip": "Inclusive upper nominal-angle bound. Set both bounds, or leave both blank.",
+        "text": "The upper bound must be greater than the lower bound. Samples outside the interval remain in the ledger but do not influence the fit or zero baseline."
+      },
+      {
+        "id": "role",
+        "title": "Selected-scan role",
+        "tip": "Keep the current role, or explicitly assign selected scans as Signal or Background.",
+        "text": "A background must still satisfy the configured near-zero-field limit and background-matching requirements. Changing the role does not erase the measured field or bypass safeguards."
+      },
+      {
+        "id": "include",
+        "title": "Include or exclude scans",
+        "tip": "Keep the current selection, or include/exclude selected scans from processing.",
+        "text": "An explicit exclusion is recorded. It is not a way to silently save an incomplete acquisition. Background availability and required signal processing are checked before saving."
+      },
+      {
+        "id": "more_settings",
+        "title": "More acquisition settings",
+        "tip": "Expand or collapse coordinate, field, scan-boundary and ordinary-centering settings.",
+        "text": "Expand or collapse coordinate, field, scan-boundary and ordinary-centering settings."
+      },
+      {
+        "id": "angle_step_deg",
+        "title": "Angle step (deg)",
+        "tip": "Spacing of the nominal acquisition-angle grid. It does not resample data.",
+        "text": "Measured angles are validated against the nominal grid with the configured origin and deviation. Actual measured samples are retained; gaps are not filled. Keep a value consistent with the instrument acquisition."
+      },
+      {
+        "id": "angle_origin_deg",
+        "title": "Angle grid origin (deg)",
+        "tip": "Reference origin used to validate nominal acquisition angles; not a probe-offset correction.",
+        "text": "This existing setting defines the acquisition's nominal coordinate grid. It does not add a constant correction to raw positions. The separate probe-position correction is not available in this release."
+      },
+      {
+        "id": "angle_tolerance_deg",
+        "title": "Allowed angle deviation (deg)",
+        "tip": "Maximum absolute deviation of a measured position from its nominal acquisition angle.",
+        "text": "Maximum absolute deviation of a measured position from its nominal acquisition angle."
+      },
+      {
+        "id": "field_step_T",
+        "title": "Field grid step (T)",
+        "tip": "Nominal field-grid spacing in tesla used by the supported acquisition profile.",
+        "text": "This is a coordinate reference, not an averaging or resampling operation. Preserve the field convention appropriate to the input; original field tokens remain recorded."
+      },
+      {
+        "id": "stable_field_tolerance_Oe",
+        "title": "Allowed field deviation (Oe)",
+        "tip": "Maximum absolute difference from a stable-field reference, in Oe.",
+        "text": "This value is used for stable-field validation, including an explicit selected-scan field target. It is distinct from the near-zero background-classification limit."
+      },
+      {
+        "id": "background_threshold_Oe",
+        "title": "Near-zero field limit (Oe)",
+        "tip": "Maximum absolute measured field used to identify or validate a background scan.",
+        "text": "Near-zero classification does not overwrite the raw measured field. A candidate still needs a valid experimental temperature, sufficient distinct angles and an explicit selection if association is ambiguous."
+      },
+      {
+        "id": "scan_starts",
+        "title": "Scan starts (source row numbers)",
+        "tip": "Optional comma-separated physical source-row numbers to resolve ambiguous scan boundaries.",
+        "text": "Normally the importer detects acquired angular sweeps from ordered data. If boundaries are ambiguous, provide the actual first physical row of each scan in source order. Do not use this to reorder, duplicate or invent measurements."
+      },
+      {
+        "id": "ordinary_centering",
+        "title": "Ordinary centering",
+        "tip": "Midrange balances retained extrema; mean subtracts the retained-sample average.",
+        "text": "Midrange subtracts (minimum + maximum)/2 of the retained background-subtracted torque. Mean subtracts its arithmetic average. Existing saved choices are preserved. A valid accepted manual adjustment takes precedence for its scan. This sets a data-based zero, not an independent absolute torque calibration."
+      },
+      {
+        "id": "settings_apply",
+        "title": "Apply acquisition settings",
+        "tip": "Validate and save these settings, then subtract background again. No values are applied on Cancel.",
+        "text": "Validate and save these settings, then subtract background again. No values are applied on Cancel."
+      },
+      {
+        "id": "settings_cancel",
+        "title": "Cancel acquisition settings",
+        "tip": "Close this dialog and discard its uncommitted edits.",
+        "text": "Close this dialog and discard its uncommitted edits."
+      },
+      {
+        "id": "baseline_scan",
+        "title": "Zero editor: Scan",
+        "tip": "Choose a processed signal scan. Apply or Cancel a dirty draft before changing scans.",
+        "text": "Choose a processed signal scan. Apply or Cancel a dirty draft before changing scans."
+      },
+      {
+        "id": "baseline_view",
+        "title": "Zero editor: View",
+        "tip": "Uncentered shows the draggable baseline; Corrected shows the result with a fixed zero line.",
+        "text": "Uncentered shows the draggable baseline; Corrected shows the result with a fixed zero line."
+      },
+      {
+        "id": "baseline_delta",
+        "title": "Offset from midrange (N m)",
+        "tip": "Additional torque-baseline offset. Positive values move corrected torque downward.",
+        "text": "Let u be background-subtracted torque for all retained samples. The midrange is c_mid = (min(u)+max(u))/2. The accepted baseline is c_final = c_mid + delta, and treated torque is u - c_final. The offset is in N m, not degrees. The zoom window never determines centering."
+      },
+      {
+        "id": "baseline_apply",
+        "title": "Apply zero adjustment",
+        "tip": "Commit this scan's current baseline. Repeated Apply does not accumulate a shift.",
+        "text": "Commit this scan's current baseline. Repeated Apply does not accumulate a shift."
+      },
+      {
+        "id": "baseline_cancel",
+        "title": "Cancel zero-adjustment draft",
+        "tip": "Discard the current draft and return to its last committed state.",
+        "text": "Discard the current draft and return to its last committed state."
+      },
+      {
+        "id": "baseline_reset",
+        "title": "Reset zero-adjustment draft",
+        "tip": "Set the draft offset from midrange to zero. Apply is still required.",
+        "text": "Set the draft offset from midrange to zero. Apply is still required."
+      },
+      {
+        "id": "baseline_remove",
+        "title": "Remove override",
+        "tip": "Restore this scan's ordinary centering policy. Apply or Cancel dirty edits first.",
+        "text": "Restore this scan's ordinary centering policy. Apply or Cancel dirty edits first."
+      },
+      {
+        "id": "baseline_close",
+        "title": "Close zero editor",
+        "tip": "Close the editor; resolve any dirty draft with Apply or Cancel first.",
+        "text": "Close the editor; resolve any dirty draft with Apply or Cancel first."
+      },
+      {
+        "id": "baseline_plot",
+        "title": "Baseline plot and readouts",
+        "tip": "Drag the baseline in Uncentered view. Extrema and midrange use all retained samples.",
+        "text": "The editor works from immutable cached data and does not reread or refit while dragging. A higher baseline shifts corrected values downward. Corrected min/max and signed imbalance (max + min) describe the retained points. Axis limits remain stable while dragging."
+      },
+      {
+        "id": "baseline_home",
+        "title": "Plot: Home",
+        "tip": "Restore the initial plot limits. This does not change the selected data or zero baseline.",
+        "text": "Restore the initial plot limits. This does not change the selected data or zero baseline."
+      },
+      {
+        "id": "baseline_back",
+        "title": "Plot: Back",
+        "tip": "Return to the previous plot view without changing numerical processing.",
+        "text": "Return to the previous plot view without changing numerical processing."
+      },
+      {
+        "id": "baseline_forward",
+        "title": "Plot: Forward",
+        "tip": "Advance through plot-view history without changing numerical processing.",
+        "text": "Advance through plot-view history without changing numerical processing."
+      },
+      {
+        "id": "baseline_pan",
+        "title": "Plot: Pan",
+        "tip": "Move the plot view. Baseline dragging is disabled while pan mode is active.",
+        "text": "Move the plot view. Baseline dragging is disabled while pan mode is active."
+      },
+      {
+        "id": "baseline_zoom",
+        "title": "Plot: Zoom",
+        "tip": "Zoom the display. Baseline dragging is disabled in zoom mode; centering still uses all retained points.",
+        "text": "Zoom the display. Baseline dragging is disabled in zoom mode; centering still uses all retained points."
+      },
+      {
+        "id": "baseline_subplots",
+        "title": "Plot: Layout",
+        "tip": "Adjust the embedded plot layout. This does not change data or centering.",
+        "text": "Adjust the embedded plot layout. This does not change data or centering."
+      }
+    ]
+  },
+  {
+    "id": "examples",
+    "title": "Worked examples",
+    "text": "These examples explain settings; they are not built-in targets or calibration values.",
+    "children": [
+      {
+        "id": "example_temperatures",
+        "title": "Temperature entry and override",
+        "text": "A confirmed experiment may use:\n2.5 5 10 25 50 100 150 200 250\n\nThe equivalent comma-separated list is:\n2.5, 5, 10, 25, 50, 100, 150, 200, 250\n\nFor a user-provided 2.5 K target, a measured 2.49238 K differs by 0.00762 K, which is within an allowed deviation of 0.2 K. Comparing it to an unrelated 2 K reference would give 0.49238 K. Do not widen the tolerance to compensate for the wrong reference.\n\nIf a scan matches more than one supplied target, select that scan and enter its actual experimental value in Override selected scan temperature (K). Leave the override blank to keep existing explicit assignments. Other scans retain their own settings."
+      },
+      {
+        "id": "example_range",
+        "title": "Retain 0–200 degrees",
+        "text": "For an acquisition spanning about 250 to -5 degrees, enter Lower angle = 0 and Upper angle = 200. The inclusive nominal-angle interval is applied to actual signal and background samples before fitting, centering and export.\n\nExcluded endpoint artifacts cannot affect the background fit or retained-vector midrange. Gaps are not filled. Points shows retained/acquired counts. Changing the range invalidates processed results and any affected accepted baseline; subtract again and review a stale adjustment before saving."
+      },
+      {
+        "id": "example_coverage",
+        "title": "Background ends before the signal",
+        "text": "Suppose a signal reaches 250 degrees but its chosen background stops near 205 degrees. Background fitting alone does not supply measured coverage from 205 to 250 degrees.\n\nChoose a suitable background or explicitly allow background extrapolation and click Apply background. The extra evaluated values are predictions, not measurements. The choice is bound to the selected signal/background pair.\n\nIf both retained scans span 0–200 degrees, extrapolation is unnecessary. The user-confirmed Ho2sq3 example full-range settings already record the explicit permission for scans P022–P024."
+      },
+      {
+        "id": "example_zero",
+        "title": "Fine-tune torque zero",
+        "text": "After subtraction, the default midrange balances the sampled positive and negative extrema. Manual adjustment is optional.\n\nAs an illustrative software example, entering delta = 1e-9 N m raises the baseline by 1e-9 N m and lowers every corrected torque value by that amount. A negative delta moves values upward. This example is not an experimental calibration.\n\nApply commits only this scan. Cancel discards the draft. Reset makes a zero-delta draft that still needs Apply. Remove override returns to the ordinary policy. Changing the plot zoom does not change which retained samples determine the baseline."
+      },
+      {
+        "id": "example_replay",
+        "title": "Save settings and replay",
+        "text": "Use File > Save settings to save a JSON session after applying or cancelling baseline drafts. Later, load it and click Subtract background. Raw-file locations and hashes must match.\n\nFrom PowerShell in the project folder:\n.\\.venv\\Scripts\\python.exe app.py --session examples\\Ho2sq3_0_to_200.json\n\nHeadless replay to a new filename:\n.\\.venv\\Scripts\\python.exe cli.py process --session examples\\Ho2sq3_0_to_200.json --dat runs\\new_treated.dat\n\nFor a new input, quote a whitespace list as one CLI argument:\n--setpoints \"7.375 13.625\"\n\nThose two temperatures are illustrative software values. Use the experimental settings for your sample. A session replays committed settings; command-line overrides cannot silently change it."
+      }
+    ]
+  },
+  {
+    "id": "troubleshooting",
+    "title": "Troubleshooting",
+    "text": "Center zero is disabled: select a processed signal scan and wait for any running task. Background scans cannot be centered here.\n\nSave treated data is disabled: process the file and resolve included scans or stale active zero adjustments. Explicit exclusions are recorded; the application does not silently save a partial file.\n\nSettings changed: the old result is invalid. The preview returns to Raw; click Subtract background again.\n\nMissing/ambiguous temperature: enter the actual experimental targets or assign the selected scan explicitly. A measured value is not automatically an integer-K target.\n\nInvalid input: use finite numbers and the units shown. Temperature lists accept spaces or commas; scan-start row lists use commas. Duplicate temperature targets are rejected.\n\nInsufficient coverage or fit rank: choose an appropriate background or angle interval. At least seven distinct background angles and a finite valid fit are required. Extrapolation requires an explicit choice.\n\nStale accepted baseline: upstream data/settings or the numerical environment changed. Review and Apply a new setting, or remove the old adjustment. The program must not silently reuse it.\n\nOutput already exists: choose a new filename. Keep raw inputs, references and earlier runs unchanged.\n\nFont issue: Tools > Details reports the resolved font. Scientific figure export requires Arial Regular; a fallback preview does not count as a compliant export.\n\nMoving raw files: saved sessions contain paths. Reopen the data at its new location and use verified matching settings; do not bypass the raw-file hash check."
+  }
+]

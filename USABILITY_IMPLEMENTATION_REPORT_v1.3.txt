@@ -1,0 +1,129 @@
+Torque Postprocessing v1.3 — implementation and validation
+Execution prompt v1.1, dated 4 October 2026
+
+IMPLEMENTATION
+The existing Tkinter worker, Matplotlib canvases and shared GUI/CLI core are
+retained. One small Decimal-preserving list parser is shared by both entry points.
+A local help module and sibling JSON resource supply tooltips and a topic tree.
+The View selector follows actual per-scan results; stale adjustments cannot be
+shown as valid corrected data. The activity bar occupies reserved space but is
+hidden/reset while idle. Tooltips wait 1000 ms and remain until exit/interaction;
+Esc suppresses immediate reopening and does not close the underlying dialog.
+No dependency, recipe, coordinate or settings-schema change was needed.
+
+Application version: 1.3. Configuration version: 1.2. Baseline schema: 2.
+Base Git HEAD: b9517f489a35dcf3984ea48356fc3d12956e7c5c.
+The pre-patch contents already contained uncommitted v1.2 implementation.
+Snapshot: validation/usability_v1.3/before/source (61 files), before.json,
+before/results, before_unit_tests.txt. Nothing was reset to the older Git HEAD.
+
+OBSERVED GATES
+A PASS — temperature labels/scopes, comma/space/mixed entry, Decimal tokens,
+         arbitrary nonuniform values, invalid/duplicate rejection, save/load/CLI.
+B PASS — Raw/processed selector, axis labels and arrays agree across import,
+         settings invalidation, file/scan/background switches, partial errors,
+         failures and reprocessing. Raw versus Corrected exports are identical.
+C PASS — idle hiding; real task animation; stable toolbar; completion, worker
+         error, submission failure and shutdown cleanup.
+D PASS — real withdrawn Tk events verify hover delay/cancellation, disabled
+         controls, persistent reading, pointer transfer, Esc suppression, modal
+         Help access, topic selection/expand/collapse, resources and cleanup.
+E PASS — hidden load/settings/process/zero/save/load/export; GUI/CLI bytes agree.
+         Dirty edits, sign, zero-delta, reset/remove, pan/zoom, independent offsets
+         and nonaccumulation retain passing coverage.
+F PASS — three v1.2 DATs byte-identical, all saved
+         bindings identical, 196 protected files unchanged, historical regression,
+         reference-isolated replay, torque-only output and plotting checks.
+         Extracted full source and v1.2+update overlay each replay all three
+         example DATs exactly and launch withdrawn App/Help from unrelated CWD.
+         CRC/member hashes pass. Preflight is included as package_preflight.json;
+         final archive checks are in validation/usability_v1.3/package_checks_final.json
+         and the per-ZIP verification records.
+
+42 unit tests passed: 37 existing + 5 new. Usability harness: 7 grouped checks.
+Workflow harness: 8 grouped checks. These are actual current executions, not
+inherited PASS claims. Intermediate attempt logs are retained separately.
+
+NUMERICAL EVIDENCE
+Six historical cases: 5405 case rows exactly preserve A-D, covering 3519 distinct
+reference rows and 4869 distinct raw rows. D reference equality/max error in N m:
+  Ho2thd4Pc Rot1 midrange      818/818      0
+  Ho2thd4Pc Rot2 midrange      938/938      0
+  Previous Rot2 midrange       820/820      0
+  Previous Rot1 mean           615/943      3.010934E-7
+  Previous Rot1 midrange       328/943      3.242307E-7
+  Previous Rot1 diagnostic     943/943      0
+The last case uses historical reference-selected choices, not a production rule.
+
+Ho2sq3: 1754 raw rows, 34 scans, 458 background rows, 1296 full-range signal rows.
+0-200 degrees: 1023 signal rows, 368 background rows, 363 outside the interval.
+Same confirmed setpoints/backgrounds; full-range extrapolation remains bound only
+to P022-P024. No new permission was inferred. No treated reference exists for
+this sample; exact comparison here is to the saved v1.2 software output.
+
+The three example settings (full range, 0-200, manual-demo) reproduce pre-patch
+DAT bytes exactly. The manual demo is a software test, not physical calibration.
+All upstream bindings remain identical. The numerical implementation hash is:
+ce5bcc72bf3fe23873d78b1b4c0e487e14da54cbbc909976c065556bb4e96d7a
+pipeline.py, plots.py and storage.py are byte-identical to pre-patch v1.2.
+Old accepted example offsets required no reacceptance in this environment.
+No saved digest was rewritten or integrity check disabled.
+
+RAW LOCATION AND PRESERVATION
+The originally cited directory had been renamed to:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\20260928 Maglab Measurements - SCM6\[Ho2sq3(OH2)8]\Crystal 1\Raw Data\Ho2sq3_Rot1_00001.dat
+269380 bytes; SHA-256:
+04edb7daae1c04a4330cb49a2cd46de5111ee00c643cef8e6e510b1be258e04c
+Current example sessions use the verified absolute raw path so they also work
+from the separate GitHub checkout. Source ZIP examples are rebased to its fixture.
+The measurements were unchanged.
+196 protected raw/archive/evidence/prompt files retain their pre-patch hashes.
+The exact revised execution prompt remains Torque_GUI_v1.3_execution_prompt_v1.1.txt:
+c1d4375b4899d4437b2bb95c5e5ae427179b4b1996876ddab8cdcb15ab9c69ea
+
+ENVIRONMENT AND LIMITS
+Windows 11 build 26300, Python 3.12.14, NumPy 2.3.5, Matplotlib 3.10.8,
+Tk 8.6.12; existing pypdf 6.10.0 used for validation. Other platforms untested.
+Restricted sandbox Tcl initialization failed; actual hidden GUI tests passed
+outside it. A sandbox directory rename denied the first isolated-run export;
+the rerun outside the sandbox passed with the Python reference-read guard intact.
+An initial GUI check found the long temperature Help topic omitted separator
+syntax; the text was corrected and the full usability harness passed afterward. Package extraction then exposed
+relative example paths that would fail after relocation; current local examples
+were changed to the verified absolute path. Accepted numerical records are intact.
+
+All test windows were withdrawn. No desktop input, pointer movement, screen
+capture or control of the running user application occurred. Keyboard dismissal
+uses the actual Tcl-bound event callback because unmapped windows cannot receive
+physical keyboard focus. Whole-window visual inspection was not performed.
+Three scientific PDF/300-dpi PNG pairs passed embedded Arial/style/clipping checks.
+The background and corrected plot images were inspected offscreen. These are
+rendered plot canvases, not screenshots of the application window.
+
+DELIVERY AND REPLAY
+Representative output: runs/Ho2sq3_0_to_200_v1.3.dat and matching .dat.details.
+DAT SHA-256: 2d0f22218227867748586e43a9521fc77eecf2a6c0c716554631b0331a5a7212
+Replay settings: examples/Ho2sq3_0_to_200.json (existing confirmed choices).
+Source/tests/help/fixtures: Torque_Postprocessing_v1.3_source.zip.
+Changed/new project files: Torque_Postprocessing_v1.3_GitHub_update.zip.
+Update compares the actual v1.2 snapshot, not only Git HEAD. No removals required.
+See UPDATE_v1.3.txt, README.md and PACKAGE_MANIFEST.json inside each archive.
+The update excludes .git/.venv/caches/personal sessions/raw research/evidence/runs.
+The source ZIP includes required raw/historical fixtures; current example paths
+are rebased there only. Older releases and archived research were preserved.
+
+Tested entry points (PowerShell in the project folder):
+  .\.venv\Scripts\python.exe app.py --version
+  .\.venv\Scripts\python.exe cli.py --version
+  .\.venv\Scripts\python.exe -m unittest discover -s tests -v
+  .\.venv\Scripts\python.exe cli.py process --session examples\Ho2sq3_0_to_200.json --dat runs\Ho2sq3_0_to_200_v1.3.dat
+The last filename now exists; use a new one for another replay.
+Interactive launch: .\.venv\Scripts\python.exe app.py --session examples\Ho2sq3_0_to_200.json
+Launch and session processing were tested through the same App class in withdrawn
+windows, not by opening the foreground CLI launch. Full reproducible test commands
+are in README.md; all output directories must be new.
+
+Sample-position correction, endpoint retention after a shift and new angular
+rounding remain deferred. Physical absolute torque calibration, historical
+algorithm uniqueness and the previous-Rot1 autonomous selector remain outside
+this usability release. No commit/push or write to the GitHub checkout occurred.

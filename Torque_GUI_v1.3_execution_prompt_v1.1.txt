@@ -1,0 +1,291 @@
+TORQUE POSTPROCESSING v1.3 — USABILITY UPDATE
+Execution prompt v1.1 | 4 October 2026
+
+TASK AND SCOPE
+
+Implement and validate the six usability changes below in the existing desktop
+application, and deliver Torque Postprocessing v1.3. Deliver working code,
+focused validation, documentation and local update archives.
+
+This prompt supersedes Torque_GUI_v1.3_execution_prompt_v1.0.txt. The user has
+DEFERRED sample-position offset correction. Do not implement its checkbox,
+Add/Subtract controls, angle shifts, endpoint-retention changes, new angular
+rounding, configuration fields or CLI options. Keep the existing angle-range
+selection and coordinate conventions unchanged. The deferred feature and its
+unresolved endpoint/rounding questions remain future work.
+
+The existing manual TORQUE zero adjustment in N m remains supported. It is
+distinct from the deferred sample-position correction in degrees.
+
+Use one agent and minimal maintainable Python. Reuse Tkinter/ttk, Matplotlib,
+the shared GUI/CLI processing core and existing configuration/provenance.
+Briefly explain the integration, then implement without routine confirmation.
+Keep the main workflow: Open data → Subtract background → optional Center zero
+→ Save treated data. Avoid unrelated redesign, refactoring or dependency changes.
+
+Run tests in the background with withdrawn Tk windows and programmatic events.
+Do not open foreground windows, move the pointer, send desktop keystrokes,
+capture the user's desktop, or close/control the running application.
+Do not commit, push, deploy, publish or rerun scientific model discovery.
+The user will copy the update and commit/push manually through GitHub Desktop.
+
+1. INSPECT AND PRESERVE THE CURRENT APPLICATION
+
+Active repository:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\Codex Torque\torque-postprocessing
+
+Read applicable AGENTS.md, README.md, Torque_GUI_project_state_v1.0.json
+(including pending_next_patch and deferred work), CHANGELOG.txt, relevant source
+and tests. Inspect actual Git status, HEAD and environment. Preserve user edits.
+
+At prompt preparation, this checkout contains working v1.2 changes on base:
+b9517f489a35dcf3984ea48356fc3d12956e7c5c
+Do not reset to that commit; it predates the current implementation.
+
+The user separately reported updating the GitHub checkout:
+D:\OneDrive - Florida State University\FSU\Github\torque-postprocessing
+Treat it as a manual delivery destination, not the active working copy. Recheck
+its state read-only if needed for packaging; do not write there.
+
+Capture the relevant current v1.2 source, settings, hashes and representative
+outputs in a new validation directory before editing. Reuse existing evidence
+and focused helpers without overwriting prior results or archived packages.
+
+Relevant integration points to inspect:
+- app.py: AcquisitionDialog, view selection, task worker and activity bar.
+- cli.py: temperature-list entry and headless replay.
+- plots.py: raw versus processed views.
+- baseline.py / baseline_editor.py: manual zero adjustment and bound settings.
+- io_profiles.py, pipeline.py and storage.py: numerical/configuration contracts;
+  avoid changing them merely to implement UI behavior.
+- tests/test_workflow.py, tests/workflow_gui.py, tests/workflow_regression.py,
+  tests/workflow_isolation.py and existing unit tests.
+- WORKFLOW_IMPLEMENTATION_REPORT_v1.2.txt and validation/import_workflow_v1.2/.
+
+2. IMPLEMENT THESE SIX CHANGES
+
+A. Clarify the two temperature fields
+
+Rename:
+  Temperature setpoints (K) → Temperatures in this file (K)
+  Temperature setpoint (K) → Override selected scan temperature (K)
+
+The general list supplies experimental temperatures for the file. Each scan
+must match exactly one supplied temperature within the configured deviation,
+unless it has an explicit selected-scan assignment.
+The override applies only to the selected scan(s); a blank override preserves
+existing explicit assignments. Keep units, precedence, save/load and matching
+behavior unchanged. Explain the two scopes briefly in help.
+
+B. Accept spaces and commas in temperature lists
+
+Use one small shared GUI/CLI parser for whitespace-separated, comma-separated
+and mixed lists. These inputs must produce equivalent settings:
+  2.5 5 10 25 50 100 150 200 250
+  2.5, 5, 10, 25, 50, 100, 150, 200, 250
+
+Support arbitrary finite noninteger values and retain Decimal token semantics.
+Keep existing malformed/nonfinite/duplicate-value checks and missing/ambiguous
+assignment handling. Preserve the existing list representation in saved settings.
+Add a short input hint, such as “Separate values with spaces or commas”.
+Document quoting for whitespace lists in the CLI.
+
+Do not hardcode experimental targets, infer a temperature grid, widen tolerances
+or alter the inclusive absolute-deviation comparison. The example temperatures
+are user-provided experiment settings, not production defaults.
+
+C. Synchronize the View selector with the actual plot
+
+Fix the state in which View says Corrected while the graph shows raw torque
+because processing has not run or settings have invalidated the result.
+
+Whenever raw measurements are plotted, show Raw in the selector. Only make a
+processed view available when the selected scan has a valid corresponding result.
+Handle initial import, signal/background selection, file/scan switching,
+settings changes, partial processing, failures and successful reprocessing.
+Retain the selected view when it remains valid; otherwise use an honest fallback.
+
+Changing View must only change visualization. Save treated data must continue
+to export committed corrected torque regardless of the displayed view.
+Preserve invalidation/export safeguards and avoid displaying stale previews.
+
+D. Hide the activity bar when idle
+
+Start with the activity bar hidden. Show and animate it only while an existing
+background task is running, including loading, processing and saving.
+Stop/reset and hide it on completion or failure, and on cancellation if already
+supported. Avoid toolbar movement and lingering animation callbacks on closure.
+
+Retain useful status text. The bar indicates activity, not a percentage complete.
+Do not introduce a fabricated completion estimate or a new task framework.
+
+E. Add brief hover help after 1 second
+
+Show contextual help after 1000 ms over a control or its labelled option area.
+The accepted 1-second delay replaces the earlier 5-second proposal.
+
+Keep help visible while the pointer remains over its control or the tooltip,
+without an automatic reading timeout. Dismiss when the pointer leaves both,
+on Esc, on interaction or when the containing window closes.
+Esc must not immediately reopen the tooltip under a stationary pointer or also
+close the parent dialog. Cancel pending timers when targets disappear.
+
+Do not take focus, modify settings or obstruct normal interaction. Use Tk event
+scheduling, not blocking sleeps. Cover exposed controls in the main window,
+acquisition settings including expanded controls, background/extrapolation,
+plot views and manual zero adjustment. Include disabled actions and explain
+what enables them. Menus must have equivalent explanations in Help.
+
+Explain purpose, units, scope and accepted input syntax where relevant. Keep
+tooltips short, with detailed instructions/examples in Help. Help must also be
+accessible without hovering.
+
+F. Add Help alongside File and Tools
+
+Provide a local help viewer with an expandable/collapsible topic tree and
+readable text, using existing Tk widgets. No web service or browser dependency.
+
+Include:
+- Summary: supported input layouts, processing method, units and output files.
+- Workflow: import, acquisition settings, angle limits, background selection/
+  subtraction, automatic centering, optional manual zero adjustment, and saving.
+- Option reference: all exposed controls, both temperature fields, deviations,
+  selected-scan settings, role/inclusion choices, advanced acquisition settings,
+  background extrapolation, views, zero adjustment, settings and figure export.
+- Concrete examples: space/comma temperature entry; explicit scan override;
+  2.49238 K versus a user-provided 2.5 K target with 0.2 K deviation; retaining
+  0–200 degrees from a wider acquisition; signal extending to 250 degrees with
+  background ending near 205 degrees; manual torque-offset sign and
+  Apply/Cancel/Reset/Remove; settings save/load and CLI replay.
+- Troubleshooting: disabled Center zero/Save, reprocessing after settings
+  changes, missing/ambiguous conditions, coverage, invalid inputs, stale
+  accepted baselines and existing output filenames.
+
+Explain that Subtract background also applies the selected ordinary centering
+policy (midrange by default), while Center zero is optional fine-tuning.
+Do not imply that midrange establishes independently calibrated absolute torque.
+
+Use clear scientific language and distinguish measurements, fitted predictions
+and user settings. Do not describe deferred position correction as available.
+Reuse control descriptions between tooltips and Help where practical.
+Load help resources relative to the application, not the current shell folder,
+and include them in release/update archives.
+
+3. KEEP SCIENTIFIC PROCESSING AND SAVED SETTINGS COMPATIBLE
+
+This is a usability release. Preserve the existing:
+- Raw input formats, source tokens, acquisition order, scan identities, measured/
+  nominal coordinate distinction and temperature/field/angle validation.
+- Inclusive nominal-angle selection before background fitting, centering,
+  preview and export, with all original rows retained in the ledger.
+- Same-file/rotation and experimental-temperature background associations,
+  including backgrounds acquired afterward and explicit extrapolation choices.
+- Six-significant-digit Decimal torque quantization; unweighted degree-six
+  background polynomial with the existing [0,200] scaled basis; evaluation at
+  actual retained nominal signal positions; subtraction; centering once;
+  binary64 .8g serialization. No intermediate rounding or numerical retuning.
+- Four-column DAT: temperature (K), field (T), position (deg), torque (N m).
+  No molar conversion, angle shifts, resampling, smoothing or fabricated points.
+- Ordinary mean/midrange policies, immutable baseline cache, per-scan
+  Apply/Cancel/Reset/Remove, dirty-edit protections, no accumulated offsets,
+  constant-data handling, full retained-vector centering and pan/zoom behavior.
+- Lossless accepted torque offsets, source/settings bindings and recomputed-u
+  digest checks; GUI/CLI processing parity; atomic writes and collision protection.
+- Arial Regular, existing scientific figure sizes/styles/units and dynamic bounds.
+
+Keep help, view selection and activity state out of numerical fingerprints.
+Prefer UI/parser utility changes that do not disturb numerical source identity.
+Do not forge acceptance, rewrite saved digests or weaken integrity checks to make
+old baselines pass. If an existing version/source/environment safeguard requires
+reacceptance, establish and report the exact reason rather than silently applying
+a stale setting.
+
+Update application/version reporting to 1.3. Keep configuration and numerical
+recipe versions unchanged unless a real schema change requires migration.
+Do not globally replace 1.2 in historical recipe IDs, archive names or reports.
+Old configurations must remain readable; avoid unnecessary schema changes.
+
+4. VALIDATE IN THE BACKGROUND
+
+Run the current unit suite and focused regression/replay/GUI checks. Add tests
+that verify the six changes; do not add tests that merely mirror their code.
+Keep all new outputs separate from immutable fixtures and previous validation.
+
+Required gates:
+A. Temperature entry: comma/space/mixed lists agree through GUI, save/load and
+   CLI; noninteger/nonuniform values work; existing validation remains effective;
+   overrides affect only selected scans with unchanged precedence.
+B. View state: dropdown, labels and plotted data agree before/after processing,
+   when settings invalidate results, during partial/failing runs, and across
+   signal/background/file/scan selection. DAT output is independent of View.
+C. Activity state: hidden initially/when idle, animated while busy, hidden after
+   success/error, and cleaned up on closure.
+D. Hover/Help: actual withdrawn Tk widgets/events verify the 1000 ms timer,
+   cancellation, pointer transfer to the tooltip, persistent reading, Esc,
+   disabled controls, cleanup, Help menu/tree navigation and resource loading.
+E. Workflow/replay: load → settings → process → manual zero → settings save/load
+   → DAT save; GUI and CLI output agree for the same committed settings.
+   Preserve baseline sign, zero-delta, dirty-edit and nonaccumulation behavior.
+F. Regression/preservation: exact v1.2 numerical DAT output and row accounting,
+   raw/archive hashes unchanged, reference-isolated processing, torque-only
+   exports, unchanged plotting conventions, and extracted-package replay.
+
+Reuse existing reference comparisons; do not rerun discovery or archival mains
+that overwrite evidence, and do not disable frozen hash guards.
+Use offscreen rendering where available, without desktop capture. Report a
+precise blocked check if hidden GUI initialization or rendering is unavailable.
+Distinguish widget/event testing from whole-window visual inspection. Do not
+claim current PASS results merely from an older report.
+
+Existing raw fixture:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\20260928 Maglab Measurements\[Ho2sq3(OH2)8]\Crystal 1\Raw Data\Ho2sq3_Rot1_00001.dat
+Bytes: 269380
+SHA-256: 04edb7daae1c04a4330cb49a2cd46de5111ee00c643cef8e6e510b1be258e04c
+
+Reuse examples/Ho2sq3_full_range.json and examples/Ho2sq3_0_to_200.json.
+The user already confirmed their temperature setpoints, nine backgrounds and
+full-range extrapolation for P022–P024. Do not request the same confirmation again
+or silently extend coverage permissions.
+
+Earlier observed accounting, to preserve and verify:
+- 1754 raw rows, 34 scans.
+- 458 background rows, 1296 full-range signal rows.
+- 0–200 degrees: 1023 signal rows, 368 background rows, 363 outside the interval.
+- Six historical A–D regression cases: 5405 case rows, covering 3519 distinct
+  reference rows and 4869 distinct raw rows.
+- Earlier unit suite: 37 passing tests; report the actual new test count.
+
+No independent treated reference exists for Ho2sq3. Historical reference-selected
+centering remains diagnostic evidence, not a production selector.
+
+5. DELIVER v1.3 AND STOP
+
+Update README.md, README.txt if needed, CHANGELOG.txt and the existing compact
+project state with implemented behavior, setup/launch/replay/test commands,
+observed results and limitations. Keep deferred position correction out of the
+completed scope. Mark the six items complete only when their required work passes.
+
+Provide:
+- Working v1.3 source, focused tests, Help resources and GUI/CLI entry points.
+- Representative treated DAT and replay settings using established decisions.
+- A concise implementation/validation report with observed PASS/FAIL/BLOCKED
+  gates, runtime/platform, hashes, output locations and any actual limitation.
+- Available offscreen evidence, labelled according to what was inspected.
+- This revised execution prompt and a v1.3 source/test/help ZIP, preserving all
+  earlier releases and including required resources/fixtures or precise immutable
+  fixture paths and hashes for reproducibility.
+- A separate v1.3 GitHub-update ZIP containing changed/new project files needed
+  to update v1.2, preserving paths. Include source, Help resources, docs and tests.
+  Exclude .git, .venv, caches, personal sessions, raw research files and generated
+  evidence/runs. List any genuinely required removals explicitly.
+
+Build the update against the actual pre-patch v1.2 working contents, not just
+the older Git HEAD. Verify archive contents/hashes and replay from an extracted
+copy, including Help-resource loading. Do not copy into the GitHub folder,
+commit or push.
+
+Finish with a brief change summary, exact tested launch/replay/test commands,
+compact observed gate results, absolute links to actual deliverables, any specific
+remaining limitation, and a suggested GitHub commit summary/description.
+Then stop.
+

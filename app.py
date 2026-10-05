@@ -9,7 +9,9 @@ import queue
 import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from io_profiles import InputError, read_raw, configure_acquisition, profile_from
+from io_profiles import APP_VERSION, InputError, read_raw, configure_acquisition, profile_from
+from input_fields import temperature_list
+from ui_help import HoverHelp, HelpWindow, help_tip
 from pipeline import (default_config, select_background, refinalize, support_permission,
                       validate_config)
 from baseline import empty_review
@@ -35,7 +37,7 @@ configure_tk()
 class App:
     def __init__(self, root):
         self.root = root
-        root.title("Torque Postprocessing 1.2")
+        root.title(f"Torque Postprocessing {APP_VERSION}")
         root.geometry("1220x780")
         root.minsize(1000, 660)
         self.records, self.counter = {}, 0
@@ -48,16 +50,33 @@ class App:
         self.status = tk.StringVar(value="Open a raw DAT file.")
         self.details = tk.StringVar()
         self.range_label = tk.StringVar(value="All angles")
-        self.view = tk.StringVar(value="Corrected")
+        self.view = tk.StringVar(value="Raw")
+        self.view_preference = "Corrected"
         self.background = tk.StringVar()
         self.extrapolate = tk.BooleanVar(value=False)
         self.buttons = {}
+        self.help_window = None
+        self.hover = self.help_for(root)
         self.build_ui()
         root.protocol("WM_DELETE_WINDOW", self.close)
         root.bind("<Control-o>", lambda e: self.add_files())
         root.bind("<Control-s>", lambda e: self.export_all())
         root.bind("<F5>", lambda e: self.process_all())
-        root.after(40, self.poll)
+        self.poll_id = root.after(40, self.poll)
+
+    def help_for(self, window):
+        window.hover_help = HoverHelp(window)
+        window.bind("<F1>", lambda event: self.show_help(window))
+        return window.hover_help
+
+    def show_help(self, parent=None):
+        parent = parent or self.root
+        self.hover.dismiss()
+        if hasattr(parent, "hover_help"):
+            parent.hover_help.dismiss()
+        if self.help_window and self.help_window.window.winfo_exists():
+            self.help_window.close()
+        self.help_window = HelpWindow(parent)
 
     def build_ui(self):
         style = ttk.Style()
@@ -76,6 +95,9 @@ class App:
                               ("Details…", self.show_details)]:
             tools_menu.add_command(label=label, command=action)
         menu.add_cascade(label="Tools", menu=tools_menu)
+        help_menu = tk.Menu(menu, tearoff=False)
+        help_menu.add_command(label="User guide", accelerator="F1", command=self.show_help)
+        menu.add_cascade(label="Help", menu=help_menu, underline=0)
         self.root.config(menu=menu)
         outer = ttk.Frame(self.root, padding=10)
         outer.pack(fill="both", expand=True)
@@ -86,18 +108,25 @@ class App:
             button = ttk.Button(toolbar, text=label, command=command)
             button.pack(side="left", padx=(0, 8))
             self.buttons[label] = button
-        self.progress = ttk.Progressbar(toolbar, mode="indeterminate", length=70)
-        self.progress.pack(side="right")
+            key = {"Open data…": "open", "Subtract background": "process", "Center zero…": "center_zero",
+                   "Save treated data…": "save_dat"}[label]
+            self.hover.attach(button, key, text=lambda key=key: ("A task is running; wait for it to finish. " if self.busy else "") + help_tip(key))
+        slot = ttk.Frame(toolbar, width=70, height=24)
+        slot.pack(side="right")
+        slot.pack_propagate(False)
+        self.progress = ttk.Progressbar(slot, mode="indeterminate", length=70)
+        self.hover.attach(self.progress, "activity")
         self.files = ttk.Treeview(outer, columns=("name", "state"), show="headings", height=2)
         for key, title, width in [("name", "Raw file", 380), ("state", "Status", 700)]:
             self.files.heading(key, text=title)
             self.files.column(key, width=width)
         self.files.pack(fill="x", pady=8)
         self.files.bind("<<TreeviewSelect>>", self.refresh_selected)
+        self.hover.attach(self.files, "files")
         settings = ttk.Frame(outer)
         settings.pack(fill="x", pady=(0, 8))
-        ttk.Button(settings, text="Acquisition settings…", command=self.file_settings).pack(side="left")
-        ttk.Button(settings, text="Angle range…", command=self.range_settings).pack(side="left", padx=8)
+        self.hover.attach(ttk.Button(settings, text="Acquisition settings…", command=self.file_settings), "settings").pack(side="left")
+        self.hover.attach(ttk.Button(settings, text="Angle range…", command=self.range_settings), "range").pack(side="left", padx=8)
         ttk.Label(settings, textvariable=self.range_label).pack(side="left")
         panes = ttk.Panedwindow(outer, orient="horizontal")
         panes.pack(fill="both", expand=True)
@@ -116,23 +145,26 @@ class App:
         scroll.pack(side="right", fill="y")
         self.passes.pack(fill="both", expand=True)
         self.passes.bind("<<TreeviewSelect>>", self.select_pass)
+        self.hover.attach(self.passes, "scans")
         association = ttk.Frame(left, padding=(0, 8))
         association.pack(fill="x")
         ttk.Label(association, text="Background").pack(anchor="w")
         self.background_box = ttk.Combobox(association, textvariable=self.background, state="readonly")
         self.background_box.pack(fill="x", pady=3)
+        self.hover.attach(self.background_box, "background")
         self.extrapolation_check = ttk.Checkbutton(association, text="Allow background extrapolation",
                                                  variable=self.extrapolate)
         self.extrapolation_check.pack(anchor="w")
-        ttk.Button(association, text="Apply background", command=self.apply_background).pack(anchor="e", pady=3)
+        self.hover.attach(self.extrapolation_check, "extrapolation")
+        self.hover.attach(ttk.Button(association, text="Apply background", command=self.apply_background), "apply_background").pack(anchor="e", pady=3)
         ttk.Label(left, textvariable=self.details, wraplength=420).pack(fill="x", pady=6)
         controls = ttk.Frame(right)
         controls.pack(fill="x", padx=10)
         ttk.Label(controls, text="View").pack(side="left")
-        box = ttk.Combobox(controls, textvariable=self.view, state="readonly", width=20,
-                          values=("Corrected", "Background fit", "Processing steps", "Raw"))
-        box.pack(side="left", padx=6)
-        box.bind("<<ComboboxSelected>>", self.select_pass)
+        self.view_box = ttk.Combobox(controls, textvariable=self.view, state="readonly", width=20, values=("Raw",))
+        self.view_box.pack(side="left", padx=6)
+        self.view_box.bind("<<ComboboxSelected>>", self.change_view)
+        self.hover.attach(self.view_box, "view")
         self.plot_area = ttk.Frame(right, padding=5)
         self.plot_area.pack(fill="both", expand=True)
         self.plot_message = ttk.Label(self.plot_area, text="", anchor="center")
@@ -153,16 +185,32 @@ class App:
         messagebox.showerror("Torque Postprocessing", str(error), parent=self.root)
 
     def submit(self, message, job, callback):
-        if self.busy:
+        if self.busy or self.closed:
             return
         self.busy = True
         self.status.set(message)
-        self.progress.start(12)
+        self.set_activity(True)
         self.refresh_buttons()
-        future = self.executor.submit(job)
+        try:
+            future = self.executor.submit(job)
+        except Exception:
+            self.busy = False
+            self.set_activity(False)
+            self.refresh_buttons()
+            raise
         future.add_done_callback(lambda f: self.events.put((f, callback)))
 
+    def set_activity(self, active):
+        self.progress.stop()
+        self.progress.configure(value=0)
+        if active:
+            self.progress.pack(fill="x", pady=3)
+            self.progress.start(12)
+        else:
+            self.progress.pack_forget()
+
     def poll(self):
+        self.poll_id = None
         if self.closed:
             return
         self.pulse_count += 1
@@ -172,13 +220,13 @@ class App:
             pass
         else:
             self.busy = False
-            self.progress.stop()
+            self.set_activity(False)
             try:
                 callback(future.result())
             except Exception as exc:
                 self.show_error(exc)
             self.refresh_buttons()
-        self.root.after(40, self.poll)
+        self.poll_id = self.root.after(40, self.poll)
 
     def refresh_buttons(self):
         r = self.selected()
@@ -186,7 +234,9 @@ class App:
             button.configure(state="disabled" if self.busy else "normal")
         if not self.busy:
             self.buttons["Save treated data…"].configure(state="normal" if r and r.get("result", {}) and r["result"]["exportable"] else "disabled")
-            self.buttons["Center zero…"].configure(state="normal" if r and (r.get("result") or {}).get("passes") else "disabled")
+            p = self.selected_pass()
+            processed = p and any(v["pass_id"] == p.id for v in ((r or {}).get("result") or {}).get("passes", []))
+            self.buttons["Center zero…"].configure(state="normal" if processed else "disabled")
 
     def add_record(self, path, obj=None, cfg=None, error=""):
         self.counter += 1
@@ -250,6 +300,7 @@ class App:
         self.clear_plot()
         r = self.selected()
         if not r or not r.get("obj"):
+            self.update_view()
             self.details.set(r["error"] if r else "")
             self.refresh_buttons()
             return
@@ -289,7 +340,11 @@ class App:
         text = issue or f"Measured T: {p.measured_temperature} K"
         if pred:
             text += f"\nZero offset: {pred['centering_constant_Nm']:.8g} N m ({pred['centering']})"
+            if pred["baseline_review"]["status"] == "stale":
+                text += "\nSaved zero adjustment is stale; review or remove it."
         self.details.set(text)
+        self.update_view(pred)
+        self.refresh_buttons()
         self.clear_plot()
         try:
             if pred and self.view.get() != "Raw":
@@ -302,6 +357,20 @@ class App:
             self.canvas.draw_idle()
         except InputError as exc:
             self.plot_message.configure(text=str(exc))
+
+    def change_view(self, event=None):
+        if self.view.get() in self.view_box["values"]:
+            self.view_preference = self.view.get()
+        self.select_pass()
+
+    def update_view(self, prediction=None):
+        values = ("Raw",)
+        if prediction:
+            values = ("Corrected", "Background fit", "Processing steps", "Raw")
+            if prediction["baseline_review"]["status"] == "stale":
+                values = ("Background fit", "Raw")
+        self.view_box.configure(values=values)
+        self.view.set(self.view_preference if self.view_preference in values else "Raw")
 
     def view_key(self):
         return {"Corrected": "centered", "Background fit": "background",
@@ -476,6 +545,11 @@ class App:
         if not self.guard_baseline(close=True):
             return
         self.closed = True
+        self.set_activity(False)
+        self.hover.dismiss()
+        if self.poll_id:
+            self.root.after_cancel(self.poll_id)
+            self.poll_id = None
         self.clear_plot()
         self.executor.shutdown(wait=False, cancel_futures=True)
         self.root.destroy()
@@ -488,18 +562,24 @@ class AcquisitionDialog:
         self.window.title("Acquisition settings")
         self.window.transient(app.root)
         self.window.grab_set()
+        self.hover = app.help_for(self.window)
         panel = ttk.Frame(self.window, padding=16)
         panel.pack(fill="both", expand=True)
-        self.values, self.entries = {}, {}
+        self.values, self.entries, self.labels = {}, {}, {}
         cfg = record["cfg"]
         def entry(key, label, value, parent=panel):
             frame = ttk.Frame(parent)
             frame.pack(fill="x", pady=3)
-            ttk.Label(frame, text=label, width=32).pack(side="left")
+            self.labels[key] = ttk.Label(frame, text=label, width=39, wraplength=320)
+            self.labels[key].pack(side="left")
             self.values[key] = tk.StringVar(value=str(value))
             self.entries[key] = ttk.Entry(frame, textvariable=self.values[key], width=40)
             self.entries[key].pack(side="right", fill="x", expand=True)
-        entry("setpoints", "Temperature setpoints (K)", ", ".join(cfg["acquisition"]["temperature_setpoints_K"]))
+            help_key = "temperature_list" if key == "setpoints" else key
+            self.hover.attach(self.labels[key], help_key)
+            self.hover.attach(self.entries[key], help_key)
+        entry("setpoints", "Temperatures in this file (K)", ", ".join(cfg["acquisition"]["temperature_setpoints_K"]))
+        ttk.Label(panel, text="Separate values with spaces or commas").pack(anchor="e")
         entry("temperature_tolerance_K", "Allowed deviation (K)", cfg["profile"]["temperature_tolerance_K"])
         limits = cfg["acquisition"]["angle_range_deg"]
         ttk.Label(panel, text="Angle range for fit, centering and export (blank = all angles)").pack(anchor="w", pady=(12, 3))
@@ -507,20 +587,22 @@ class AcquisitionDialog:
         entry("range_max", "Upper angle (deg)", limits[1] if limits else "")
         scan_panel = ttk.LabelFrame(panel, text="Selected scans: " + ", ".join(selected), padding=8)
         scan_panel.pack(fill="x", pady=10)
-        entry("scan_temperature", "Temperature setpoint (K)", "", scan_panel)
+        entry("scan_temperature", "Override selected scan temperature (K)", "", scan_panel)
         entry("scan_field", "Stable field setpoint (T)", "", scan_panel)
         self.role = tk.StringVar(value="Keep current")
-        ttk.Combobox(scan_panel, textvariable=self.role, state="readonly",
-                     values=("Keep current", "Signal", "Background"), width=25).pack(anchor="w", pady=3)
+        ttk.Label(scan_panel, text="Role").pack(anchor="w")
+        self.hover.attach(ttk.Combobox(scan_panel, textvariable=self.role, state="readonly",
+                     values=("Keep current", "Signal", "Background"), width=25), "role").pack(anchor="w", pady=3)
         self.include = tk.StringVar(value="Keep current")
-        ttk.Combobox(scan_panel, textvariable=self.include, state="readonly",
-                     values=("Keep current", "Include", "Exclude"), width=25).pack(anchor="w", pady=3)
+        ttk.Label(scan_panel, text="Processing").pack(anchor="w")
+        self.hover.attach(ttk.Combobox(scan_panel, textvariable=self.include, state="readonly",
+                     values=("Keep current", "Include", "Exclude"), width=25), "include").pack(anchor="w", pady=3)
         advanced = ttk.Frame(panel)
         self.advanced_visible = False
         def show_advanced():
             self.advanced_visible = not self.advanced_visible
             advanced.pack(fill="x", before=footer) if self.advanced_visible else advanced.pack_forget()
-        ttk.Button(panel, text="More acquisition settings", command=show_advanced).pack(anchor="w")
+        self.hover.attach(ttk.Button(panel, text="More acquisition settings", command=show_advanced), "more_settings").pack(anchor="w")
         for key, label in [("angle_step_deg", "Angle step (deg)"), ("angle_origin_deg", "Angle grid origin (deg)"),
                            ("angle_tolerance_deg", "Allowed angle deviation (deg)"), ("field_step_T", "Field grid step (T)"),
                            ("stable_field_tolerance_Oe", "Allowed field deviation (Oe)"),
@@ -528,11 +610,12 @@ class AcquisitionDialog:
             entry(key, label, cfg["profile"][key], advanced)
         entry("scan_starts", "Scan starts (source row numbers)", ", ".join(map(str, cfg["acquisition"]["scan_starts"] or [])), advanced)
         self.center = tk.StringVar(value=cfg["centering"])
-        ttk.Combobox(advanced, textvariable=self.center, values=("midrange", "mean"), state="readonly").pack(anchor="w")
+        ttk.Label(advanced, text="Automatic centering").pack(anchor="w")
+        self.hover.attach(ttk.Combobox(advanced, textvariable=self.center, values=("midrange", "mean"), state="readonly"), "ordinary_centering").pack(anchor="w")
         footer = ttk.Frame(panel)
         footer.pack(fill="x", pady=(12, 0))
-        ttk.Button(footer, text="Apply", command=self.apply).pack(side="right")
-        ttk.Button(footer, text="Cancel", command=self.window.destroy).pack(side="right", padx=6)
+        self.hover.attach(ttk.Button(footer, text="Apply", command=self.apply), "settings_apply").pack(side="right")
+        self.hover.attach(ttk.Button(footer, text="Cancel", command=self.window.destroy), "settings_cancel").pack(side="right", padx=6)
         self.error = tk.StringVar()
         ttk.Label(panel, textvariable=self.error, wraplength=540, foreground="#963a24").pack(fill="x")
 
@@ -544,7 +627,7 @@ class AcquisitionDialog:
                     cfg["profile"][key] = self.values[key].get().strip()
             cfg["profile"] = asdict(profile_from(cfg["profile"]))
             values = self.values["setpoints"].get().strip()
-            cfg["acquisition"]["temperature_setpoints_K"] = [v.strip() for v in values.split(",")] if values else []
+            cfg["acquisition"]["temperature_setpoints_K"] = temperature_list(values)
             cfg["acquisition"]["source"] = "Explicit GUI experimental setpoints"
             lo, hi = self.values["range_min"].get().strip(), self.values["range_max"].get().strip()
             cfg["acquisition"]["angle_range_deg"] = [lo, hi] if lo or hi else None
@@ -574,6 +657,7 @@ class AcquisitionDialog:
 def main():
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--version", action="version", version=f"Torque Postprocessing {APP_VERSION}")
     parser.add_argument("--session")
     args = parser.parse_args()
     root = tk.Tk()

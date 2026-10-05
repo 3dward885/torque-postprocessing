@@ -4,7 +4,8 @@ import argparse
 import json
 from pathlib import Path
 import sys
-from io_profiles import read_raw, configure_acquisition, InputError
+from io_profiles import APP_VERSION, read_raw, configure_acquisition, InputError
+from input_fields import temperature_list
 from pipeline import default_config, migrate_config, process, select_background, support_permission
 from storage import atomic_json, export_run, save_dat, load_config, load_session
 
@@ -22,6 +23,7 @@ def run_entry(path, settings=None, profile="fractional", allow_stale_review=Fals
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--version", action="version", version=f"Torque Postprocessing {APP_VERSION}")
     arguments = sys.argv[1:] if argv is None else argv
     obsolete = ("--molar-", "--factor", "--amount-mol", "--mass", "--preset")
     if any(a.startswith(obsolete) for a in arguments):
@@ -35,7 +37,7 @@ def main(argv=None):
     source.add_argument("--raw", nargs="+")
     source.add_argument("--session")
     p.add_argument("--settings", help="Saved per-file settings (one raw file)")
-    p.add_argument("--setpoints", help="Comma-separated experimental temperature setpoints in K")
+    p.add_argument("--setpoints", help='Experimental temperatures in K, separated by spaces or commas; quote the list, e.g. "7.375 13.625"')
     p.add_argument("--temperature-tolerance", help="Allowed temperature deviation in K")
     p.add_argument("--angle-range", nargs=2, metavar=("MIN_DEG", "MAX_DEG"), help="Range for background fit, centering and export; default all samples")
     p.add_argument("--allow-extrapolation", nargs="+", metavar="SCAN", help="Explicitly allow background extrapolation for these scan IDs")
@@ -81,7 +83,7 @@ def main(argv=None):
         try:
             obj, cfg = load_entry(path, settings)
             if args.setpoints is not None:
-                cfg["acquisition"]["temperature_setpoints_K"] = [v.strip() for v in args.setpoints.split(",")]
+                cfg["acquisition"]["temperature_setpoints_K"] = temperature_list(args.setpoints)
                 cfg["acquisition"]["source"] = "Explicit CLI experimental setpoints"
             if args.temperature_tolerance is not None:
                 cfg["profile"]["temperature_tolerance_K"] = args.temperature_tolerance

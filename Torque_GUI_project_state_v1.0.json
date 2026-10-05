@@ -12,12 +12,15 @@
     "execution_prompt_sha256": "15be2d3bdc029a14b4d9d5159beb9581bb56687c4ce653fdf5e9e377020d8112",
     "immutable_evidence_entries_verified": 191,
     "Ho2sq3_raw": {
-      "path": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\20260928 Maglab Measurements\\[Ho2sq3(OH2)8]\\Crystal 1\\Raw Data\\Ho2sq3_Rot1_00001.dat",
+      "path": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\20260928 Maglab Measurements - SCM6\\[Ho2sq3(OH2)8]\\Crystal 1\\Raw Data\\Ho2sq3_Rot1_00001.dat",
       "sha256": "04edb7daae1c04a4330cb49a2cd46de5111ee00c643cef8e6e510b1be258e04c",
       "bytes": 269380
     },
     "workflow_execution_prompt": "Torque_GUI_import_and_workflow_execution_prompt_v1.0.txt",
-    "workflow_execution_prompt_sha256": "dfb5388469ae041542d1552d8e2e3392f1008a6860bb59a1c3936f4682e75b16"
+    "workflow_execution_prompt_sha256": "dfb5388469ae041542d1552d8e2e3392f1008a6860bb59a1c3936f4682e75b16",
+    "raw_path_note": "Original folder was renamed to 20260928 Maglab Measurements - SCM6; identity unchanged.",
+    "usability_execution_prompt": "Torque_GUI_v1.3_execution_prompt_v1.1.txt",
+    "usability_execution_prompt_sha256": "c1d4375b4899d4437b2bb95c5e5ae427179b4b1996876ddab8cdcb15ab9c69ea"
   },
   "base_commit": "b9517f489a35dcf3984ea48356fc3d12956e7c5c",
   "baseline_contract": {
@@ -34,19 +37,21 @@
     "midrange_samples": "Actual retained signal rows after optional angle-range selection"
   },
   "current_core_sha256": {
-    "app.py": "cf0968618328cef7738cb4c52b71576675a33cb928aad380c5feeca106a38967",
-    "baseline.py": "e8d23d9ec36d87786132ceaee602a1f687133d5123548eb17dc12ca1448a39e0",
-    "baseline_editor.py": "1d5786ee512862cfcfbbdd4515af5882dc43a9179631ab339add09ec8cd57af4",
-    "cli.py": "35343012ce9ea5a6ca9ca40889dc332037c77a21542b8dd32bc80008b81db209",
-    "io_profiles.py": "fdf65edeae137f2019a829122250fd6806c06abd493718e4adb8fd2ca49e401f",
+    "app.py": "74778058b9ff7dc4bc2d62a9363f1fe501fc50ac0a8617790b95ccf7144620f1",
+    "baseline.py": "d646eb9c28e7f94c032a4e7b5439f0e5ef63edb22ce918a348573d953a262e75",
+    "baseline_editor.py": "23900cb77f0213c3a1162d09e9a4c2281706db458a439ef7f6b7999ee2b24a6c",
+    "cli.py": "83adc6eefeb1b51b8fa3e2abbc96f946398a97292f6afaa1f09b839fefae8d50",
+    "input_fields.py": "098bdecfe0467eb7e83f596fbd74a63116dd470a79f54ad18feff9a3d8b20eee",
+    "io_profiles.py": "546d5ff60d30108c898c01295281c9c5811a8cac8298916368a67f77f9a7b0ce",
     "pipeline.py": "cec5705d093ea5591cc2a0874ebbcbdf8cf8b573089b58794f1efd3f09c16d35",
     "plots.py": "b0410b9a3ec775d99d06907d744c7b4d9256691e9dd5fa755d8a23fa7eb33b57",
     "presets.py": "9ee51f73ccc1f0a557b78b694b13afa464ea673658cdbcd0a4f9ef5a7ac1cee2",
     "setup_environment.py": "f6f8e9fd48b345b5b2c833744b6bf3070c51871bd2a8a572a35b03488dcde6d3",
     "storage.py": "4334b654a8a4696ebc2f5d7ffa46243da08c68b73c706bd30ac984c041c4328e",
+    "ui_help.py": "16d6b949e1ed89204ac55b6243b6e07824418480205fb6ef2285548f55a96e67",
     "validate.py": "416c8d822068a9e8a7942bdf39a9263490e998b92dd7ec613b5e16194a679660"
   },
-  "current_source_commit": "b9517f489a35dcf3984ea48356fc3d12956e7c5c (base; v1.2 working changes uncommitted)",
+  "current_source_commit": "b9517f489a35dcf3984ea48356fc3d12956e7c5c (base; v1.2 and v1.3 working changes uncommitted)",
   "decisions": [
     "Extend existing Tkinter architecture; one shared finalization for both profiles",
     "Keep ordinary arithmetic/serialization exact",
@@ -58,22 +63,29 @@
     "v1.2: remove production molar conversion and header presets; preserve archives.",
     "v1.2: apply optional angular bounds to signal and background samples before fitting and centering.",
     "v1.2: simpler main workflow with optional settings/details in menus; immediate raw previews.",
-    "v1.2: successful GUI checks ran outside the sandbox due to Tcl initialization failure inside it; all windows remained withdrawn."
+    "v1.2: successful GUI checks ran outside the sandbox due to Tcl initialization failure inside it; all windows remained withdrawn.",
+    "v1.3: shared space/comma Decimal temperature entry; no numerical function or coordinate changes.",
+    "v1.3: honest view availability, idle activity hiding, one-second hover help and local F1 topic tree.",
+    "v1.3: old accepted settings keep identical bindings and replay without reacceptance in the tested environment.",
+    "v1.3: source/update packages compared against the saved pre-patch v1.2 working tree; no writes to GitHub checkout."
   ],
   "delivery": {
     "active_working_copy": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\torque-postprocessing",
     "copy_verification": "validation/local_copy_2026-10-03/copy_verification.json",
     "historical_release_report": "BASELINE_IMPLEMENTATION_REPORT_v1.1.txt",
     "startup_validation": "validation/local_copy_2026-10-03/startup_and_replay.json",
-    "current_report": "WORKFLOW_IMPLEMENTATION_REPORT_v1.2.txt",
-    "example_treated_data": "runs/Ho2sq3_0_to_200_v1.2.dat",
-    "current_validation": "validation/import_workflow_v1.2",
+    "current_report": "USABILITY_IMPLEMENTATION_REPORT_v1.3.txt",
+    "example_treated_data": "runs/Ho2sq3_0_to_200_v1.3.dat",
+    "current_validation": "validation/usability_v1.3",
     "example_settings": [
       "examples/Ho2sq3_full_range.json",
       "examples/Ho2sq3_0_to_200.json",
       "examples/Ho2sq3_manual_demo.json"
     ],
-    "source_zip": "Torque_Postprocessing_v1.2_source.zip"
+    "source_zip": "Torque_Postprocessing_v1.3_source.zip",
+    "github_update_zip": "Torque_Postprocessing_v1.3_GitHub_update.zip",
+    "update_instructions": "UPDATE_v1.3.txt",
+    "package_validation": "validation/usability_v1.3/package_checks_final.json"
   },
   "derived_quantities": [
     "Retained actual rows in the optional angle range",
@@ -133,8 +145,8 @@
     "verified_rows": 818,
     "historical_record": true
   },
-  "next_step": "User may launch v1.2 with examples/Ho2sq3_0_to_200.json, subtract background, review zero, and save a new DAT. Review/commit/push manually through GitHub Desktop.",
-  "objective": "Configurable experimental setpoints, lean torque-only GUI, manual zero adjustment, and an optional angular interval applied before fitting/centering/export.",
+  "next_step": "User may copy the v1.3 GitHub update and review/commit/push manually. Position correction stays deferred until explicitly revisited.",
+  "objective": "Complete six v1.3 usability changes while preserving all v1.2 numerical/settings contracts.",
   "provided_settings": [
     "Experimental temperature setpoints and per-scan assignments, with source",
     "Tolerance values and nominal angle/field conventions",
@@ -154,7 +166,7 @@
   ],
   "repository": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\torque-postprocessing",
   "state_filename_retained_for_continuity": "Torque_GUI_project_state_v1.0.json",
-  "status": "Implemented; required numerical, replay and background GUI checks passed. Full-window visual inspection not performed because windows stayed withdrawn.",
+  "status": "v1.3 complete; all six usability and numerical/replay/package gates passed. Whole-window visual inspection not performed under background-only constraint.",
   "units": {
     "D": "N m",
     "angles": "deg",
@@ -170,9 +182,9 @@
     "Historical previous-Rot1 autonomous centering selection remains unresolved; diagnostic choices remain reference-selected.",
     "Historical algorithm uniqueness and transfer claims remain unestablished; physical molar normalization is outside this torque-only processor."
   ],
-  "updated_utc": "2026-10-04T17:46:17.902988+00:00",
+  "updated_utc": "2026-10-05T02:53:29.143304+00:00",
   "verified_results": {
-    "unit_tests": 37,
+    "unit_tests": 42,
     "historical_cases_A_D_exact": 6,
     "historical_case_rows_A_D_exact": 5405,
     "historical_distinct_reference_rows": 3519,
@@ -185,12 +197,20 @@
     "GUI_windows_withdrawn": true,
     "reference_denied_CLI": true,
     "Arial_figure_pairs": 3,
-    "protected_files_unchanged": 193,
-    "reports_directory": "validation/import_workflow_v1.2",
-    "whole_window_visual_inspection": "Not performed: all GUI test windows withdrawn"
+    "protected_files_unchanged": 196,
+    "reports_directory": "validation/usability_v1.3",
+    "whole_window_visual_inspection": "Not performed: all GUI test windows withdrawn",
+    "v12_example_DATs_byte_identical": 3,
+    "all_example_upstream_bindings_unchanged": true,
+    "usability_widget_checks": 7,
+    "workflow_widget_checks": 8,
+    "extracted_source_replay": true,
+    "extracted_v12_update_overlay_replay": true,
+    "help_resource_loaded_outside_CWD": true,
+    "package_preflight": "validation/usability_v1.3/package_preflight.json"
   },
-  "verified_results_basis": "v1.2 observed on Windows build 26300. Original v1.1 results remain in the historical report/state.",
-  "version": "1.2",
+  "verified_results_basis": "v1.3 observed on Windows build 26300; reports preserve intermediate failures and final successful checks separately.",
+  "version": "1.3",
   "historical_v1_1": {
     "state_before_v1_2": "validation/import_workflow_v1.2/before/Torque_GUI_project_state_v1.0.json",
     "report": "BASELINE_IMPLEMENTATION_REPORT_v1.1.txt"
@@ -211,5 +231,161 @@
     "backgrounds": "Nine near-zero-field scans confirmed by user",
     "extrapolation": "User allowed the approximately 100 K background extrapolation; bound to P022–P024 in full-range settings.",
     "range_request": "User requested configurable sample-position bounds and exclusion of endpoint backlash artifacts before centering. 0–200 degrees is an example, not a default."
-  }
+  },
+  "pending_next_patch": {
+    "recorded_on": "2026-10-04",
+    "source": "User selected six usability changes for v1.3 and explicitly deferred sample-position offset correction on 4 October 2026.",
+    "status": "All six usability items implemented and tested in v1.3.",
+    "changes": [
+      {
+        "id": "temperature_field_labels",
+        "change": "Rename the general list to Temperatures in this file (K) and the optional selected-scan field to Override selected scan temperature (K).",
+        "scope": "The list supplies candidate experimental setpoints for the file; an assignment requires one unique match within the configured tolerance. The override applies only to selected scans. A blank override leaves current explicit assignments unchanged.",
+        "validation": "Check labels, units, selected-scan scope and unchanged assignment/override behavior in withdrawn Tk widgets.",
+        "status": "Complete in v1.3; unit and withdrawn-widget/workflow gates passed."
+      },
+      {
+        "id": "temperature_list_separators",
+        "change": "Accept temperature lists separated by whitespace, commas, or a mixture; retain support for existing comma-separated input and show a concise input-format hint.",
+        "scope": "Parse arbitrary finite user values without adding built-in targets or changing tolerance arithmetic, setpoint precedence, scan assignment or saved numerical values.",
+        "validation": "Verify equivalent comma/space/mixed lists, leading/trailing whitespace, noninteger values, and continued rejection of malformed/nonfinite or duplicate entries; preserve settings save/load and CLI replay.",
+        "status": "Complete in v1.3; unit and withdrawn-widget/workflow gates passed."
+      },
+      {
+        "id": "plot_view_matches_displayed_data",
+        "recorded_on": "2026-10-04",
+        "change": "Keep the View dropdown synchronized with the displayed data. When processing is pending or invalidated and the plot falls back to raw measurements, display Raw rather than Corrected, Background fit or Processing steps.",
+        "scope": "Use the actual selected scan and available processing result to determine which views are available. A request for an unavailable processed view must not silently show raw data under that label. Preserve the raw preview, processing/export safeguards and numerical behavior; this is a display correction.",
+        "validation": "Exercise initial import, acquisition/angle-range/background changes, scan switching, partial or failed processing and successful reprocessing in withdrawn Tk widgets. Verify the selected view agrees with plot labels/data throughout and that processed views become available when the selected scan has a valid result.",
+        "status": "Complete in v1.3; unit and withdrawn-widget/workflow gates passed."
+      },
+      {
+        "id": "delayed_hover_help",
+        "recorded_on": "2026-10-04",
+        "change": "Add concise contextual help after 1 second of hovering over a control or its labelled option area.",
+        "timing": "Initial delay: 1000 ms. This user-accepted recommendation supersedes the earlier 5-second proposal; it is not a universal industry standard. Start or reset the timer when entering or changing the target control; cancel on leaving, clicking or closing the containing window.",
+        "scope": "Cover main-window controls, menus where practical, acquisition settings including expanded controls, background/extrapolation selection, plot views and zero-adjustment controls. Briefly explain purpose, units, scope, accepted input syntax and effect on processing/output where relevant. Include disabled controls, explaining their enabling condition. Tooltips must not take focus, change settings or obstruct interaction. Put detailed instructions and worked examples in the Help menu; reuse descriptions where practical.",
+        "validation": "Use withdrawn Tk widget/event tests for the 1000 ms delay, cancellation, target changes, visibility while reading, Esc dismissal without immediate reopening, pointer exit, disabled controls and window cleanup. Verify help matches actual behavior, and perform visible layout review only when foreground interaction is authorized.",
+        "visibility": "Keep help visible while the user reads it with the pointer over the control or tooltip; do not dismiss on an automatic reading timeout. Dismiss when the pointer leaves both the control and tooltip, when Esc is pressed, on interaction or when the containing window closes. Esc dismissal must remain effective until a new hover entry; do not immediately reopen the tooltip under a stationary pointer.",
+        "accepted_on": "2026-10-04",
+        "status": "Complete in v1.3; unit and withdrawn-widget/workflow gates passed."
+      },
+      {
+        "id": "help_menu_and_expandable_guide",
+        "recorded_on": "2026-10-04",
+        "change": "Add Help beside File and Tools. Open an in-application help viewer with an expandable/collapsible topic tree and readable explanatory text.",
+        "topics": [
+          "Summary: supported inputs, processing method, torque units, and output files.",
+          "How to use the software: open DAT, enter acquisition settings, choose angle range/background, subtract background with automatic centering, optionally adjust zero, and save treated DAT.",
+          "Control reference: explain every option including file versus selected-scan setpoints, allowed deviations, background selection/extrapolation, angle bounds, view choices, automatic/manual centering, and settings/figure export.",
+          "Worked examples: arbitrary temperature lists and selected-scan overrides; 2.49238 K versus a user-provided 2.5 K setpoint with 0.2 K deviation; selecting 0-200 degrees from a wider scan before fitting/centering/export; explicit extrapolation when signal extends beyond background coverage; manual-offset sign and Apply/Cancel/Reset; saving and reloading settings.",
+          "Troubleshooting: why centering/save controls are disabled, reprocessing after changes, missing or ambiguous setpoints, insufficient background coverage, invalid input, stale offsets and existing output filenames."
+        ],
+        "scope": "Use plain scientific language and concrete examples. Treat temperatures, bounds and offsets in examples as supplied or illustrative settings rather than production defaults or calibration claims. Distinguish measurements, fitted predictions and manual choices. Reuse concise control descriptions between hover help and the guide where practical; keep the guide local and independent of internet access.",
+        "validation": "Verify Help menu and tree expand/collapse navigation, topic readability and agreement with actual GUI/CLI behavior. Include help for every exposed option; preserve processing, raw data and export behavior.",
+        "status": "Complete in v1.3; unit and withdrawn-widget/workflow gates passed."
+      },
+      {
+        "id": "activity_indicator_only_while_busy",
+        "recorded_on": "2026-10-04",
+        "change": "Hide the activity bar whenever the application is idle. Show and animate it only while a background task is running.",
+        "scope": "Cover loading, processing and saving operations that use the existing task worker. Start hidden, show on task start, then stop/reset and hide on completion or failure; use the same cleanup for cancellation if supported. Retain useful textual status and stable toolbar layout. The bar remains an activity indicator, not a percentage-complete display; do not imply quantitative progress or change numerical processing.",
+        "validation": "Check initial idle state, task start, successful completion, error handling and repeated tasks using withdrawn Tk widgets. Verify the bar is absent when idle, animates only while busy and does not leave pending animation callbacks after closure.",
+        "status": "Complete in v1.3; unit and withdrawn-widget/workflow gates passed."
+      }
+    ],
+    "target_version": "1.3"
+  },
+  "next_patch_execution_prompt": {
+    "path": "Torque_GUI_v1.3_execution_prompt_v1.1.txt",
+    "prompt_version": "1.1",
+    "target_version": "1.3",
+    "prepared_on": "2026-10-04",
+    "sha256": "c1d4375b4899d4437b2bb95c5e5ae427179b4b1996876ddab8cdcb15ab9c69ea",
+    "bytes": 16364,
+    "status": "Executed for v1.3. Revised prompt bytes preserved.",
+    "supersedes": "Torque_GUI_v1.3_execution_prompt_v1.0.txt",
+    "pending_change_ids": [
+      "temperature_field_labels",
+      "temperature_list_separators",
+      "plot_view_matches_displayed_data",
+      "delayed_hover_help",
+      "help_menu_and_expandable_guide",
+      "activity_indicator_only_while_busy"
+    ],
+    "excluded_deferred_change_ids": [
+      "uniform_sample_position_offset"
+    ]
+  },
+  "superseded_execution_prompts": [
+    {
+      "path": "Torque_GUI_v1.3_execution_prompt_v1.0.txt",
+      "target_version": "1.3",
+      "prepared_on": "2026-10-04",
+      "sha256": "754a5d0843a3967b91471b0f278af60145b7b714a5d4ee4cb67f6d9f9f400dbd",
+      "bytes": 22367,
+      "status": "Superseded; do not use for v1.3 execution.",
+      "pending_change_ids": [
+        "temperature_field_labels",
+        "temperature_list_separators",
+        "plot_view_matches_displayed_data",
+        "delayed_hover_help",
+        "help_menu_and_expandable_guide",
+        "activity_indicator_only_while_busy",
+        "uniform_sample_position_offset"
+      ],
+      "superseded_by": "Torque_GUI_v1.3_execution_prompt_v1.1.txt",
+      "superseded_on": "2026-10-04",
+      "reason": "User deferred sample-position correction; revised v1.3 scope contains six usability changes only."
+    }
+  ],
+  "deferred_changes": [
+    {
+      "id": "uniform_sample_position_offset",
+      "status": "Deferred by explicit user request; excluded from v1.3.",
+      "deferred_on": "2026-10-04",
+      "request": "Add an optional user-entered constant sample-position correction to account for a known experimental torque-probe position error.",
+      "controls_requested_for_future_discussion": {
+        "checkbox": "Apply sample-position correction",
+        "default_enabled": false,
+        "when_enabled": "Reveal Correction value (deg) and an Add (+) / Subtract (-) selector.",
+        "value": "User supplies a finite nonnegative magnitude. Zero is valid. Use the separate operation selector for the sign; reject negative magnitudes to avoid double-negative ambiguity.",
+        "when_disabled": "Apply no correction. Retained inactive settings must not affect processing."
+      },
+      "uniform_correction_definition": "theta_corrected = theta_measured + s * magnitude_deg, where s = +1 for Add and -1 for Subtract. Apply the effective signed correction once, from immutable original angles, to every acquired row in the raw dataset, including signal and background scans, independently of temperature, field or position. No per-scan/T/B variation and no accumulation on reprocess.",
+      "endpoint_requirement": "User objected to discarding selected endpoints after a shift. Example: with a -3 degree correction, originally selected positions 0 and 200 degrees must still be reported as -3 and 197 degrees. This is an illustrative requirement, not a supplied calibration value.",
+      "rounding_request": "User asked for positions rounded to the nearest digit. Exact precision and rounding semantics have not been agreed; do not introduce new rounding in v1.3.",
+      "superseded_proposal": "The earlier proposal filtered against unchanged numeric bounds after shifting and could discard selected endpoints. The user rejected that behavior. It is not an accepted future design.",
+      "constraints": "Preserve original measured tokens/raw files and identities; any future correction is user-provided, uniform across signal/background rows, applied once, and distinct from torque zero adjustment. No actual probe-error magnitude is supplied.",
+      "open_questions": "Resolve endpoint retention, selection/correction order and requested reporting precision when the user revisits the feature; no implementation or migration scaffolding in v1.3.",
+      "historical_prompt": "Torque_GUI_v1.3_execution_prompt_v1.0.txt"
+    }
+  ],
+  "historical_v1_2": {
+    "state_before_v1_3": "validation/usability_v1.3/before/source/Torque_GUI_project_state_v1.0.json",
+    "report": "WORKFLOW_IMPLEMENTATION_REPORT_v1.2.txt",
+    "results": {
+      "unit_tests": 42,
+      "historical_cases_A_D_exact": 6,
+      "historical_case_rows_A_D_exact": 5405,
+      "historical_distinct_reference_rows": 3519,
+      "historical_distinct_raw_rows": 4869,
+      "Ho2sq3_raw_rows": 1754,
+      "Ho2sq3_scans": 34,
+      "Ho2sq3_full_range_signal_rows": 1296,
+      "Ho2sq3_0_to_200_signal_rows": 1023,
+      "GUI_CLI_DAT_byte_identical": true,
+      "GUI_windows_withdrawn": true,
+      "reference_denied_CLI": true,
+      "Arial_figure_pairs": 3,
+      "protected_files_unchanged": 196,
+      "reports_directory": "validation/usability_v1.3",
+      "whole_window_visual_inspection": "Not performed: all GUI test windows withdrawn",
+      "v12_example_DATs_byte_identical": 3,
+      "all_example_upstream_bindings_unchanged": true,
+      "usability_widget_checks": 7,
+      "workflow_widget_checks": 8
+    }
+  },
+  "current_help_sha256": "08dbe71b6c54c044242ea3be3fdf4c58e663caddc71a9b80375b5fcb0788d27e"
 }
