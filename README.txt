@@ -1,5 +1,8 @@
 Torque Data Postprocessing 1.6
 
+v1.6 installer build 5 input fix: sample fields retain keyboard focus while typing. The live amount is a draft until Apply; corrected preview is hidden during edits. Excluded scans show raw data only; select an included processed signal for Corrected/Center zero. File exports remain available when processing is valid and sample changes are applied. See INPUT_FIX_REPORT_v1.6.txt.
+
+
 Read README.md for current launch, workflow, replay and validation instructions.
 End users: run Torque_Data_Postprocessing_1.6_Setup_x64.exe, then open
 Torque Data Postprocessing from the Start menu. No Python/setup scripts required.

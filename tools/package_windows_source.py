@@ -6,7 +6,7 @@ from pathlib import Path
 from package_usability_release import ROOT, project_files, write_zip
 
 
-def main(destination):
+def main(destination, before_path=None):
     files = project_files()
     # These are named project examples, not private user session files.
     for name in ("WINDOWS_APP.txt", "STARTUP_FIX_v1.3.txt", "UPDATE_v1.6.txt",
@@ -21,12 +21,13 @@ def main(destination):
     assert not any(set(Path(name).parts) & forbidden for name in files)
     assert all(not name.lower().endswith((".exe", ".dll", ".pyd", ".zip")) for name in files)
     assert all(not name.endswith(".dat") or name == "fixtures/SYNTHETIC_software_fixture.dat" for name in files)
-    before = json.loads((ROOT / "validation/v16_before/before.json").read_text(encoding="utf-8"))
+    before_path = before_path or ROOT / "validation/v16_before/before.json"
+    before = json.loads(before_path.read_text(encoding="utf-8"))
     metadata = {
         "app": "Torque Data Postprocessing", "version": "1.6",
         "kind": "Complete project source/update; no runtime binaries or research measurements",
-        "comparison_basis": "Fresh v1.5 working snapshot validation/v16_before; not the older Git HEAD",
-        "base_source_sha256": before["snapshot_files"],
+        "comparison_basis": "Actual working source snapshot: " + str(before_path) + "; not Git HEAD",
+        "base_source_sha256": before.get("source_sha256", before.get("snapshot_files")),
         "required_removals": [],
         "fixtures": "FIXTURE_LOCATIONS_v1.6.json; original examples require field-policy migration",
     }
@@ -36,4 +37,6 @@ def main(destination):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    main(parser.parse_args().output.resolve())
+    parser.add_argument("--before", type=Path, help="Pre-patch working-source hash manifest")
+    args = parser.parse_args()
+    main(args.output.resolve(), args.before)

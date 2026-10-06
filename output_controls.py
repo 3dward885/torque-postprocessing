@@ -17,6 +17,7 @@ EDITABLE = ("mass_mg", "molar_mass_g_mol", "amount_mol")
 class OutputControls:
     def __init__(self, app, parent):
         self.app, self.record, self.dirty, self.loading = app, None, False, True
+        self.layout = None
         self.frame = ttk.LabelFrame(parent, text="Output", padding=8)
         self.frame.pack(fill="x", pady=5)
         self.file_label = ttk.Label(self.frame, text="Output for: no file", wraplength=460)
@@ -111,7 +112,7 @@ class OutputControls:
         keys = (*EDITABLE, "quantity", "method")
         self.dirty = any(block[k] != self.record["output"][k] for k in keys)
         self.refresh()
-        self.app.select_pass()
+        self.app.refresh_output_preview()
 
     def choose_quantity(self):
         if not self.record or self.app.busy:
@@ -165,15 +166,18 @@ class OutputControls:
         for b in self.radios:
             b.configure(state="normal" if enabled else "disabled")
         molar = self.mode == "molar"
-        if molar:
-            self.sample.pack(fill="x", before=self.frame.winfo_children()[3])
-        else:
-            self.sample.pack_forget()
         method = METHODS.get(self.method.get(), "mass")
+        if self.layout != (molar, method):
+            if molar:
+                self.sample.pack(fill="x", before=self.frame.winfo_children()[3])
+            else:
+                self.sample.pack_forget()
+            for k in EDITABLE:
+                visible = (k == "amount_mol") == (method == "amount")
+                for w in (self.labels[k], self.entries[k]):
+                    w.grid() if visible else w.grid_remove()
+            self.layout = (molar, method)
         for k in EDITABLE:
-            visible = (k == "amount_mol") == (method == "amount")
-            for w in (self.labels[k], self.entries[k]):
-                w.grid() if visible else w.grid_remove()
             self.entries[k].configure(state="normal" if enabled else "disabled")
         self.method_box.configure(state="readonly" if enabled else "disabled")
         self.apply_button.configure(state="normal" if enabled and self.dirty else "disabled")

@@ -153,6 +153,8 @@ def check_installation(output, session=None):
                     assert app.canvas.figure.axes[0].get_ylabel() == "Molar torque (N m/mol)"
                     assert record["result"] is original_result
                     assert treated_text(record["result"]) == saved
+                    check_output_typing(app, root)
+                    report["checks"].append("Continuous Entry typing/paste/delete: no canvas recreation or focus requests; Apply/Cancel and stale-preview guards")
                     # Dirty settings cannot silently cross files, save, or change quantity.
                     panel.values["mass_mg"].set("3")
                     app.save_configuration(output / "must_not_save.json")
@@ -298,6 +300,19 @@ def check_field_widgets(app, root, output):
     assert 'Excluded: P001' in app.field_alert.get()
     result=process(record['raw'],record['cfg'])
     assert result['rows']==41 and sum(r['retention']=='explicitly excluded' for r in result['ledger'])==41
+    record['result'] = result
+    app.refresh_selected()
+    app.passes.selection_set('P001')
+    app.select_pass()
+    assert app.view.get() == 'Raw' and 'Excluded scan: raw measurements only' in app.details.get()
+    assert app.buttons['Center zero…'].instate(['disabled'])
+    assert app.output.save_button.instate(['!disabled']) and app.output.plots_button.instate(['!disabled'])
+    app.passes.selection_set('P002')
+    app.view_preference = 'Corrected'
+    app.select_pass()
+    assert app.view.get() == 'Corrected' and app.buttons['Center zero…'].instate(['!disabled'])
+    app.passes.selection_set('P001')
+    app.select_pass()
     session=output/'SYNTHETIC_field_session.json'
     save_session(session,[(str(source),record['cfg'])])
     raw,reloaded=load_session(session)[0]
@@ -309,3 +324,70 @@ def check_field_widgets(app, root, output):
     app.review_field();app.field_dialog.remove();root.update()
     assert not record['cfg']['field_quality']['decisions']
     assert record['obj'].field_review['P001']['status']=='Check passed'
+
+
+def check_output_typing(app, root):
+    """Real withdrawn Entry edits; never send OS input or force window focus."""
+    import copy
+    import tkinter as tk
+    from unittest.mock import patch
+    from storage import treated_text
+    panel = app.output
+    record = app.selected()
+    committed = copy.deepcopy(record['output'])
+    ordinary = treated_text(record['result'])
+    original_view = app.view_preference
+    for view in ('Raw', 'Corrected'):
+        app.view.set(view)
+        app.change_view()
+        root.update()
+        canvas = app.canvas
+        with patch.object(app, 'select_pass', side_effect=AssertionError('Typing recreated the plot')), \
+             patch.object(tk.Misc, 'focus_set', side_effect=AssertionError('Typing requested keyboard focus')), \
+             patch('app.run_entry', side_effect=AssertionError('Typing reprocessed data')):
+            for key, value in (('mass_mg', '0.235'), ('molar_mass_g_mol', '1575.45')):
+                entry = panel.entries[key]
+                entry.delete(0, 'end')
+                for char in value:
+                    before = entry.get()
+                    entry.insert('insert', char)
+                    root.update()
+                    assert entry.get() == before + char
+                    assert entry.index('insert') == len(entry.get())
+                    assert app.canvas is canvas
+                    assert panel.save_button.instate(['disabled']) and panel.plots_button.instate(['disabled'])
+                entry.selection_range(0, 2)
+                root.update()
+                assert entry.selection_present()
+                entry.delete(0, 'end')
+                entry.insert(0, value)  # Paste-sized insertion, not a clipboard operation.
+            if view == 'Corrected':
+                assert canvas.get_tk_widget().winfo_manager() == ''
+            else:
+                assert canvas.get_tk_widget().winfo_manager() == 'pack'
+            assert record['output'] == committed
+            # Incomplete scientific notation remains an editable draft.
+            panel.method.set('Amount in moles')
+            entry = panel.entries['amount_mol']
+            entry.delete(0, 'end')
+            for char in '5e-6':
+                entry.insert('insert', char)
+                root.update()
+            assert entry.get() == '5e-6'
+            assert panel.dirty and not panel.require_clean()
+        panel.cancel_button.invoke()
+        assert record['output'] == committed and not panel.dirty
+        assert treated_text(record['result']) == ordinary
+    # Restoring original text manually also restores the existing preview without stealing focus.
+    app.view.set('Corrected'); app.change_view(); root.update()
+    canvas = app.canvas
+    entry = panel.entries['mass_mg']
+    with patch.object(app, 'select_pass', side_effect=AssertionError('Reverting text recreated plot')):
+        entry.insert('end', '1')
+        root.update()
+        entry.delete(len(committed['mass_mg']), 'end')
+        root.update()
+        assert not panel.dirty and app.canvas is canvas
+        assert canvas.get_tk_widget().winfo_manager() == 'pack'
+    app.view_preference = original_view
+    app.select_pass()

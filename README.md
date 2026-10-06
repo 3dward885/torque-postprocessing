@@ -1,5 +1,8 @@
 # Torque Data Postprocessing 1.6
 
+v1.6 installer build 5 input fix: sample fields retain keyboard focus while typing. The live amount is a draft until Apply; corrected preview is hidden during edits. Excluded scans show raw data only; select an included processed signal for Corrected/Center zero. File exports remain available when processing is valid and sample changes are applied. See INPUT_FIX_REPORT_v1.6.txt.
+
+
 Active checkout: this folder under
 `D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\Codex Torque\torque-postprocessing`.
 Use it for future changes and launches. Copies under Astra/ and FSU/Github are
@@ -31,7 +34,7 @@ Current observed checks and limitations are in `WINDOWS_INSTALLER_REPORT_v1.6.tx
 
 ## Install and start on Windows
 
-The verified release is in `releases/Torque_Data_Postprocessing_1.6_final/`.
+The verified release is in `releases/Torque_Data_Postprocessing_1.6_build5_final/`.
 Numbered build folders are retained attempts. The verified deliverable is named final. Earlier releases remain available.
 
 Run **Torque_Data_Postprocessing_1.6_Setup_x64.exe**, then open

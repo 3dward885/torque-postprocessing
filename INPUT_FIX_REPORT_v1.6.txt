@@ -1,0 +1,68 @@
+Torque Data Postprocessing 1.6 - installer build 5 input fix
+6 October 2026
+
+Confirmed cause: every sample-entry StringVar write called App.select_pass,
+which rebuilt FigureCanvasTkAgg. Matplotlib's canvas constructor requests focus.
+A replay of the original callback caused 1 redraw and 1 focus request per key;
+the fixed callback caused zero, preserving the existing canvas. Measured example
+callback+event-loop times were 54 ms before / 1.4 ms after on this PC, not a
+cross-machine performance guarantee. Decimal normalization was not the cause.
+
+Fix: entry edits update draft amount/validation/actions without rebuilding the
+plot or re-gridding fields. Corrected preview is hidden while dirty, restored
+when committed text is restored, and refreshed on Apply/Cancel. No forced focus,
+blocking sleeps, delayed callbacks, scientific or normalization changes.
+
+Second report: P003 is excluded and has raw-only inspection with Center zero
+disabled. The user confirmed P001/P002/P004 corrected plots and export work.
+Hidden widget tests and approved Rot1 replay verify file data/plot exports stay
+enabled even with P003 selected when processing is valid and sample edits clean.
+A short message now explains excluded-scan behavior. No exclusion policy changed.
+
+Observed checks:
+PASS 66 unit tests (including two new withdrawn-widget input tests).
+PASS Continuous digit/decimal/scientific input, deletion, paste-sized insertion,
+     cursor index/selection, unchanged canvas, no focus requests, Apply/Cancel,
+     invalid editable drafts, dirty export guards and preview hiding/restoration.
+PASS Hidden GUI workflow: settings/replay, baseline safeguards, field review,
+     excluded selection, local Help, ordinary/molar DAT and JPEG/PDF/PNG exports.
+PASS Approved Rot1: 777 signal rows, ordinary and molar DAT byte-identical.
+PASS Installed GUI/CLI with system-only PATH, separate Unicode/spaced directory,
+     3 existing Ho2sq3 DAT replays exactly equal and saved bindings unchanged.
+PASS Actual silent installer, repeat update, locked-file rollback, shortcut and
+     uninstall checks; only isolated test copy removed, user sentinels retained.
+PASS Numerical fingerprint and prior verified release files unchanged.
+Source ZIP verification: see adjacent SOURCE_VERIFICATION.json, generated after
+packaging by tests/windows_source.py; it records archive hash, extracted replay,
+real hidden widgets, Help, plot resources and numerical comparison results.
+
+Runtime: Windows 11 build 26300; Python 3.12.14; NumPy 2.3.5;
+Matplotlib 3.10.8; Tk 8.6.12; PyInstaller 6.22.3; Inno Setup 7.1.0.
+Fingerprint: ce5bcc72bf3fe23873d78b1b4c0e487e14da54cbbc909976c065556bb4e96d7a
+
+Reproduction commands (from this checkout):
+.venv\Scripts\python.exe -m unittest discover -s tests -p test_*.py -v
+.venv\Scripts\python.exe desktop.py --check-installation validation/v16_input_fix_gui_02 --session validation/v16_source_final/Ho2sq3_0_to_200_diagnostic.json
+.venv\Scripts\python.exe validation/v16_input_fix_check.py
+.build-venv\Scripts\python.exe tools/build_windows.py --output releases/Torque_Data_Postprocessing_1.6_build5 --build-number 5
+.venv\Scripts\python.exe tests/windows_installer.py --setup releases/Torque_Data_Postprocessing_1.6_build5/Torque_Data_Postprocessing_1.6_Setup_x64.exe --manifest releases/Torque_Data_Postprocessing_1.6_build5/bundle_manifest.json --output C:/Users/eduar/AppData/Local/Temp/torque16_build5_0rqykgjk/installer --before validation/v16_before/before.json
+.venv\Scripts\python.exe tools/package_windows_source.py --output releases/Torque_Data_Postprocessing_1.6_build5/Torque_Data_Postprocessing_v1.6_source_update.zip --before validation/v16_input_fix_before/before.json
+.venv\Scripts\python.exe tests/windows_source.py --archive releases/Torque_Data_Postprocessing_1.6_build5/Torque_Data_Postprocessing_v1.6_source_update.zip --output validation/v16_input_fix_source
+Use fresh output paths for repeat runs. Private diagnostic evidence is not in the
+source ZIP; focused typing tests and installed-app checks are included.
+
+Evidence: validation/v16_input_fix_before, v16_input_fix_units.txt,
+v16_input_fix_evidence/report.json, v16_input_fix_gui_02/report.json,
+v16_input_fix_distribution/report.json and v16_input_fix_source/report.json.
+The initial extended GUI check failed due to its new test selecting P002 before
+an old P001 decision-removal assertion; test selection was corrected and rerun.
+
+Installation: close the running application yourself, then run the build 5 Setup.
+No uninstall or Python setup is required. Existing data/settings are unchanged.
+Old build 4 final folder is preserved; CURRENT_RELEASE.txt identifies build 5.
+Source update is a complete project overlay, with no required removals.
+
+Limitations: no visible whole-window review or physical keyboard test performed;
+all windows withdrawn and entry events programmatic. No clean Windows VM was
+available. Restricted-PATH checks are not clean-machine testing. Installer is
+unsigned; no SmartScreen approval claim. No running user app was controlled.

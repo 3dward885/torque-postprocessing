@@ -1,3 +1,9 @@
+1.6 installer build 5 - 6 October 2026
+- Fix sample mass/molar mass/amount typing: no per-keystroke Matplotlib canvas replacement or focus transfer.
+- Keep live draft amount and export guards; hide corrected preview until Apply/Cancel or restoration of committed text.
+- Explain raw-only inspection for excluded scans. Verify excluded selection does not block valid file exports.
+- Numerical processing, molar arithmetic, field policy and saved settings unchanged.
+
 1.6 - 6 October 2026
 - Add independently versioned fixed-field acquisition review, using original full-scan fields before filtering.
 - User-approved rule: round span to 0.01 T; review at or above the user-entered limit. No experimental default.

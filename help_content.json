@@ -2,7 +2,7 @@
   {
     "id": "summary",
     "title": "Overview",
-    "text": "Torque Data Postprocessing 1.5 supports the existing raw layouts and scientific processing. Open data, subtract background, optionally center zero, then use Output to save torque or molar torque. Ordinary treated data remains in N m. Background samples are excluded from signal DATs. Position correction remains deferred."
+    "text": "Torque Data Postprocessing 1.6 supports the existing raw layouts and scientific processing. Open data, subtract background, optionally center zero, then use Output to save torque or molar torque. Ordinary treated data remains in N m. Background samples are excluded from signal DATs. Position correction remains deferred."
   },
   {
     "id": "workflow",
@@ -30,7 +30,7 @@
         "id": "center_zero",
         "title": "Center zero",
         "tip": "Fine-tune one processed signal scan. Requires background subtraction; this step is optional.",
-        "text": "Select a processed signal scan, then open Center zero. Review a baseline from the cached background-subtracted data, drag it or enter an offset in N m, and click Apply. Opening the editor alone does not change saved data. A background scan or unprocessed signal cannot be centered here."
+        "text": "Select a processed signal scan, then open Center zero. Review a baseline from the cached background-subtracted data, drag it or enter an offset in N m, and click Apply. Opening the editor alone does not change saved data. An excluded scan shows raw measurements only; select an included processed signal for Corrected and Center zero. Selecting an excluded scan does not block saving the remaining valid data. A background scan or unprocessed signal cannot be centered here."
       },
       {
         "id": "save_dat",
@@ -347,8 +347,8 @@
       {
         "id": "output_apply",
         "title": "Apply sample changes",
-        "tip": "Validate and save this file's draft sample quantities. No background refit or zero change.",
-        "text": "Validate and save this file's draft sample quantities. No background refit or zero change."
+        "tip": "Validate and save this file's draft sample quantities. Type the full value, then Apply. Live amount calculation does not commit edits. No background refit or zero change.",
+        "text": "Validate and save this file's draft sample quantities. Type the full value, then Apply. Live amount calculation does not commit edits. No background refit or zero change."
       },
       {
         "id": "output_cancel",

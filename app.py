@@ -310,6 +310,19 @@ class App:
             self.canvas = None
         self.plot_message.pack(fill="both", expand=True)
 
+    def refresh_output_preview(self):
+        """Hide committed corrected output during drafts without replacing its canvas."""
+        if self.view.get() != "Corrected" or not self.canvas:
+            return
+        widget = self.canvas.get_tk_widget()
+        if self.output.dirty:
+            widget.pack_forget()
+            self.plot_message.configure(text="Apply or cancel sample changes to view corrected output.")
+            self.plot_message.pack(fill="both", expand=True)
+        else:
+            self.plot_message.pack_forget()
+            widget.pack(fill="both", expand=True)
+
     def refresh_selected(self, event=None):
         if self.output.record is not self.selected() and not self.output.require_clean():
             self.files.selection_set(self.output.record["key"])
@@ -368,6 +381,8 @@ class App:
         pred = next((x for x in (r.get("result") or {}).get("passes", []) if x["pass_id"] == p.id), None)
         issue = (r.get("result") or {}).get("processing_errors", {}).get(p.id) or p.issue
         text = issue or f"Measured T: {p.measured_temperature} K"
+        if p.excluded:
+            text += "\nExcluded scan: raw measurements only. Select an included signal for corrected data and Center zero."
         if pred:
             text += f"\nZero offset: {pred['centering_constant_Nm']:.8g} N m ({pred['centering']})"
             if pred["baseline_review"]["status"] == "stale":
@@ -378,8 +393,6 @@ class App:
         self.clear_plot()
         try:
             if pred and self.view.get() != "Raw":
-                if self.view.get() == "Corrected" and self.output.dirty:
-                    raise InputError("Apply or cancel sample changes to view corrected output.")
                 fig = make_figure(r["result"], p.id, self.view_key(), preview=True, output=r["output"])
             else:
                 fig = raw_figure(p, preview=True)
@@ -387,6 +400,7 @@ class App:
             self.canvas = FigureCanvasTkAgg(fig, master=self.plot_area)
             self.canvas.get_tk_widget().pack(fill="both", expand=True)
             self.canvas.draw_idle()
+            self.refresh_output_preview()
         except InputError as exc:
             self.plot_message.configure(text=str(exc))
 
