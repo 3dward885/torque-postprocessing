@@ -22,6 +22,7 @@ from plots import make_figure, raw_figure, export_figure, font_status
 from output_settings import default_output, save_output_dat, output_paths
 from output_controls import OutputControls, MolarSaveDialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import field_quality
 
 ROOT = Path(__file__).resolve().parent
 
@@ -51,6 +52,7 @@ class App:
         self.last_error = ""
         self.status = tk.StringVar(value="Open a raw DAT file.")
         self.details = tk.StringVar()
+        self.field_alert = tk.StringVar()
         self.range_label = tk.StringVar(value="All angles")
         self.view = tk.StringVar(value="Raw")
         self.view_preference = "Corrected"
@@ -132,6 +134,10 @@ class App:
         self.hover.attach(ttk.Button(settings, text="Acquisition settings…", command=self.file_settings), "settings").pack(side="left")
         self.hover.attach(ttk.Button(settings, text="Angle range…", command=self.range_settings), "range").pack(side="left", padx=8)
         ttk.Label(settings, textvariable=self.range_label).pack(side="left")
+        alert = ttk.Frame(outer)
+        alert.pack(fill="x", pady=(0, 5))
+        ttk.Label(alert, textvariable=self.field_alert, wraplength=940, foreground="#963a24").pack(side="left")
+        self.hover.attach(ttk.Button(alert, text="Review scan…", command=self.review_field), "field_review").pack(side="right")
         panes = ttk.Panedwindow(outer, orient="horizontal")
         panes.pack(fill="both", expand=True)
         left, right = ttk.Frame(panes), ttk.Frame(panes)
@@ -139,11 +145,11 @@ class App:
         panes.add(right, weight=6)
         scan_area = ttk.Frame(left)
         scan_area.pack(fill="both", expand=True)
-        self.passes = ttk.Treeview(scan_area, columns=("T", "B", "n", "role"), show="tree headings", selectmode="extended")
+        self.passes = ttk.Treeview(scan_area, columns=("T", "B", "n", "role", "quality"), show="tree headings", selectmode="extended")
         self.passes.heading("#0", text="Scan")
         self.passes.column("#0", width=65, stretch=False)
         for key, label, width in [("T", "T (K)", 130), ("B", "B (T)", 110),
-                                   ("n", "Points", 55), ("role", "Role", 90)]:
+                                   ("n", "Points", 55), ("role", "Role", 90), ("quality", "Field review", 130)]:
             self.passes.heading(key, text=label)
             self.passes.column(key, width=width, minwidth=45)
         scroll = ttk.Scrollbar(scan_area, orient="vertical", command=self.passes.yview)
@@ -258,7 +264,7 @@ class App:
                   "result": None, "saved": None, "state": error, "error": error}
         record["output"] = output or default_output((cfg or {}).get("input_sha256", ""), path)
         if obj:
-            record["obj"] = configure_acquisition(obj, cfg["acquisition"])
+            record["obj"] = field_quality.configure(obj, cfg)
             record["state"] = f"{len(obj.rows)} measurements; {len(record['obj'].passes)} scans"
         self.records[key] = record
         self.files.insert("", "end", iid=key)
@@ -316,6 +322,7 @@ class App:
         self.passes.delete(*self.passes.get_children())
         self.clear_plot()
         r = self.selected()
+        self.field_alert.set("")
         self.output.bind_record(r)
         if not r or not r.get("obj"):
             self.update_view()
@@ -323,12 +330,17 @@ class App:
             self.refresh_buttons()
             return
         limits = r["cfg"]["acquisition"]["angle_range_deg"]
+        reviews = r["obj"].field_review
+        pending = [pid for pid, v in reviews.items() if v["status"] in field_quality.UNRESOLVED]
+        excluded = [pid for pid, v in reviews.items() if v["status"] == "Excluded by decision"]
+        self.field_alert.set(("Field review required: " + ", ".join(pending) + ". Select a scan and Review scan; final exports are blocked.")
+                             if pending else "Field review resolved." + (" Excluded: " + ", ".join(excluded) if excluded else ""))
         self.range_label.set(f"{limits[0]} to {limits[1]}° — fit, center and export" if limits else "All angles")
         for p in r["obj"].passes:
             self.passes.insert("", "end", iid=p.id, text=p.id, values=(
                 str(p.T) if p.T is not None else p.measured_temperature,
                 p.field_label, f"{len(p.rows)}/{len(p.acquired_rows)}",
-                "Excluded" if p.excluded else "Background" if p.zero else "Signal"))
+                "Excluded" if p.excluded else "Background" if p.zero else "Signal", reviews[p.id]["status"]))
         selected = [pid for pid in old if self.passes.exists(pid)] or [r["obj"].passes[0].id]
         self.passes.selection_set(selected)
         self.select_pass()
@@ -400,7 +412,7 @@ class App:
         if not self.guard_baseline(close=True):
             return False
         obj = read_raw(record["path"], cfg["profile"])
-        configured = configure_acquisition(obj, cfg["acquisition"])
+        configured = field_quality.configure(obj, cfg)
         record.update(raw=obj, obj=configured, cfg=cfg, result=None, saved=None,
                       state="Settings changed; subtract background again", error="")
         self.update_file(record)
@@ -412,6 +424,13 @@ class App:
         if self.busy or not r or not r.get("raw") or not self.guard_baseline(close=True):
             return
         self.settings_dialog = AcquisitionDialog(self, r, list(self.passes.selection()))
+
+    def review_field(self):
+        r, p = self.selected(), self.selected_pass()
+        if self.busy or not r or not p or not self.guard_baseline(close=True):
+            return
+        from field_review_dialog import FieldReviewDialog
+        self.field_dialog = FieldReviewDialog(self, r, p.id)
 
     def range_settings(self):
         self.file_settings()
@@ -542,6 +561,8 @@ class App:
         folder = filedialog.askdirectory(parent=self.root, title="Save figure")
         if folder:
             try:
+                from pipeline import verify_export
+                verify_export(r["result"])
                 if self.view.get() == "Raw":
                     raise InputError("Choose Corrected, Background fit or Processing steps for figure export.")
                 export_figure(r["result"], p.id, folder, self.view_key(), output=r["output"])
@@ -621,6 +642,13 @@ class AcquisitionDialog:
         entry("setpoints", "Temperatures in this file (K)", ", ".join(cfg["acquisition"]["temperature_setpoints_K"]))
         ttk.Label(panel, text="Separate values with spaces or commas").pack(anchor="e")
         entry("temperature_tolerance_K", "Allowed deviation (K)", cfg["profile"]["temperature_tolerance_K"])
+        quality = cfg.get("field_quality", field_quality.defaults())
+        self.field_condition = tk.StringVar(value="Fixed field" if quality["condition"] == "fixed" else "Changing field permitted")
+        ttk.Label(panel, text="Field condition").pack(anchor="w")
+        self.hover.attach(ttk.Combobox(panel, textvariable=self.field_condition, state="readonly",
+            values=("Fixed field", "Changing field permitted")), "field_condition").pack(anchor="w")
+        entry("field_limit", "Review at field change (T)", quality["limit_T"])
+        ttk.Label(panel, text="Span rounded to 0.01 T; review at or above the limit. Blank = unconfigured.").pack(anchor="w")
         limits = cfg["acquisition"]["angle_range_deg"]
         ttk.Label(panel, text="Angle range for fit, centering and export (blank = all angles)").pack(anchor="w", pady=(12, 3))
         entry("range_min", "Lower angle (deg)", limits[0] if limits else "")
@@ -662,6 +690,12 @@ class AcquisitionDialog:
     def apply(self):
         try:
             cfg = copy.deepcopy(self.record["cfg"])
+            quality = cfg.setdefault("field_quality", field_quality.defaults())
+            condition = "fixed" if self.field_condition.get() == "Fixed field" else "changing"
+            limit = self.values["field_limit"].get().strip()
+            if (condition, limit) != (quality["condition"], quality["limit_T"]):
+                quality.update(condition=condition, limit_T=limit, source="Explicit GUI field-condition setting")
+            field_quality.validate(quality)
             for key in cfg["profile"]:
                 if key in self.values:
                     cfg["profile"][key] = self.values[key].get().strip()
@@ -685,9 +719,13 @@ class AcquisitionDialog:
                     updates["role"] = self.role.get().lower()
                 if self.include.get() != "Keep current":
                     updates["exclude"] = self.include.get() == "Exclude"
+                    if self.include.get() == "Include":
+                        quality["decisions"].pop(pid, None)
                 if updates:
                     cfg["acquisition"]["scans"].setdefault(pid, {}).update(
                         identity=scan.identity, source="Explicit GUI scan setting", **updates)
+                if self.include.get() == "Exclude":
+                    cfg = field_quality.decide(self.record["raw"], cfg, pid, "exclude", "Explicit GUI acquisition setting: exclude entire scan")
             if self.app.apply_settings(self.record, cfg):
                 self.window.destroy()
         except (ValueError, OSError) as exc:

@@ -13,6 +13,18 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from storage import load_session, save_session
 from io_profiles import sha256
+from io_profiles import APP_VERSION
+from pipeline import migrate_config
+
+
+def diagnostic_session(original, destination):
+    entries=[]
+    for raw,cfg,choice in load_session(original,include_output=True):
+        cfg=migrate_config(cfg)
+        cfg['field_quality'].update(condition='changing',source='Diagnostic numerical regression policy; not experimental permission')
+        entries.append((raw,cfg,choice) if choice else (raw,cfg))
+    save_session(destination,entries)
+    return destination
 
 
 def clean_environment():
@@ -41,11 +53,11 @@ def check(bundle, output, before, historical=True):
         return done
     cli = "TorqueDataCLI.exe"
     version = run(cli, ["--version"], "version")
-    assert "Torque Data Postprocessing 1.5" in version.stdout
+    assert f"Torque Data Postprocessing {APP_VERSION}" in version.stdout
     prior = json.loads(Path(before).read_text(encoding="utf-8"))
     report["examples"] = {}
     for name, expected in prior["results"].items():
-        session = ROOT / "examples" / (name + ".json")
+        session = diagnostic_session(ROOT / "examples" / (name + ".json"),output / (name + '_diagnostic.json'))
         dat = output / (name + ".dat")
         run(cli, ["process", "--session", session, "--dat", dat], name)
         assert sha256(dat) == expected["dat_sha256"], name
@@ -68,7 +80,7 @@ def check(bundle, output, before, historical=True):
         report["examples"][name] = {"rows": expected["rows"], "DAT_byte_equal": True,
               "bindings_equal": True, "counts": {str(k): v for k, v in counts.items()}}
     report["checks"].append("Three exact DAT replays, original accepted offsets, row accounting and source provenance")
-    session = ROOT / "examples/Ho2sq3_0_to_200.json"
+    session = output / 'Ho2sq3_0_to_200_diagnostic.json'
     collision = output / "Ho2sq3_0_to_200.dat"
     original = sha256(collision)
     run(cli, ["process", "--session", session, "--dat", collision], "collision", False)
@@ -111,6 +123,7 @@ def check(bundle, output, before, historical=True):
                 continue
             key = next(k for k in CASES if folder.name.startswith(k))
             cfg = migrate_config(json.loads((folder / "settings.json").read_text(encoding="utf-8")))
+            cfg['field_quality'].update(condition='changing',source='Diagnostic historical comparison; not experimental permission')
             frozen = json.loads((folder / "provenance.json").read_text(encoding="utf-8"))
             cfg["acquisition"]["temperature_setpoints_K"] = sorted({p["T_K"] for p in frozen["inventory"]}, key=Decimal)
             cfg["acquisition"]["source"] = "Frozen prior-run inventory; sha256 " + sha256(folder / "provenance.json")

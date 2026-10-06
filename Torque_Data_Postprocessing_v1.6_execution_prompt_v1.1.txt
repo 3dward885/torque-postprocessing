@@ -1,0 +1,346 @@
+TORQUE DATA POSTPROCESSING v1.6 — FIXED-FIELD SWEEP VALIDATION
+Execution prompt v1.1 | 6 October 2026
+
+EXECUTION BOUNDARY
+
+Creating or reviewing this prompt does not authorize implementation. Execute it only when the user explicitly asks you to execute it.
+
+This revision supersedes execution prompt v1.0. It explicitly requires user alerts and prohibits silent exclusion of suspected defective sweeps.
+
+TASK
+
+Implement and validate a safeguard against large field changes during experiments intended to use fixed magnetic field. Deliver Torque Data Postprocessing v1.6, including the self-contained Windows installer and source/update archive.
+
+The user’s requirements are:
+- These experimental sweeps were intended at fixed field.
+- A sweep with a confirmed massive field change is unsuitable for the treated data package.
+- Ordinary field fluctuations must not cause rejection.
+- Verify source records and acquisition identity before recommending exclusion.
+- Alert the user and require an explicit decision before excluding a sweep.
+- Exclude a rejected sweep IN FULL.
+- Never silently remove or hide measurements, salvage a failed sweep’s stable portion, or relabel changing-field measurements as fixed-field data.
+
+Use one agent and minimal maintainable Python. Reuse acquisition settings, independent scan identities, the existing exclusion mechanism, shared GUI/CLI core, provenance, Help and Windows packaging. Explain the integration briefly, then implement without routine confirmation.
+
+Run tests in the background with withdrawn Tk windows and offscreen plots. Do not control the running application, capture the desktop, install over the user’s installation, modify the GitHub checkout, commit, push or publish.
+
+1. ESTABLISH THE CURRENT APPLICATION AND DIAGNOSIS
+
+Active repository:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\Codex Torque\torque-postprocessing
+
+Read applicable AGENTS.md, README.md, Torque_GUI_project_state_v1.0.json, CHANGELOG.txt and relevant source/tests. Inspect actual Git status, source version and environment. Preserve existing working changes.
+
+Read the completed diagnosis under:
+validation/mixed_field_20261006/
+
+In particular:
+- README_diagnosis.txt — authoritative final diagnosis.
+- parser_checks.json.
+- saved_DAT_verification.json.
+- series_audit.json and point_trace.tsv.
+- saved_session.json.
+- diagnose.py, checks.py, verify_saved.py and check_parsers.py.
+
+The interim report is superseded where it discusses salvaging the stable tail or merely changing the legend.
+
+Inspect acquisition parsing/configuration, processing/exclusion, baseline bindings, GUI controls, CLI replay, DAT/plot export and packaging. Relevant modules include io_profiles.py, pipeline.py, app.py, baseline.py, storage.py, cli.py, treated_plots.py and output_settings.py.
+
+Capture a fresh pre-patch snapshot of relevant source/settings/hashes, numerical fingerprints and representative outputs. Preserve previous releases and evidence. Build against the actual working v1.5 contents, not the historical Git HEAD.
+
+2. USE THE ESTABLISHED FINDING
+
+Verified raw input:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\20250923 Firenze Measurements\Ho2(thd)4Pc\Raw Data from Instrument\Rot1_raw.dat
+
+176165 bytes
+SHA-256:
+9ea4fec5a273b727546139b899ec1e2c1c94177e39191548076d321dc4237355
+
+The instrument header declares 32 columns; all 1146 measurement records contain 14 fields, with trailing fields omitted. Independent parsing confirmed correct column alignment and Oe-to-T conversion.
+
+Rotation 1, 2 K:
+- P001: physical lines 18–58, 41 points, approximately 2 T.
+- P002: lines 59–99, 41 points, approximately 1.5 T.
+- P003: lines 100–140, 41 points, changing field.
+- P004: lines 141–181, 41 points, approximately 0.5 T.
+- Background P005: lines 182–222, acquired afterward.
+
+P003’s first five measured fields are:
+1.499926248, 1.466694392, 1.268758436, 1.06862508 and 0.9999581 T.
+
+Its measured span is 0.499968148 T, approximately 33.33% of its starting value. The field then remains near 1 T. The original file, raw snapshot, row ledger, ordinary DAT and molar DAT agree.
+
+The separate P002 acquisition was NOT merged into P003. Current code accepts a monotonic field trajectory and labels P003 from its nominal field range. The issue to address is insufficient enforcement and visibility of fixed-field experimental intent.
+
+Do not alter parsing, scan segmentation, nominal coordinates or field rounding merely to implement this safeguard. Do not repeat the completed investigation unless new evidence requires it.
+
+3. DEFINE A SEPARATE GROSS FIELD-CHANGE CHECK
+
+Add a concise acquisition policy with clear labels such as:
+
+Field condition:
+  Fixed field
+  Changing field permitted
+
+For fixed-field experiments:
+  Maximum field change within a scan (T): [value]
+
+New work defaults to Fixed field. Legitimate changing-field measurements remain supported through an explicit recorded choice.
+
+Keep these concepts separate:
+- Measured within-sweep field variation.
+- Deviation from an assigned field setpoint.
+- Existing nominal-coordinate rounding.
+- The existing stable-field tolerance of 1 Oe.
+
+The gross-change check must use ORIGINAL MEASURED field values, converted with the declared Oe-to-T convention, before nominal rounding, angle-range filtering, fitting or centering.
+
+For each complete acquired scan:
+  field_span_T = max(B_measured_T) − min(B_measured_T)
+
+Use Decimal arithmetic and a documented inclusive boundary:
+  field_span_T <= configured_limit_T passes this check.
+  field_span_T > configured_limit_T requires review.
+
+Do not make the check depend on the plotting window or silently split one acquisition into smaller passing segments.
+
+Threshold authorization:
+- The user has NOT specified a universal numerical limit.
+- “A massive change, such as 1.5 to 1 T” is an example, not an exact cutoff.
+- Do not hardcode 0.5 T: this measured event is slightly smaller than 0.5 T and would pass a literal 0.5 T limit.
+- Do not invent an accepted experimental threshold or substitute the existing 1 Oe tolerance.
+- Provide an editable per-file limit, saved with units and provenance.
+- Blank means not configured, not unlimited.
+- When execution begins, ask one concise question for the intended experimental limit while continuing independent implementation and tests.
+- Use clearly labelled synthetic limits in software tests until an experimental value is supplied. An unanswered question is not approval.
+
+P003’s recorded large change and the experiment’s fixed-field intent are already established. Do not ask the user to reconfirm those facts. Distinguish those facts from a saved decision to exclude a particular acquisition.
+
+4. MANDATORY USER ALERT — NO SILENT EXCLUSION
+
+Detecting a suspected defective sweep must alert the user. Detection alone must NEVER automatically remove, hide or exclude it.
+
+Represent at least these distinct states:
+- Check passed.
+- Review required.
+- Excluded by an explicit recorded decision.
+- Changing-field acquisition explicitly permitted.
+- Policy/limit not configured.
+
+When a scan requires review:
+- Keep it visible in the scan list and mark it “Review required.”
+- Show a concise, conspicuous notification when validation finishes.
+- Identify the affected scans and offer direct access to their evidence.
+- Keep the warning available until the issue is resolved.
+- Do not rely solely on color, a tooltip, Help text or an exported log.
+- Allow inspection of the measurements before any decision.
+- Do not display an incomplete result as though all scans passed.
+
+Avoid repeated pop-up dialogs. Prefer one persistent summary alert with access to per-scan review. Use plain labels such as “Field changed during sweep,” “Review scan” and “Exclude entire scan.”
+
+The review panel must show:
+- Scan identity and physical source-row range.
+- Measured field minimum, maximum and span, in T.
+- Configured limit and effective acquisition policy.
+- Field versus acquisition order or sample position.
+- Access to original row values.
+- The reason processing/export is blocked.
+
+Clearly distinguish a recorded field change from independently verified physical magnet behavior. A file cannot establish whether its sensor or instrument log was itself faulty.
+
+An isolated suspicious reading must remain available for inspection rather than being automatically discarded or smoothed.
+
+Offer clear resolution:
+- Exclude the entire scan, recording an explicit user decision.
+- Correct an erroneous user setting explicitly.
+- Explicitly permit a genuinely intended changing-field acquisition.
+
+Do not silently change experimental policy or widen a limit to force a pass. Persist the evidence and acceptance source for any scoped exception.
+
+The user may leave a scan unresolved. Unaffected scans may still be reviewed and processed, but final treated-data and plot export must remain blocked while an included scan is unresolved. Explain the blocked action where it appears.
+
+Exclusion must never be the automatic or preselected consequence of acknowledging a warning. Closing or cancelling review leaves the scan unresolved.
+
+A previously confirmed exclusion may replay without another prompt only when its saved source/scan bindings remain valid. Keep the exclusion visible in the interface and export summary.
+
+CLI processing must identify affected scans and stop with an actionable error and nonzero exit status unless valid saved decisions resolve them. Never silently skip unresolved scans.
+
+5. EXCLUDE FAILED SWEEPS CONSISTENTLY AFTER APPROVAL
+
+Reuse the existing per-scan exclusion mechanism where practical.
+
+After an explicit user decision:
+- Exclude every point of that acquisition from ordinary DAT, molar DAT, grouped JPEGs and treated-data previews.
+- Keep the excluded scan visible and available for raw-data inspection.
+- Preserve its complete original measurements in raw snapshots and the row ledger.
+- Record its identity, supporting evidence, exclusion reason and decision source.
+- Do not retain only the stable tail.
+- Do not move early points into another scan.
+- Do not manufacture missing fixed-field measurements.
+- Do not silently apply the decision to another scan, file, rotation or temperature.
+
+Apply the policy to background acquisitions too. An excluded or unresolved background must not be used silently. Dependent signal scans require a valid replacement or remain unresolved.
+
+For the P003 reproducer, demonstrate the complete sequence:
+  Detect → Alert → Inspect → Explicitly exclude → Reprocess/export.
+
+Automated tests may simulate the user’s exclusion action, but must identify it as a test action. Do not fabricate a real user acceptance record.
+
+Create corrected experimental deliverables only when the acquisition-specific exclusion is explicitly authorized. If trusted prior user instructions already provide that authorization, record their actual source; otherwise request the decision after presenting the concrete evidence. Do not ask again for decisions already explicitly made.
+
+After excluding P003, expected accounting is:
+- 1146 original raw rows remain auditable.
+- 328 background rows remain background data.
+- 41 P003 signal rows are explicitly excluded.
+- 777 signal rows remain in treated output.
+- The 2 K figure contains P001, P002 and P004: 123 points.
+
+These counts describe this verified fixture, not production constants.
+
+Write a NEW corrected session/export. Preserve existing files. Retain the user’s saved molar normalization from the verified settings; do not substitute synthetic sample quantities or infer new ones.
+
+6. SETTINGS, REPLAY AND SCIENTIFIC COMPATIBILITY
+
+Persist policy, threshold, units, review status and scoped decisions in a small versioned acquisition-quality block using existing configuration/provenance conventions. Keep it separate from display and molar-output preferences.
+
+Bind decisions to:
+- Source hash.
+- Stable acquired-scan identity and original row set.
+- Field evidence and policy under which the decision was made.
+
+Source or acquisition changes must invalidate affected decisions. Changing font, plot view or molar normalization must not.
+
+Retain an explicit record of why each scan is included, unresolved or excluded. A source change must not silently carry an old exclusion onto a different acquisition.
+
+Old sessions must remain readable. Do not interpret the old default “monotonic” parser profile as proof that the user deliberately intended changing-field experiments. If fixed-field intent or a limit is unavailable, show an explicit migration/review requirement rather than inventing one.
+
+Use identical enforcement in GUI and CLI. Document any new review requirement; do not bypass it for headless exports.
+
+Retain original session files. Historical numerical comparisons may use explicit diagnostic policies in new test settings, without rewriting archived evidence or presenting those settings as experimental approval.
+
+Preserve exactly:
+- Raw tokens, measured/nominal coordinates, acquisition order and identities.
+- Existing temperature/field/angle checks and angle-range selection.
+- Background selection and coverage permissions.
+- Six-significant-digit Decimal torque quantization.
+- Existing unweighted degree-six background fit and scaled [0,200] basis.
+- Subtraction, ordinary/manual centering once and binary64 .8g N m export.
+- Exact existing molar conversion from serialized N m tokens.
+- Manual-zero behavior and stale-baseline protections.
+- Atomic writes, collision protection and complete row accounting.
+
+Compare unaffected scans against fresh v1.5 outputs exactly. Do not claim the entire DAT remains byte-identical when an acquisition is deliberately excluded.
+
+Inspect baseline-binding consequences before refactoring. Preserve compatible accepted settings and invalidate incompatible settings honestly. Never forge digests or silently reaccept offsets.
+
+Sample-position correction in degrees remains DEFERRED.
+
+7. FOCUSED BACKGROUND VALIDATION
+
+Run the current unit suite and add meaningful tests for:
+
+A. Measured-field check
+- Stable scans with normal fluctuations pass an appropriate configured limit.
+- Large changes in either direction are flagged.
+- Below, exactly at and above the boundary.
+- Positive, negative and near-zero fields; Oe-to-T conversion.
+- Decimal/scientific notation, missing, malformed, negative and nonfinite limits.
+- Angle filtering cannot hide a transition.
+- No hardcoded field targets or experiment-specific production branches.
+
+B. Parser and scan identity
+- Preserve the real P002/P003 boundary and original field tokens.
+- Distinct adjacent and repeated same-field scans remain independent.
+- Missing points, resets and temperature drift do not corrupt membership.
+- A genuinely intended changing-field scan remains available under explicit policy.
+
+C. Mandatory alert and review
+- Triggering the safeguard produces a visible warning and “Review required.”
+- Detection does not shorten the data package or automatically exclude a scan.
+- Affected scans remain visible and inspectable.
+- Closing/cancelling review leaves the issue unresolved.
+- Export is blocked with an explanation while an included scan remains unresolved.
+- Only an explicit exclusion action changes the inclusion state.
+- Valid saved decisions replay visibly; mismatched decisions fail.
+- CLI reports unresolved scans and never silently skips them.
+
+D. Exclusion and state
+- Entire approved failed sweeps are excluded consistently.
+- No stable-tail salvage, cross-scan reassignment or fabricated points.
+- Source changes invalidate saved decisions.
+- Invalid backgrounds block dependent signals appropriately.
+- Save/load, per-file independence, cancelled dialogs and dirty-edit guards work.
+- Original rows and reasons remain in the audit ledger.
+
+E. Real reproducer
+- Reconfirm P003’s 0.499968148 T span directly from source tokens.
+- Original v1.5 replay reproduces the supplied evidence.
+- Exercise detection and alert before simulating explicit exclusion.
+- Verify 777 treated rows and complete 1146-row audit accounting afterward.
+- Unaffected ordinary and molar values remain exactly unchanged.
+- P002 remains a separate 41-point 1.5 T series.
+- Label simulated test decisions separately from real user-approved settings.
+
+F. GUI/CLI and figures
+- Withdrawn real-widget workflow: load, configure policy, inspect alert, resolve, process, save/reload and export.
+- GUI/CLI produce identical selected data and exclusion records.
+- JPEGs contain only included treated signal rows.
+- Preserve Arial, white background, existing dimensions, units and marker-only style.
+- Distinguish offscreen inspection from visible application review.
+
+G. Distribution
+- Test actual frozen GUI/CLI behavior and resource loading.
+- Test installer/update/uninstall only in an isolated validation installation.
+- Replay from the extracted source archive.
+- Preserve user data and prior releases.
+
+Do not rerun model discovery or archival scripts that overwrite evidence. Report observed PASS/FAIL/BLOCKED results and exact limitations. A restricted-PATH test is not a clean-machine test.
+
+8. DELIVER v1.6
+
+Update current application, executable properties, installer and current documentation to version 1.6. Keep the name exactly “Torque Data Postprocessing.” Record installer build numbers separately.
+
+Reuse the verified Windows packaging workflow and pinned dependencies. Preserve stable installer identity, per-user installation, shortcuts, logs, uninstaller behavior and bundled numerical-source verification.
+
+Do not redistribute Arial, require end-user Python setup, or claim publisher signing/SmartScreen approval without evidence.
+
+Update README, CHANGELOG, local Help/tooltips and the compact project state. Explain:
+- Fixed-field policy versus permitted changing-field acquisition.
+- Gross field-change limit versus ordinary coordinate tolerance.
+- Mandatory alerts and unresolved states.
+- Explicit review before complete-sweep exclusion.
+- Session migration and CLI behavior.
+- Preservation of raw/audit data.
+- Actual tests and remaining limitations.
+
+Deliver:
+- Verified Torque_Data_Postprocessing_1.6_Setup_x64.exe.
+- Source/update ZIP for manual GitHub copying.
+- Portable ZIP if supported by the existing workflow.
+- Checksums and a concise implementation/validation report.
+- Corrected Rot1 session, ordinary/molar DATs and JPEGs in a separate directory when the exclusion decision is authorized.
+- Clearly labelled test-only outputs if acceptance was simulated.
+- This execution prompt and reproducible focused tests.
+
+Keep generated evidence and private research data outside source/update archives. List required source removals, if any. Preserve all previous releases and existing experimental exports.
+
+Keep attempts numbered. Only a verified build belongs in:
+releases/Torque_Data_Postprocessing_1.6_final/
+
+Update CURRENT_RELEASE.txt after verification.
+
+If an experimental threshold or exclusion approval remains unresolved, complete independent software work and report the precise outstanding decision. Do not invent approval, silently exclude data or mislabel test decisions as experimental acceptance.
+
+Finish with:
+- A brief change summary.
+- Absolute installer/source/report/data links.
+- Exact tested commands.
+- A compact observed gate table.
+- Migration notes and specific limitations.
+- A suggested GitHub commit summary and description.
+- Whether a clean Windows machine and visible installer UI were tested.
+
+The user manages installation and GitHub commits/pushes manually.
+
+Then stop.

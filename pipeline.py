@@ -14,6 +14,7 @@ from numpy.polynomial import Polynomial
 from io_profiles import (InputError, read_raw, _nominal, profile_from, check_deviation,
                          acquisition_defaults, configure_acquisition, split_scans)
 from baseline import empty_review, review_settings, make_binding, resolve, finalize_pass
+import field_quality
 
 RECIPE = {
     "version": "verified-1.2/gui-1.0",
@@ -32,6 +33,7 @@ def default_config(acquisition):
         "centering_source": "Application default: midrange",
         "acquisition": acquisition_defaults(), "overrides": {}, "support_exceptions": [],
         "note": "", "migration_notes": [], "baseline_review": empty_review(),
+        "field_quality": field_quality.defaults(),
     }
 
 
@@ -50,6 +52,7 @@ def migrate_config(config):
         cfg.pop("molar", None)
         cfg.pop("export_format", None)
         cfg.setdefault("migration_notes", []).append("Molar conversion and historical header choices removed; output is torque in N m.")
+    cfg.setdefault("field_quality", field_quality.defaults())
     return cfg
 
 
@@ -77,7 +80,7 @@ def validate_config(acquisition, config):
             raise InputError(f"{pid}: invalid centering override.")
         if not override.get("source", "").strip():
             raise InputError(f"{pid}: override needs a source note.")
-        if "background" in override and override["background"] not in [p.id for p in acquisition.candidates(passes[pid])]:
+        if "background" in override and override["background"] not in [p.id for p in acquisition.passes if p.zero and p.T == passes[pid].T]:
             raise InputError(f"{pid}: selected background is not in this input at the same nominal temperature.")
     for exception in config.get("support_exceptions", []):
         legacy = {"input_sha256", "temperature_K", "outside_angles_deg", "background_support_deg", "source"}
@@ -220,7 +223,7 @@ def refinalize(result, config, allow_stale_review=False):
     """Replay committed choices from cached u; never reread raw data or refit."""
     config = migrate_config(config)
     review_settings(config, {p["id"] for p in result["inventory"] if p["role"] == "signal"})
-    for key in ("input_sha256", "profile", "acquisition", "support_exceptions"):
+    for key in ("input_sha256", "profile", "acquisition", "support_exceptions", "field_quality"):
         if config.get(key) != result["config"].get(key):
             raise InputError("Upstream settings changed; process again before reviewing the baseline.")
     old, new = result["config"].get("overrides", {}), config.get("overrides", {})
@@ -241,6 +244,7 @@ def refinalize(result, config, allow_stale_review=False):
 
 
 def verify_export(result):
+    field_quality.verify_result(result)
     if result.get("exportable") is False:
         raise InputError("Resolve unprocessed scans or stale adjustments before saving: " + ", ".join(result["export_blockers"]))
     if "baseline_review" in result["config"]:
@@ -260,9 +264,14 @@ def verify_export(result):
 def process(acquisition, config, allow_stale_review=False, partial=False):
     """Shared computation; partial review never permits silently incomplete export."""
     config = migrate_config(config)
-    acquisition = configure_acquisition(acquisition, config["acquisition"])
+    acquisition = field_quality.configure(acquisition, config)
     validate_config(acquisition, config)
     fits, predictions, output_rows, stages, errors = {}, [], [], {}, {}
+    errors.update({pid: r["reason"] for pid, r in acquisition.field_review.items()
+                   if r["status"] in field_quality.UNRESOLVED})
+    if errors and not partial:
+        raise InputError("Field review required; inspect scans and resolve in Acquisition settings / Review scan: " +
+                         "; ".join(f"{pid}: {reason}" for pid, reason in errors.items()))
     signals = [p for p in acquisition.passes if not p.zero and not p.excluded]
     if not signals:
         raise InputError("No included signal scans.")
@@ -311,6 +320,8 @@ def process(acquisition, config, allow_stale_review=False, partial=False):
     for row in acquisition.rows:
         p = passes[row.pass_id]
         ledger.append({**asdict(row), "T": str(row.T), "B": str(row.B),
+            "field_review_status": acquisition.field_review[p.id]["status"],
+            "field_review_reason": acquisition.field_review[p.id]["reason"],
             "role": "background" if p.zero else "signal",
             "retention": "explicitly excluded" if p.excluded else "outside selected angle range" if row.line not in {r.line for r in p.rows} else "retained in treated DAT" if row.line in stages and not p.zero else "background fit only" if row.line in stages else "unprocessed",
             "measured_temperature_K": row.tokens[3], "measured_field_Oe": row.tokens[4],
@@ -318,6 +329,8 @@ def process(acquisition, config, allow_stale_review=False, partial=False):
             "record_width": len(row.source_tokens), **stages.get(row.line, {})})
     return review_summary({
         "recipe": copy.deepcopy(RECIPE), "config": copy.deepcopy(config),
+        "field_review": acquisition.field_review,
+        "field_quality_digest": field_quality.settings_digest(config),
         "reference_settings": acquisition.reference_metadata,
         "processing_errors": errors,
         "input": {"path": acquisition.path, "filename": acquisition.path.replace("\\", "/").rsplit("/", 1)[-1],

@@ -442,5 +442,25 @@
     "id": "output_examples",
     "title": "Output examples and troubleshooting",
     "text": "Software example only: 2 mg and 400 g/mol gives 5e-6 mol. Entering Amount (mol) = 5e-6 gives the same factor 200000 mol^-1. These are not measured Ho2sq3 sample quantities.\n\nA missing, zero, negative, nonfinite or unusable amount blocks molar saving with an inline explanation. Apply or Cancel before changing files, quantity, saving settings or exporting. A positive but physically wrong mass cannot be detected automatically; check units and the calculated amount.\n\nSwitch clean settings back to Torque to save ordinary N m; accepted sample entries remain available. To save plots in both quantities, export in each mode without reprocessing. Settings belong to the selected file and never spread to another sample. Raw/background/stages and torque-zero controls stay in N m.\n\nSave settings, then replay: TorqueDataCLI.exe process --session settings.json --dat sample_treated.dat. A molar session also saves sample_molar.dat; old sessions save only ordinary data. Keep the details/replay.json file for reproducing exported settings."
+  },
+  {
+    "id": "field_review",
+    "title": "Field review and complete-sweep exclusion",
+    "tip": "Inspect original measured fields and source rows. Review never excludes automatically. Resolve included scans before exporting.",
+    "text": "Every acquired scan, including backgrounds, is checked before angle selection, fitting or centering. The measured span is max(B) minus min(B) after Oe-to-T conversion. It is rounded to 0.01 T (nearest; ties away from zero) for this review only. Review is required when the rounded span reaches or exceeds the user-entered limit. For example, 0.499968148 T rounds to 0.50 T and requires review at a 0.50 T limit; the effective unrounded boundary is 0.495 T. Original field measurements and exported coordinates do not change. This is distinct from setpoint deviations and the existing 1 Oe coordinate tolerance.\n\nThe persistent warning and scan status show unresolved acquisitions. Review scan displays minimum, maximum, exact and rounded span, policy and original rows. These are recorded instrument values, not independent verification of the magnet. No points are smoothed, discarded or moved. Closing the panel leaves the scan unresolved.\n\nAfter inspecting the evidence, enter a reason and explicitly Exclude entire scan or Permit changing field. To fix incorrect settings, use Acquisition settings. Remove saved decision restores validation. Exclusion affects the entire acquisition in all treated outputs; all raw rows remain in the snapshot and ledger. Unresolved or excluded backgrounds cannot supply a fit; choose another valid background or resolve dependent signals.\n\nDecisions bind to source hash, acquired row identities, measured field evidence and policy. A changed source or policy requires review again. Display and molar choices do not invalidate decisions. Old sessions remain readable but require an explicit field policy/limit before exporting. Their old monotonic parser setting is not an experimental permission.",
+    "children": [
+      {
+        "id": "field_condition",
+        "title": "Field condition",
+        "tip": "Fixed field requires an entered review limit. Changing field permitted records explicit experimental intent for this file.",
+        "text": "New and migrated files start with Fixed field and no limit. Choose Changing field permitted only for an intended changing-field experiment; this does not bypass other temperature, coordinate or parser safeguards."
+      },
+      {
+        "id": "field_limit",
+        "title": "Review at field change (T)",
+        "tip": "Enter a finite nonnegative limit in tesla. Rounded full-scan span at or above this limit requires review. Blank is unconfigured.",
+        "text": "Enter a decimal or scientific-notation value in T. The review span is rounded to 0.01 T; the configured limit is used as entered. Zero requires review even for a constant scan. Ordinary fluctuations pass when their rounded span is below the chosen limit. The software supplies no experimental default. Saving is blocked while an included scan is unresolved."
+      }
+    ]
   }
 ]

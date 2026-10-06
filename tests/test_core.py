@@ -33,6 +33,7 @@ def synthetic(angles=GRID, background=GRID, second_background=False):
 
 def fixture_config(obj):
     cfg = default_config(obj)
+    cfg["field_quality"].update(condition="changing", source="Synthetic test policy; not experimental approval")
     cfg["acquisition"]["temperature_setpoints_K"] = ["5"]
     cfg["acquisition"]["source"] = "Synthetic software fixture setpoint"
     return cfg
@@ -251,7 +252,7 @@ class CoreTests(unittest.TestCase):
         result = process(obj, cfg)
         capture = io.StringIO()
         with patch("sys.stdout", capture):
-            status = cli_main(["process", "--raw", str(self.path), str(self.folder/"missing.dat"), "--setpoints", "5", "--output", str(self.folder/"out")])
+            status = cli_main(["process", "--raw", str(self.path), str(self.folder/"missing.dat"), "--setpoints", "5", "--field-condition", "changing", "--output", str(self.folder/"out")])
         reports = json.loads(capture.getvalue())
         self.assertEqual(status, 1)
         self.assertEqual([r["status"] for r in reports], ["success", "failed"])

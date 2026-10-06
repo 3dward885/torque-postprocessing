@@ -8,6 +8,7 @@ from io_profiles import APP_VERSION, read_raw, configure_acquisition, InputError
 from input_fields import temperature_list
 from pipeline import default_config, migrate_config, process, select_background, support_permission
 from storage import atomic_json, export_run, save_dat, load_config, load_session
+import field_quality
 
 
 def load_entry(path, settings=None):
@@ -42,6 +43,8 @@ def main(argv=None):
     p.add_argument("--angle-range", nargs=2, metavar=("MIN_DEG", "MAX_DEG"), help="Range for background fit, centering and export; default all samples")
     p.add_argument("--allow-extrapolation", nargs="+", metavar="SCAN", help="Explicitly allow background extrapolation for these scan IDs")
     p.add_argument("--centering", choices=("midrange", "mean"))
+    p.add_argument("--field-condition", choices=("fixed", "changing"), help="Explicit experimental field condition")
+    p.add_argument("--field-review-limit", help="Review when measured full-scan span, rounded to 0.01 T, reaches this limit in T")
     out = p.add_mutually_exclusive_group(required=True)
     out.add_argument("--output", help="Parent folder for a new complete run")
     out.add_argument("--dat", help="Treated .dat filename (one input)")
@@ -60,16 +63,16 @@ def main(argv=None):
         return 0
     if args.command == "inspect":
         obj, cfg = load_entry(args.raw, load_config(args.settings) if args.settings else None)
-        obj = configure_acquisition(obj, cfg["acquisition"])
+        obj = field_quality.configure(obj, cfg)
         print(json.dumps({"raw_rows": len(obj.rows), "scans": [
             {"id": p.id, "measured_T_K": p.measured_temperature, "setpoint_K": str(p.T),
-             "field_T": p.field_label, "rows": len(p.rows), "issue": p.issue,
+             "field_T": p.field_label, "rows": len(p.rows), "issue": p.issue, "field_review": obj.field_review[p.id],
              "first_line": p.acquired_rows[0].line, "last_line": p.acquired_rows[-1].line}
             for p in obj.passes]}, indent=2))
         return 0
     if args.session:
         if any((args.settings, args.setpoints, args.temperature_tolerance, args.angle_range,
-                args.allow_extrapolation, args.centering)):
+                args.allow_extrapolation, args.centering, args.field_condition, args.field_review_limit)):
             parser.error("--session replays its saved settings; edit the session in the GUI to change them.")
         entries = load_session(args.session, include_output=True)
     else:
@@ -82,6 +85,14 @@ def main(argv=None):
     for path, settings, output in entries:
         try:
             obj, cfg = load_entry(path, settings)
+            if args.field_condition is not None or args.field_review_limit is not None:
+                quality = cfg["field_quality"]
+                quality.update(source="Explicit CLI field-condition setting")
+                if args.field_condition is not None:
+                    quality["condition"] = args.field_condition
+                if args.field_review_limit is not None:
+                    quality["limit_T"] = args.field_review_limit
+                field_quality.validate(quality)
             if args.setpoints is not None:
                 cfg["acquisition"]["temperature_setpoints_K"] = temperature_list(args.setpoints)
                 cfg["acquisition"]["source"] = "Explicit CLI experimental setpoints"

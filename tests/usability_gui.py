@@ -120,6 +120,7 @@ def main(raw, output):
             assert dialog.labels["scan_temperature"]["text"] == "Override selected scan temperature (K)"
             dialog.values["setpoints"].set("2.5 5, 10 25,50 100 150,200 250")
             dialog.values["scan_temperature"].set("2.5")
+            dialog.values["field_limit"].set("0.5")  # Explicit software-test limit.
             dialog.apply()
             assert not dialog.window.winfo_exists(), dialog.error.get()
             acquisition = record["cfg"]["acquisition"]
@@ -177,6 +178,9 @@ def main(raw, output):
 
             app.load_configuration(ROOT/"examples/Ho2sq3_manual_demo.json")
             wait()
+            migrated = copy.deepcopy(app.selected()["cfg"])
+            migrated["field_quality"].update(limit_T=".5", source="Explicit diagnostic test setting")
+            app.apply_settings(app.selected(), migrated)
             app.process_all()
             wait()
             record = app.selected()

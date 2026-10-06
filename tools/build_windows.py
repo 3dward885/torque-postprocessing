@@ -130,6 +130,9 @@ def main():
          "--distpath", str(output / "portable"), "--workpath", str(stage / "pyinstaller"),
          str(ROOT / "windows/Torque.spec")], output / "pyinstaller.log", cwd=ROOT, env=build_env)
     bundle = output / "portable/Torque Data Postprocessing"
+    for required in ("_internal/_tcl_data/init.tcl", "_internal/_tk_data/tk.tcl", "_internal/_tkinter.pyd"):
+        if not (bundle / required).is_file():
+            raise RuntimeError(f"Incomplete Tk runtime: {required}. Check Tcl/Tk access in the build environment; no installer was created.")
     shutil.copyfile(ROOT / "WINDOWS_APP.txt", bundle / "Read me.txt")
     (bundle / "install_identity.txt").write_text("7192D918-D36B-4D0E-9F83-F90C3C68A6F1\n")
     manifest = {p.relative_to(bundle).as_posix(): digest(p) for p in bundle.rglob("*") if p.is_file()}

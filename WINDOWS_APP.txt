@@ -1,7 +1,7 @@
-Torque Data Postprocessing 1.5 - Windows application
+Torque Data Postprocessing 1.6 - Windows application
 
 INSTALL
-Double-click Torque_Data_Postprocessing_1.5_Setup_x64.exe and follow Setup.
+Double-click Torque_Data_Postprocessing_1.6_Setup_x64.exe and follow Setup.
 Open Torque Data Postprocessing from the Start menu. A desktop shortcut is optional.
 Python, Tk and the required numerical/plotting libraries are included.
 Installation and processing require no network connection or Python setup.
@@ -54,5 +54,11 @@ Accepted zero adjustments still validate source, numerical settings and runtime.
 A different Windows/Python/NumPy environment can require reviewing and applying
 an old adjustment again. These checks have not been disabled for packaging.
 
-Windows 64-bit build. See WINDOWS_INSTALLER_REPORT_v1.5.txt in the source project
+Windows 64-bit build. See WINDOWS_INSTALLER_REPORT_v1.6.txt in the source project
 for the actual validation and limits. No automatic updating or telemetry added.
+
+FIELD REVIEW (v1.6)
+New and migrated sessions require an explicit field policy. For Fixed field, enter your review limit in T in Acquisition settings. No experimental default is supplied.
+The full acquired measured field span is rounded to 0.01 T (nearest; ties away from zero). At or above the limit requires review. This does not alter field measurements or nominal coordinates.
+Review scan shows original rows and the field trace. Detection never excludes. Enter a reason and explicitly exclude the entire scan or permit an intended changing-field acquisition. Closing review leaves it unresolved. All final exports are blocked while an included scan is unresolved. Raw snapshots and the row ledger retain excluded measurements.
+Save a new session for CLI replay. Old monotonic parsing does not constitute changing-field permission. Changing the source, scan identity or field policy invalidates affected decisions; display and molar settings do not.

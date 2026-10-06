@@ -59,7 +59,7 @@ def main(setup, bundle_manifest, output, before):
         install(installed, "install", True)
         reg = registration()
         assert Path(reg["InstallLocation"]).resolve() == installed
-        assert reg["DisplayName"].startswith("Torque Data Postprocessing") and reg["DisplayVersion"] == "1.5"
+        assert reg["DisplayName"].startswith("Torque Data Postprocessing") and reg["DisplayVersion"] == "1.6"
         manifest = json.loads(Path(bundle_manifest).read_text())
         assert all(sha256(installed / p) == h for p, h in manifest.items())
         links = sorted(shortcut_dir.glob("*.lnk"))

@@ -1,0 +1,8 @@
+Torque Data Postprocessing 1.6 source/update
+Copy archive contents into the manual GitHub checkout, preserving paths.
+No required removals. Do not copy generated validation data, environments or installers.
+Review the working changes in GitHub Desktop and commit/push yourself.
+New modules: field_quality.py and field_review_dialog.py. Help resources required.
+For the installed app, close it yourself and run Setup; uninstall is not required.
+Older sessions require a field condition/limit and explicit resolution of warnings.
+Exact tests, current limitations and hashes: WINDOWS_INSTALLER_REPORT_v1.6.txt.

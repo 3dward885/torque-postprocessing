@@ -227,6 +227,8 @@ def check_installation(output, session=None):
                         "normalization": "Software fixture: 2 mg, 400 g/mol, or 5e-6 mol; not experimental"}
                     report["checks"].append("Visible per-file Output, invalid entries, Apply/Cancel, dirty guards, file independence, amount mode, paired filenames/DAT, saved normalization, matching preview/PDF/PNG/JPEG, no plot DAT or refit")
                 assert sha256(record["path"]) == report["raw_sha256"]
+            check_field_widgets(app, root, output)
+            report["checks"].append("Fixed-field widgets: persistent alert, full raw evidence, cancel, explicit whole-scan rejection, per-file independence, blocked export, save/replay and stale decision")
             assert root.state() == "withdrawn" and not app.busy
             report["status"] = "PASS"
             atomic_json(output / "report.json", report)
@@ -237,3 +239,73 @@ def check_installation(output, session=None):
             app.closed = True
             app.executor.shutdown(wait=True, cancel_futures=True)
         root.destroy()
+
+
+def check_field_widgets(app, root, output):
+    """Synthetic source and simulated decisions; runs inside the withdrawn-window guard."""
+    import copy
+    from io_profiles import TSV_HEADER
+    from cli import load_entry, run_entry
+    from pipeline import process, verify_export
+    from storage import save_session, load_session, treated_text
+    from field_quality import UNRESOLVED
+    source = output / "SYNTHETIC_field_review.dat"
+    with source.open('w', newline='') as stream:
+        writer=csv.writer(stream,delimiter='\t',lineterminator='\n');writer.writerow(TSV_HEADER)
+        for scan in range(3):
+            for i,angle in enumerate(range(200,-1,-5)):
+                field = Decimal('15000') - Decimal('125')*i if scan==0 else Decimal('10000') if scan==1 else Decimal(0)
+                writer.writerow(['7.375',str(field),str(angle),str(Decimal(angle*angle+1)*Decimal('1e-12'))])
+    obj,cfg=load_entry(source)
+    cfg['acquisition']['temperature_setpoints_K']=['7.375']
+    cfg['acquisition']['source']='Synthetic software fixture'
+    key=app.add_record(source,obj,cfg)
+    app.files.selection_set(key);app.refresh_selected();root.update()
+    assert 'review required' in app.field_alert.get().lower()
+    app.file_settings();dialog=app.settings_dialog
+    assert dialog.field_condition.get()=='Fixed field'
+    assert dialog.values['field_limit'].get()==''
+    dialog.values['field_limit'].set('.5');dialog.apply();root.update()
+    record=app.selected()
+    assert record['obj'].field_review['P001']['status']=='Review required'
+    assert record['obj'].field_review['P002']['status']=='Check passed'
+    app.passes.selection_set('P001');app.select_pass();app.review_field();root.update()
+    review=app.field_dialog
+    assert review.window.state()=='withdrawn'
+    assert '15000' in review.raw_text.get('1.0','end')
+    assert len(review.canvas.figure.axes[0].lines[0].get_xdata())==41
+    review.close()
+    assert not record['cfg']['field_quality']['decisions']
+    result=process(record['raw'],record['cfg'],partial=True)
+    assert not result['exportable'] and result['rows']==41
+    try: verify_export(result)
+    except ValueError: pass
+    else: raise AssertionError('Unresolved scan was exportable')
+    app.review_field();review=app.field_dialog
+    unchanged=copy.deepcopy(record['cfg'])
+    edited=copy.deepcopy(unchanged);edited['field_quality']['source']='Changed while review is open (test)'
+    app.apply_settings(record,edited)
+    review.reason.set('SIMULATED stale-panel test');review.commit('exclude')
+    assert 'changed' in review.error.get()
+    assert not record['cfg']['field_quality']['decisions']
+    app.apply_settings(record,unchanged);review.close()
+    app.review_field();review=app.field_dialog
+    review.commit('exclude');assert 'Enter a reason' in review.error.get()
+    assert not record['cfg']['field_quality']['decisions']
+    review.reason.set('SIMULATED widget-test rejection, not experimental approval')
+    review.commit('exclude');root.update()
+    assert record['obj'].passes[0].excluded
+    assert 'Excluded: P001' in app.field_alert.get()
+    result=process(record['raw'],record['cfg'])
+    assert result['rows']==41 and sum(r['retention']=='explicitly excluded' for r in result['ledger'])==41
+    session=output/'SYNTHETIC_field_session.json'
+    save_session(session,[(str(source),record['cfg'])])
+    raw,reloaded=load_session(session)[0]
+    assert treated_text(run_entry(raw,reloaded))==treated_text(result)
+    changed=copy.deepcopy(record['cfg']);changed['field_quality']['limit_T']='.6'
+    app.apply_settings(record,changed)
+    assert record['obj'].field_review['P001']['status']=='Review required'
+    assert not record['obj'].passes[0].excluded
+    app.review_field();app.field_dialog.remove();root.update()
+    assert not record['cfg']['field_quality']['decisions']
+    assert record['obj'].field_review['P001']['status']=='Check passed'

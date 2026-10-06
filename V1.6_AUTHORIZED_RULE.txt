@@ -1,0 +1,17 @@
+Authoritative user amendment, 6 October 2026
+
+The user supplied a per-file review limit of 0.5 T.
+After discussion of P003's exact measured span, the user explicitly approved:
+"round the span to 0.01 T, then require review at or above 0.50 T.
+Original measurements remain unchanged, and exclusion still requires the user's explicit decision."
+User response: "Use this rule".
+
+This supersedes the original execution prompt's exact-span > limit comparison.
+The implementation uses Decimal nearest rounding, ties away from zero, and >=.
+At a 0.50 T limit the effective exact-span boundary is 0.495 T.
+The entered limit is stored per file; no numerical experimental limit is a production default.
+The 0.01 T quantization applies only to review, never to source/export coordinates.
+This approval does not itself authorize excluding P003.
+
+Subsequent explicit acquisition decision, 6 October 2026:
+User answered "Exclude P003 and create corrected deliverables" to the question identifying P003, lines 100-140 and all 41 points. This authorizes only that acquisition in the verified Rot1 input. The saved decision records this source, the source/scan bindings and field evidence.

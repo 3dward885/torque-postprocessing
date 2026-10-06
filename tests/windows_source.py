@@ -7,6 +7,8 @@ from pathlib import Path
 import subprocess
 import sys
 import zipfile
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from windows_bundle import diagnostic_session
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -27,7 +29,7 @@ def main(archive, output):
         zipped.extractall(source)
     env = os.environ.copy()
     env.pop("PYTHONPATH", None)
-    before = json.loads((ROOT / "validation/v15_before/before.json").read_text(encoding="utf-8"))
+    before = json.loads((ROOT / "validation/v16_before/before.json").read_text(encoding="utf-8"))
     def run(arguments, label):
         done = subprocess.run([sys.executable, *map(str, arguments)], cwd=output, env=env,
                               capture_output=True, text=True, encoding="utf-8", errors="replace",
@@ -36,10 +38,11 @@ def main(archive, output):
         assert done.returncode == 0, (label, done.stdout, done.stderr)
     for name, expected in before["results"].items():
         target = output / (name + ".dat")
-        run([source / "cli.py", "process", "--session", ROOT / "examples" / (name + ".json"), "--dat", target], name)
+        session = diagnostic_session(ROOT / 'examples' / (name + '.json'),output/(name+'_diagnostic.json'))
+        run([source / "cli.py", "process", "--session", session, "--dat", target], name)
         assert hashlib.sha256(target.read_bytes()).hexdigest() == expected["dat_sha256"]
     run([source / "desktop.py", "--check-installation", output / "hidden_gui",
-         "--session", ROOT / "examples/Ho2sq3_0_to_200.json"], "hidden_gui")
+         "--session", output / 'Ho2sq3_0_to_200_diagnostic.json'], "hidden_gui")
     check = json.loads((output / "hidden_gui/report.json").read_text(encoding="utf-8"))
     assert Path(check["module_directory"]).resolve() == source
     assert check["status"] == "PASS" and check["help_topics"] >= 74

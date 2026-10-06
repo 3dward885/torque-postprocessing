@@ -48,7 +48,7 @@ class UsabilityTests(unittest.TestCase):
             for i, value in enumerate(("7.375,13.625", "7.375 13.625", "7.375,  13.625")):
                 path = folder / f"output{i}.dat"
                 with contextlib.redirect_stdout(io.StringIO()):
-                    status = cli_main(["process", "--raw", str(raw), "--setpoints", value, "--dat", str(path)])
+                    status = cli_main(["process", "--raw", str(raw), "--setpoints", value, "--field-condition", "changing", "--dat", str(path)])
                 self.assertEqual(status, 0)
                 outputs.append(path.read_bytes())
                 settings = json.loads(path.with_name(path.name + ".details").joinpath("settings.json").read_text())

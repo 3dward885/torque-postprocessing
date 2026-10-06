@@ -64,6 +64,7 @@ def main(raw, output):
             app.file_settings()
             dialog = app.settings_dialog
             dialog.values["setpoints"].set("2.5, 5, 10, 25, 50, 100, 150, 200, 250")
+            dialog.values["field_limit"].set("0.5")  # Explicit test-only acquisition policy.
             dialog.apply()
             assert not any(s.issue for s in record["obj"].passes)
             app.process_all()

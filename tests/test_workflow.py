@@ -38,6 +38,7 @@ class WorkflowTests(unittest.TestCase):
             writer.writerows([[target] + r[1:] for r in rows])
         obj = read_raw(self.path)
         cfg = default_config(obj)
+        cfg["field_quality"].update(condition="changing", source="Synthetic test policy; not experimental approval")
         cfg["acquisition"]["temperature_setpoints_K"] = [target]
         cfg["acquisition"]["source"] = "Synthetic user-selected temperature"
         return obj, cfg
@@ -84,6 +85,7 @@ class WorkflowTests(unittest.TestCase):
                 writer.writerow(cells)
         obj = read_raw(self.path)
         cfg = default_config(obj)
+        cfg["field_quality"].update(condition="changing", source="Synthetic test policy; not experimental approval")
         result = process(obj, cfg)
         self.assertEqual(result["output_rows"][0][0], "7.375")
         cfg["acquisition"]["temperature_setpoints_K"] = ["7.4"]

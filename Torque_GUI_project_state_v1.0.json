@@ -40,17 +40,19 @@
     "midrange_samples": "Actual retained signal rows after optional angle-range selection"
   },
   "current_core_sha256": {
-    "app.py": "12200a52ed009387ad04ae19cfbb3764fac0752b709b4138540a39e24f04d0ff",
+    "app.py": "210fa65eb779ac418871c1cb8bc1deb2cba61fe2b2026e6fe5aa097d222cf6d5",
     "baseline.py": "d646eb9c28e7f94c032a4e7b5439f0e5ef63edb22ce918a348573d953a262e75",
     "baseline_editor.py": "23900cb77f0213c3a1162d09e9a4c2281706db458a439ef7f6b7999ee2b24a6c",
-    "cli.py": "5e3eee7e278f5c563bc309229041d3b143e7b2ba9c3e72c2620913408b27446e",
+    "cli.py": "e33718eb077d44fc649909fb0895ad709a8e17dc0fbd929727082f6612f38988",
     "desktop.py": "659c71347549fb07bc599f3bca491e132d113536e8f361d02fe404989bde97bd",
+    "field_quality.py": "3f65a36736620dce81798fe2dded063dde04888f59eb6dca987df302bd62aadd",
+    "field_review_dialog.py": "5f5b334b386135874d955eb36dcecb2f9f8417d6271bbbbf24af9ee14a404e39",
     "input_fields.py": "098bdecfe0467eb7e83f596fbd74a63116dd470a79f54ad18feff9a3d8b20eee",
-    "installation_check.py": "5a321efa26f161d2eaf92295cb17eb3efa3698eea470d870388cf516f442d517",
-    "io_profiles.py": "d762bafca3e7b41b155c3f7ac1dd03631b89b1d16750662a1f2673626e12abdc",
+    "installation_check.py": "88e0bf3a868031a07c8dd709110682b33723989297c6afc3923376fd103a8ac1",
+    "io_profiles.py": "2e45c155c66578abbcad852cb84b590bb5753d6b22491eafdac2706a9b8b5925",
     "output_controls.py": "2b5621a73047420dec9af185cb70b47e4a25dfdc37cbae1be952aea9e7754efc",
     "output_settings.py": "5abc27c9d527ef1748962721776e78c930eb20ecfc279d9acfd8520fe8b4cad1",
-    "pipeline.py": "cec5705d093ea5591cc2a0874ebbcbdf8cf8b573089b58794f1efd3f09c16d35",
+    "pipeline.py": "b1cd6261dab3cd0f9c3e4c4c3e1e73fb82bc5094ff4e2b96dabf4c020a29ff22",
     "plots.py": "d79acaef57720d839685e4fc6bf78d138fcfbfd1db13edfa278d36b553cd4df4",
     "plot_export_dialog.py": "f6fe5424370fe7261b0314446229556a63f9c62037573a2bf2e1c2424f86a84f",
     "presets.py": "9ee51f73ccc1f0a557b78b694b13afa464ea673658cdbcd0a4f9ef5a7ac1cee2",
@@ -91,19 +93,19 @@
     "v1.5: data staging uses the existing bounded Windows publication retry after an observed transient WinError 5; ordinary torque and binding hashes remain unchanged."
   ],
   "delivery": {
-    "directory": "releases/Torque_Data_Postprocessing_1.5_final",
-    "installer": "Torque_Data_Postprocessing_1.5_Setup_x64.exe",
-    "installer_build": 3,
-    "installer_sha256": "f19b4852395e5a95e050897fcd59e80ef568cbf13a500d1ccd7b62ebe972970e",
-    "portable": "Torque_Data_Postprocessing_1.5_portable_x64.zip",
-    "portable_sha256": "387c444e3f9037b53115d7b58a55cc74fbd0d92a71168b9b24f3240dcbf757ca",
-    "source_update": "Torque_Data_Postprocessing_v1.5_source_update.zip",
-    "source_replay": "validation/v15_source_candidate_check/report.json; final archive check validation/v15_source_final/report.json",
-    "report": "WINDOWS_INSTALLER_REPORT_v1.5.txt",
-    "representative": "validation/v15_delivery",
+    "directory": "releases/Torque_Data_Postprocessing_1.6_final",
+    "installer": "Torque_Data_Postprocessing_1.6_Setup_x64.exe",
+    "installer_build": 4,
+    "installer_sha256": "0ef3f21d474d9ed894ef1b7c2c409fc8b1d447a7fe08d4b0fda8201d746be32d",
+    "source_update": "Torque_Data_Postprocessing_v1.6_source_update.zip",
+    "portable": "Torque_Data_Postprocessing_1.6_portable_x64.zip",
+    "portable_sha256": "40c03fe013b02a368ab6e9a6b042b048a82c35888ddffc80489b89dd5da03700",
+    "report": "WINDOWS_INSTALLER_REPORT_v1.6.txt",
+    "representative": "validation/v16_approved_Rot1_delivery",
     "signed": false,
     "required_removals": [],
-    "release_name": "Verified installer build 3 renamed final; build1/build2 superseded. v1.4 artifacts unchanged."
+    "clean_machine_tested": false,
+    "visible_UI_tested": false
   },
   "derived_quantities": [
     "Retained actual rows in the optional angle range",
@@ -164,8 +166,8 @@
     "verified_rows": 818,
     "historical_record": true
   },
-  "next_step": "User closes any running app, installs v1.5 from the final folder, and copies the source update for manual GitHub review/commit/push. No automatic work scheduled.",
-  "objective": "Deliver visible per-file torque/molar output with shared preview, data, plots and reproducible settings, plus the v1.5 Windows installer.",
+  "next_step": "User installs and manages GitHub manually; no further patch authorized.",
+  "objective": "Deliver v1.6 fixed-field review with user alerts and explicit whole-scan decisions.",
   "provided_settings": [
     "Experimental temperature setpoints and per-scan assignments, with source",
     "Tolerance values and nominal angle/field conventions",
@@ -185,7 +187,7 @@
   ],
   "repository": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\torque-postprocessing",
   "state_filename_retained_for_continuity": "Torque_GUI_project_state_v1.0.json",
-  "status": "v1.5 implemented and available runtime, numerical, hidden-GUI, installer and extracted-source checks passed. Clean-machine testing unavailable; visible UI review not performed.",
+  "status": "v1.6 software, numerical, withdrawn-GUI and isolated installer gates passed; extracted-source gate passed.",
   "units": {
     "D": "N m",
     "angles": "deg",
@@ -208,29 +210,29 @@
     "Historical reference-selected previous-Rot1 centering, algorithm uniqueness/transfer and the physical basis of archived normalization factors remain unestablished.",
     "Uniform sample-position correction and endpoint/rounding choices remain deferred."
   ],
-  "updated_utc": "2026-10-06T13:39:24.256474+00:00",
+  "updated_utc": "2026-10-06T18:25:19.109306+00:00",
   "verified_results": {
-    "unit_tests": 57,
-    "unit_log": "validation/v15_units_release.txt",
-    "hidden_GUI": "validation/v15_gui_final/report.json",
+    "unit_tests": 64,
+    "unit_log": "validation/v16_units_final.txt",
+    "regression": "validation/v16_regression_02/report.json",
+    "hidden_GUI": "validation/v16_gui_03/report.json",
     "existing_usability_groups": 7,
-    "help_topics": 75,
-    "fresh_v1_4_exact_pairs": 3,
-    "regression": "validation/v15_regression_release/report.json",
-    "reference_isolation": "validation/v15_isolation_release/report.json",
-    "portable_runtime": "validation/v15_bundle_final/report.json",
-    "installed_runtime_and_lifecycle": "validation/w15/report.json",
-    "historical_case_rows": 5405,
-    "distinct_reference_rows": 3519,
-    "protected_files": 196,
-    "payload_files": 1310,
-    "source_replay": "validation/v15_source_candidate_check/report.json",
-    "final_source_verification": "validation/v15_source_final/report.json",
+    "existing_workflow_groups": 8,
+    "reference_isolation": "validation/v16_isolation_01/report.json",
+    "distribution": "validation/v16_distribution_reports",
+    "source_archive_replay": "validation/v16_source_candidate/report.json",
     "numerical_fingerprint_unchanged": true,
-    "molar_validation": "Synthetic 2 mg/400 g/mol = 5e-6 mol; not experimental sample values."
+    "Rot1_rows": {
+      "raw": 1146,
+      "background": 328,
+      "excluded_by_user": 41,
+      "treated": 777,
+      "2K_plot": 123
+    },
+    "historical_case_rows": 5405
   },
-  "verified_results_basis": "Current v1.5 reports listed in WINDOWS_INSTALLER_REPORT_v1.5.txt. Earlier intermediate failures retained. Final-source code/resources were replayed from the candidate archive; final member/hash and extraction checks accompany the release.",
-  "version": "1.5",
+  "verified_results_basis": "Fresh v1.5 working snapshot validation/v16_before; current v1.6 test outputs, not older reports.",
+  "version": "1.6",
   "historical_v1_1": {
     "state_before_v1_2": "validation/import_workflow_v1.2/before/Torque_GUI_project_state_v1.0.json",
     "report": "BASELINE_IMPLEMENTATION_REPORT_v1.1.txt"
@@ -253,15 +255,14 @@
     "range_request": "User requested configurable sample-position bounds and exclusion of endpoint backlash artifacts before centering. 0–200 degrees is an example, not a default."
   },
   "pending_next_patch": {
-    "target_version": "1.5",
-    "status": "Complete; no further patch authorized",
-    "scope": "Main Output, independent sample settings, matching previews/data/plots, GUI/CLI replay and Windows distribution."
+    "target_version": "1.6",
+    "status": "Complete",
+    "scope": "Fixed-field sweep review and explicit whole-scan exclusion"
   },
   "next_patch_execution_prompt": {
-    "path": "Torque_Data_Postprocessing_v1.5_execution_prompt_v1.0.txt",
-    "sha256": "bf2341f020b4dd463a6e421d7dc394433d44f2c7ac826c2d920e93d4c1c6e182",
-    "status": "Executed for v1.5; exact prompt bytes retained.",
-    "target_version": "1.5"
+    "target_version": "1.6",
+    "path": "Torque_Data_Postprocessing_v1.6_execution_prompt_v1.1.txt",
+    "amendment": "V1.6_AUTHORIZED_RULE.txt"
   },
   "superseded_execution_prompts": [
     {
@@ -288,7 +289,7 @@
   "deferred_changes": [
     {
       "id": "uniform_sample_position_offset",
-      "status": "Deferred by explicit user request; excluded from v1.3, v1.4 and v1.5.",
+      "status": "Deferred by explicit user request; excluded through v1.6.",
       "deferred_on": "2026-10-04",
       "request": "Add an optional user-entered constant sample-position correction to account for a known experimental torque-probe position error.",
       "controls_requested_for_future_discussion": {
@@ -329,7 +330,7 @@
       "whole_window_visual_inspection": "Not performed: all GUI test windows withdrawn"
     }
   },
-  "current_help_sha256": "1853fd052264f6999ee94bb6b40c2e562532c1a9ee5fded795741c6853202802",
+  "current_help_sha256": "21b081bced0f100bf0c65e1f2813306e472a2ab6f57b81420752da9c62259e3f",
   "startup_fix": {
     "date": "2026-10-05",
     "reported_copy": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\torque-postprocessing\\Torque_Postprocessing_v1.3_source",
@@ -475,5 +476,52 @@
       "validate.py": "416c8d822068a9e8a7942bdf39a9263490e998b92dd7ec613b5e16194a679660"
     },
     "next_step": "User installs the delivered Setup and reviews the GUI on their PC; user copies the source update and commits/pushes manually through GitHub Desktop. No further automatic work scheduled."
+  },
+  "historical_v1_5": {
+    "version": "1.5",
+    "status": "v1.5 implemented and available runtime, numerical, hidden-GUI, installer and extracted-source checks passed. Clean-machine testing unavailable; visible UI review not performed.",
+    "delivery": {
+      "directory": "releases/Torque_Data_Postprocessing_1.5_final",
+      "installer": "Torque_Data_Postprocessing_1.5_Setup_x64.exe",
+      "installer_build": 3,
+      "installer_sha256": "f19b4852395e5a95e050897fcd59e80ef568cbf13a500d1ccd7b62ebe972970e",
+      "portable": "Torque_Data_Postprocessing_1.5_portable_x64.zip",
+      "portable_sha256": "387c444e3f9037b53115d7b58a55cc74fbd0d92a71168b9b24f3240dcbf757ca",
+      "source_update": "Torque_Data_Postprocessing_v1.5_source_update.zip",
+      "source_replay": "validation/v15_source_candidate_check/report.json; final archive check validation/v15_source_final/report.json",
+      "report": "WINDOWS_INSTALLER_REPORT_v1.5.txt",
+      "representative": "validation/v15_delivery",
+      "signed": false,
+      "required_removals": [],
+      "release_name": "Verified installer build 3 renamed final; build1/build2 superseded. v1.4 artifacts unchanged."
+    },
+    "verified_results": {
+      "unit_tests": 57,
+      "unit_log": "validation/v15_units_release.txt",
+      "hidden_GUI": "validation/v15_gui_final/report.json",
+      "existing_usability_groups": 7,
+      "help_topics": 75,
+      "fresh_v1_4_exact_pairs": 3,
+      "regression": "validation/v15_regression_release/report.json",
+      "reference_isolation": "validation/v15_isolation_release/report.json",
+      "portable_runtime": "validation/v15_bundle_final/report.json",
+      "installed_runtime_and_lifecycle": "validation/w15/report.json",
+      "historical_case_rows": 5405,
+      "distinct_reference_rows": 3519,
+      "protected_files": 196,
+      "payload_files": 1310,
+      "source_replay": "validation/v15_source_candidate_check/report.json",
+      "final_source_verification": "validation/v15_source_final/report.json",
+      "numerical_fingerprint_unchanged": true,
+      "molar_validation": "Synthetic 2 mg/400 g/mol = 5e-6 mol; not experimental sample values."
+    }
+  },
+  "field_review": {
+    "schema_version": 1,
+    "production_default_limit": null,
+    "rule": "Decimal span rounded to .01 T, ties away from zero; >= configured limit requires review",
+    "authorized_Rot1_limit_T": "0.5",
+    "P003_exclusion": "Explicit user approval: Exclude P003 and create corrected deliverables",
+    "approved_session": "validation/v16_approved_Rot1_delivery/Rot1_v1.6_approved.json"
   }
 }

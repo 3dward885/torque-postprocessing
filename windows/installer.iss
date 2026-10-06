@@ -14,7 +14,7 @@
 [Setup]
 AppId={{7192D918-D36B-4D0E-9F83-F90C3C68A6F1}
 AppName=Torque Data Postprocessing
-AppVersion=1.5
+AppVersion=1.6
 AppPublisher=Torque Data Postprocessing
 DefaultDirName={localappdata}\Programs\Torque Data Postprocessing
 DefaultGroupName=Torque Data Postprocessing
@@ -23,7 +23,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 OutputDir={#OutputPath}
-OutputBaseFilename=Torque_Data_Postprocessing_1.5_Setup_x64
+OutputBaseFilename=Torque_Data_Postprocessing_1.6_Setup_x64
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -33,7 +33,7 @@ UninstallDisplayIcon={app}\Torque Data Postprocessing.exe
 CloseApplications=no
 RestartApplications=no
 SetupLogging=yes
-VersionInfoVersion=1.5.0.{#BuildNumber}
+VersionInfoVersion=1.6.0.{#BuildNumber}
 VersionInfoDescription=Torque Data Postprocessing Setup
 
 [Tasks]

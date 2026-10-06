@@ -9,9 +9,9 @@ from package_usability_release import ROOT, project_files, write_zip
 def main(destination):
     files = project_files()
     # These are named project examples, not private user session files.
-    for name in ("WINDOWS_APP.txt", "STARTUP_FIX_v1.3.txt", "UPDATE_v1.5.txt",
-                 "WINDOWS_INSTALLER_REPORT_v1.5.txt", "V1.4_SCOPE_ADDITIONS.txt",
-                 "FIXTURE_LOCATIONS_v1.5.json"):
+    for name in ("WINDOWS_APP.txt", "STARTUP_FIX_v1.3.txt", "UPDATE_v1.6.txt",
+                 "WINDOWS_INSTALLER_REPORT_v1.6.txt", "V1.4_SCOPE_ADDITIONS.txt",
+                 "FIXTURE_LOCATIONS_v1.6.json", "V1.6_AUTHORIZED_RULE.txt"):
         files[name] = (ROOT / name).read_bytes()
     for path in (ROOT / "windows").iterdir():
         if path.is_file() and path.suffix in (".txt", ".iss", ".spec", ".json"):
@@ -21,14 +21,14 @@ def main(destination):
     assert not any(set(Path(name).parts) & forbidden for name in files)
     assert all(not name.lower().endswith((".exe", ".dll", ".pyd", ".zip")) for name in files)
     assert all(not name.endswith(".dat") or name == "fixtures/SYNTHETIC_software_fixture.dat" for name in files)
-    before = json.loads((ROOT / "validation/v15_before/before.json").read_text(encoding="utf-8"))
+    before = json.loads((ROOT / "validation/v16_before/before.json").read_text(encoding="utf-8"))
     metadata = {
-        "app": "Torque Data Postprocessing", "version": "1.5",
+        "app": "Torque Data Postprocessing", "version": "1.6",
         "kind": "Complete project source/update; no runtime binaries or research measurements",
-        "comparison_basis": "Fresh v1.4 working snapshot validation/v15_before; not the older Git HEAD",
+        "comparison_basis": "Fresh v1.5 working snapshot validation/v16_before; not the older Git HEAD",
         "base_source_sha256": before["snapshot_files"],
         "required_removals": [],
-        "fixtures": "FIXTURE_LOCATIONS_v1.5.json; named example sessions refer to the external raw fixture",
+        "fixtures": "FIXTURE_LOCATIONS_v1.6.json; original examples require field-policy migration",
     }
     print(json.dumps(write_zip(destination, files, metadata), indent=2))
 

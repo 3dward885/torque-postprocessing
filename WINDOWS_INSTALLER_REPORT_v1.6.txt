@@ -1,0 +1,133 @@
+Torque Data Postprocessing 1.6 — implementation and validation
+6 October 2026; installer build 4
+
+Scope: fixed-field review with explicit entire-scan decisions. No parser,
+segmentation, coordinate rounding, subtraction, centering or molar formula change.
+Single agent; no commits, pushes, GitHub writes or running-app control.
+
+USER-AUTHORIZED RULE
+Full original acquired measured span max(B)-min(B), Oe/10000 converted using
+Decimal. Round span to 0.01 T (nearest; ties away from zero); review at or above
+the configured per-file limit. User supplied 0.5 T and explicitly approved this
+rounded >= rule. It supersedes the original exact > comparison. Effective
+unrounded boundary at that limit is 0.495 T. Raw/export field values unchanged.
+No experimental limit is built into defaults; blank is unconfigured.
+
+IMPLEMENTATION
+field_quality.py supplies versioned policy, full-row evidence and bound decisions.
+pipeline.py and cli.py share enforcement; partial processing never enables final
+export while an included acquisition is unresolved. Backgrounds are checked too.
+app.py shows a persistent warning and per-scan state. Review scan opens original
+rows and a measured field trace. Closing/cancelling has no exclusion effect.
+Explicit exclusions remove the whole acquisition from treated outputs but retain
+every raw row and reason. Changed source, scan or policy requires new review.
+An open panel cannot accept a decision after its displayed evidence has changed.
+Help covers limits, warnings, migration, source evidence and physical limitations.
+
+APPROVED EXPERIMENTAL DELIVERY
+validation/v16_approved_Rot1_delivery/
+User explicitly answered "Exclude P003 and create corrected deliverables" after
+being shown the identity, source rows and recorded field span. This source is
+saved verbatim with the scoped decision. User-entered normalization retained:
+0.235 mg and 1575.45 g/mol; no new sample values inferred.
+Rot1_v1.6_approved.json; Rot1_v1.6_treated.dat; Rot1_v1.6_molar.dat; eight JPEGs.
+1146 original rows: 328 background, 41 explicitly excluded P003, 777 treated signal.
+2 K JPEG: P001/P002/P004, 123 points. P002 remains independent.
+The whole DAT intentionally differs; every unaffected ordinary and molar token
+and baseline binding is exactly unchanged. Original exports are preserved.
+Recorded change is established; physical magnet behavior is not independently measured here.
+
+OBSERVED GATES
+A PASS: Decimal review, rounded boundary below/at/above, both directions, signed
+  and near-zero fields, unit conversion, malformed/nonfinite/negative limits,
+  blank migration and full-scan check before angle filtering.
+B PASS: unchanged numerical fingerprint/parser functions and independent P002/P003
+  identity; existing gap/reset/temperature/trajectory unit safeguards pass.
+C PASS: real withdrawn widgets show persistent warning, preserve unresolved scans,
+  cancel without acceptance, block export, require explicit decisions, reject
+  stale decisions/panels; CLI returns nonzero for unresolved input.
+D PASS: complete exclusion, dependent-background blocking, all rows/reasons
+  retained, replay, identity/policy validation and existing dirty-edit safeguards.
+E PASS: fresh v1.5 before snapshot and real P003 0.499968148 T evidence; simulated
+  test rejection and separate real approved rejection both produce 777 rows.
+  Three Ho2sq3 exact ordinary/molar comparisons preserve accepted baseline bindings.
+  Six historical cases: 5405 case rows exact against previous outputs.
+F PASS: 64 unit tests; 7 existing usability groups; 8 workflow groups; withdrawn
+  installed/bundled GUI/CLI parity, zero editor, new review controls, local Help,
+  PDF/PNG and marker-only 2400x1800 JPEGs. Arial Regular resolved.
+  Offscreen 2 K test JPEG visually inspected: no clipping; 3 correctly labelled series.
+  This was not a visible whole-window review.
+G PASS: actual bundle on system-only PATH, hash-verified portable
+  extraction, silent isolated install/repeat update/locked-file rollback/uninstall.
+  Registration/shortcut cleanup and user-data sentinels verified.
+  Extracted source archive replay, GUI/Help/plots and hashes verified.
+
+Evidence:
+validation/v16_before/ (100-file pre-patch snapshot, DATs, hashes, Git state)
+validation/v16_units_final.txt (64 tests)
+validation/v16_regression_02/report.json (exact numerical/real-fixture comparisons)
+validation/v16_gui_03/report.json (new field-review widgets and stale-panel guard)
+validation/v16_usability_02/report.json
+validation/v16_workflow_01/report.json
+validation/v16_isolation_01/report.json (zero processing reference reads)
+validation/v16_distribution_reports/ (bundle and installer test reports)
+validation/v16_short_paths_checked.json (original short-path logs/tests)
+validation/v16_approved_Rot1_delivery/delivery.json (approved export/replay evidence)
+validation/v16_source_candidate/report.json (extracted source replay)
+
+RUNTIME / PRESERVATION
+Windows 11 build 26300, Python 3.12.14, NumPy 2.3.5, Matplotlib 3.10.8, Tcl/Tk 8.6.12.
+PyInstaller 6.22.3/hooks 2026.8; Inno Setup 7.1.0. Existing pinned dependencies reused.
+Compiler vendor signatures checked by build tool; original hashes in build_info.json.
+Numerical fingerprint unchanged:
+ce5bcc72bf3fe23873d78b1b4c0e487e14da54cbbc909976c065556bb4e96d7a
+Original Rot1: 176165 bytes, SHA256
+9ea4fec5a273b727546139b899ec1e2c1c94177e39191548076d321dc4237355
+Protected raw/reference/evidence and prior release hashes rechecked unchanged.
+Exact fixture paths/hashes: FIXTURE_LOCATIONS_v1.6.json.
+Source is based on the actual v1.5 working tree, not old Git HEAD.
+
+BUILD ATTEMPTS / LIMITATIONS
+Build1 FAILED GUI validation: sandbox denied Tcl access; packager omitted Tk.
+Added a build gate that stops if Tcl/Tk runtime files are absent.
+Build2 is superseded by build3's stale-review-panel safeguard. Build3 passed, then build4 restored the pre-patch LF source convention (no numerical logic change).
+Build4 passed when run from a short path; the deep repository path exceeds the
+existing Windows DLL limit. Installer enforces maximum installation path 180
+characters for this payload. Use the default installation path or a short portable path.
+Some sandbox-created temporary DAT staging files were inaccessible to the external
+test user; final approved data were regenerated in a separate user-accessible
+delivery directory and actual bundled ordinary/molar replay matched exactly.
+No clean Windows VM was available; system-only PATH on this development PC is
+not equivalent to a clean-machine test. Visible installer/application UI was not
+tested (user explicitly required background testing). Installer remains unsigned;
+no publisher certificate or SmartScreen approval is claimed. Arial is not bundled.
+Sample-position correction remains deferred.
+
+MIGRATION
+Old sessions remain readable but require an explicit field policy/limit before
+export. Old monotonic parsing does not grant changing-field permission.
+Save a NEW session after review; never rewrite historical acceptance/digests.
+field_quality schema 1 is separate from output preferences and numerical recipe.
+Existing coordinate checks, baseline schema and output serialization are unchanged.
+No source removals required. No raw research data or generated runs in source ZIP.
+
+TESTED COMMANDS (PowerShell in the active checkout; use NEW output folders for reruns)
+.\.venv\Scripts\python.exe -B -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -B tests/field_quality_regression.py --output validation/v16_regression_02
+.\.venv\Scripts\python.exe -B -c "from installation_check import check_installation; check_installation('validation/v16_gui_03','validation/v16_regression_02/Ho2sq3_0_to_200.json')"
+.\.build-venv\Scripts\python.exe -B tools/build_windows.py --output releases/Torque_Data_Postprocessing_1.6_build4 --build-number 4
+$paths = Get-Content validation/v16_short_paths_checked.json | ConvertFrom-Json
+.\.venv\Scripts\python.exe -B tests/windows_bundle.py --bundle $paths.bundle --output (Join-Path $paths.base 'bundle_check') --before validation/v16_before/before.json
+.\.venv\Scripts\python.exe -B tests/windows_installer.py --setup releases/Torque_Data_Postprocessing_1.6_build4/Torque_Data_Postprocessing_1.6_Setup_x64.exe --manifest releases/Torque_Data_Postprocessing_1.6_build4/bundle_manifest.json --output (Join-Path $paths.base 'install_check') --before validation/v16_before/before.json
+& (Join-Path $paths.bundle 'TorqueDataCLI.exe') process --session validation/v16_approved_Rot1_delivery/Rot1_v1.6_approved.json --dat validation/v16_approved_Rot1_delivery/bundled_replay/Rot1_v1.6_treated.dat
+
+INSTALLER SHA256
+0ef3f21d474d9ed894ef1b7c2c409fc8b1d447a7fe08d4b0fda8201d746be32d
+
+Suggested commit summary:
+Release v1.6 with explicit fixed-field sweep review
+Suggested description:
+Validate full measured field spans with the approved rounded threshold rule.
+Show persistent alerts and require explicit, source-bound whole-scan decisions.
+Preserve raw/audit rows, unchanged torque/molar arithmetic and baseline safeguards.
+Add GUI/CLI regression coverage, migration guidance and validated Windows packaging.
