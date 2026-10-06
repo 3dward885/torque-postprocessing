@@ -1,4 +1,19 @@
+1.5 - 6 October 2026
+- Make optional molar conversion visible in the main per-file Output section.
+- Share committed quantity/sample values across corrected preview, data and plots.
+- Validate sample mass plus molar mass or amount with Apply/Cancel and dirty guards.
+- Save ordinary and separate molar DATs with visible paired filenames, collision
+  protection and rollback. Plot saving now creates JPEGs and details only.
+- Persist independently versioned output choices beside scientific settings;
+  replay the selected outputs through GUI and CLI. Old sessions default to N m.
+- Preserve numerical fingerprints, ordinary torque, baseline bindings and recipe.
+- Reuse bounded Windows sharing/access-lock retries for transactional data publication.
+- Update local Help and self-contained Windows packaging to 1.5.
+- See WINDOWS_INSTALLER_REPORT_v1.5.txt for current validation and limitations.
+
 1.4 — 5 October 2026
+- Correct release folder naming: verified former build3 is now final; the earlier
+  mislabeled final is archived as build2. Executable/portable bytes unchanged.
 - Rename the current application Torque Data Postprocessing.
 - Bundle Python, Tcl/Tk, NumPy, Matplotlib, Help and licenses in a Windows x64
   package with a per-user Setup wizard, Start-menu entry and uninstaller.

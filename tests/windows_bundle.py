@@ -41,7 +41,7 @@ def check(bundle, output, before, historical=True):
         return done
     cli = "TorqueDataCLI.exe"
     version = run(cli, ["--version"], "version")
-    assert "Torque Data Postprocessing 1.4" in version.stdout
+    assert "Torque Data Postprocessing 1.5" in version.stdout
     prior = json.loads(Path(before).read_text(encoding="utf-8"))
     report["examples"] = {}
     for name, expected in prior["results"].items():
@@ -63,7 +63,7 @@ def check(bundle, output, before, historical=True):
         assert prov["environment"]["numpy"] == prior["environment"]["numpy"]
         assert prov["environment"]["matplotlib"] == prior["environment"]["matplotlib"]
         for module in ("pipeline.py", "io_profiles.py", "storage.py", "baseline.py", "plots.py"):
-            expected_hash = sha256(ROOT / module) if module == "io_profiles.py" else prior["source_sha256"][module]
+            expected_hash = sha256(ROOT / module)
             assert prov["code_sha256"][module] == expected_hash
         report["examples"][name] = {"rows": expected["rows"], "DAT_byte_equal": True,
               "bindings_equal": True, "counts": {str(k): v for k, v in counts.items()}}
@@ -91,6 +91,10 @@ def check(bundle, output, before, historical=True):
     assert sha256(gui_output / "session_treated.dat") == prior["results"]["Ho2sq3_0_to_200"]["dat_sha256"]
     run(cli, ["process", "--session", gui_output / "accepted_session.json", "--dat", output / "gui_cli.dat"], "gui_cli")
     assert (output / "gui_cli.dat").read_bytes() == (gui_output / "gui_treated.dat").read_bytes()
+    run(cli, ["process", "--session", gui_output / "molar_session.json", "--dat", output / "selected.dat"], "molar_cli")
+    assert (output / "selected.dat").read_bytes() == (gui_output / "selected_treated.dat").read_bytes()
+    assert (output / "selected_molar.dat").read_bytes() == (gui_output / "selected_molar.dat").read_bytes()
+    report["checks"].append("Committed per-file molar settings replay: GUI/CLI ordinary and molar DAT bytes equal")
     report["checks"].append("Hidden real GUI workflow, bundled dependencies/Help/figures and GUI/CLI equality")
     failure = output / "startup_failure"
     run("Torque Data Postprocessing.exe", ["--check-installation", failure, "--session", output / "absent.json"], "startup_failure", False)

@@ -12,12 +12,8 @@ import shutil
 import time
 import uuid
 
-import matplotlib as mpl
-from matplotlib.figure import Figure
-from matplotlib.ticker import AutoMinorLocator
 from io_profiles import APP_VERSION, InputError, sha256
 from pipeline import verify_export
-from plots import style, font_status, angle_limits
 from storage import json_text, treated_text
 
 COLORS = ("#000000", "#0072B2", "#D55E00", "#009E73", "#CC79A7", "#56B4E9", "#A6761D")
@@ -113,6 +109,10 @@ def grouped_samples(result, choice):
 
 
 def grouped_figure(rotation, temperature, series, norm, field_styles):
+    import matplotlib as mpl
+    from matplotlib.figure import Figure
+    from matplotlib.ticker import AutoMinorLocator
+    from plots import style, font_status, angle_limits
     if not font_status().startswith("Arial Regular verified:"):
         raise InputError(font_status())
     with mpl.rc_context(style()):
@@ -165,8 +165,12 @@ def publish_directory(stage, final):
 
 def export_treated_plots(entries, parent):
     """entries contains (processed result, user plot choices), independently per file."""
+    from plots import font_status
     prepared = []
     for result, choice in entries:
+        if "version" in choice:
+            from output_settings import validate_output
+            choice = validate_output(choice, result["input"]["sha256"])
         if sha256(result["input"]["path"]) != result["input"]["sha256"]:
             raise InputError("Raw input changed since processing. Reprocess before exporting plots.")
         prepared.append((result, choice, grouped_samples(result, choice)))
@@ -199,15 +203,12 @@ def export_treated_plots(entries, parent):
                 item["plots"].append({"filename": filename, "temperature_K": str(temperature),
                                       "pass_ids": [s["pass_id"] for s in series],
                                       "points": sum(len(s["tokens"]) for s in series), "sha256": sha256(stage / filename)})
-            if norm["quantity"] == "molar":
-                filename = prefix + "_molar.dat"
-                (stage / filename).write_text(molar_text(result, norm), encoding="utf-8", newline="")
-                item["molar_DAT"] = {"filename": filename, "sha256": sha256(stage / filename)}
             manifest["files"].append(item)
-            sessions.append((result["input"]["path"], result["config"]))
+            sessions.append((result["input"]["path"], result["config"], choice))
         # Raw paths are saved absolutely because the staging directory is renamed.
         (details / "settings.json").write_text(json_text({"session_version": "1.0", "files": [
-            {"path": str(Path(raw).resolve()), "settings": config} for raw, config in sessions]}), encoding="utf-8")
+            {"path": str(Path(raw).resolve()), "settings": config, **({"output": choice} if "version" in choice else {})}
+            for raw, config, choice in sessions]}), encoding="utf-8")
         (details / "plots.json").write_text(json_text(manifest), encoding="utf-8")
         for result, _, _ in prepared:
             if sha256(result["input"]["path"]) != result["input"]["sha256"]:

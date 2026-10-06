@@ -44,7 +44,7 @@ def style(preview=False):
     }
 
 
-def make_figure(result, pass_id, view="stages", reference=None, preview=False):
+def make_figure(result, pass_id, view="stages", reference=None, preview=False, output=None):
     pred = next((p for p in result["passes"] if p["pass_id"] == pass_id), None)
     if pred is None:
         raise InputError("Select a processed signal pass for preview.")
@@ -92,6 +92,13 @@ def make_figure(result, pass_id, view="stages", reference=None, preview=False):
             for name, key, color in series:
                 ax.plot(x, pred[key], "o", color=color, markersize=3.5, linestyle="none", label=name)
             ax.set_ylabel("Torque (N m)")
+            if view == "centered" and output and output["quantity"] == "molar":
+                from treated_plots import normalization, converted_token
+                norm = normalization(output)
+                ax.lines[0].set_ydata([float(converted_token(v, norm)) for v in pred["D"]])
+                ax.relim()
+                ax.autoscale_view()
+                ax.set_ylabel("Molar torque (N m/mol)")
         ax.set_xlabel("Sample position (deg)")
         angle_limits(ax, x)
         ax.xaxis.set_minor_locator(AutoMinorLocator(2))
@@ -144,18 +151,19 @@ def raw_figure(scan, preview=False):
         return fig
 
 
-def export_figure(result, pass_id, folder, view="stages", reference=None):
+def export_figure(result, pass_id, folder, view="stages", reference=None, output=None):
     if not font_status().startswith("Arial Regular verified:"):
         raise InputError(font_status())
     from pipeline import verify_export
     verify_export(result)
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
-    paths = [folder / f"{pass_id}_{view}.{extension}" for extension in ("pdf", "png")]
+    suffix = "_molar" if view == "centered" and output and output["quantity"] == "molar" else ""
+    paths = [folder / f"{pass_id}_{view}{suffix}.{extension}" for extension in ("pdf", "png")]
     if any(p.exists() for p in paths):
         raise InputError("Plot filename collision; choose a new plot folder.")
     with mpl.rc_context(style()):
-        fig = make_figure(result, pass_id, view, reference)
+        fig = make_figure(result, pass_id, view, reference, output=output)
         for path in paths:
             fig.savefig(path, dpi=300, facecolor="white")
     return [str(p) for p in paths]

@@ -9,7 +9,7 @@ data = [(str(root / name), ".") for name in (
     "app.py", "baseline.py", "baseline_editor.py", "cli.py", "input_fields.py",
     "io_profiles.py", "pipeline.py", "plots.py", "presets.py", "storage.py",
     "ui_help.py", "validate.py", "desktop.py", "installation_check.py", "help_content.json",
-    "treated_plots.py", "plot_export_dialog.py")]
+    "treated_plots.py", "plot_export_dialog.py", "output_settings.py", "output_controls.py")]
 # Source is required by inspect.getsource for scientific baseline bindings.
 data += [(str(stage / "licenses"), "licenses"),
          (str(stage / "build_info.json"), ".")]

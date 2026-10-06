@@ -27,7 +27,7 @@ def main(argv=None):
     arguments = sys.argv[1:] if argv is None else argv
     obsolete = ("--molar-", "--factor", "--amount-mol", "--mass", "--preset")
     if any(a.startswith(obsolete) for a in arguments):
-        parser.error("Legacy molar options are unsupported. Process saves N m; use Export treated plots for optional molar output.")
+        parser.error("Legacy molar options are unsupported. Choose Output in the app, save settings, and replay with --session.")
     sub = parser.add_subparsers(dest="command", required=True)
     inspect = sub.add_parser("inspect", help="Load raw measurements and list scans")
     inspect.add_argument("raw")
@@ -71,15 +71,15 @@ def main(argv=None):
         if any((args.settings, args.setpoints, args.temperature_tolerance, args.angle_range,
                 args.allow_extrapolation, args.centering)):
             parser.error("--session replays its saved settings; edit the session in the GUI to change them.")
-        entries = load_session(args.session)
+        entries = load_session(args.session, include_output=True)
     else:
         if args.settings and len(args.raw) != 1:
             parser.error("--settings requires one raw file.")
-        entries = [(path, load_config(args.settings) if args.settings else None) for path in args.raw]
+        entries = [(path, load_config(args.settings) if args.settings else None, None) for path in args.raw]
     if (args.dat or args.run_name) and len(entries) != 1:
         parser.error("--dat and --run-name require one input.")
     summary = []
-    for path, settings in entries:
+    for path, settings, output in entries:
         try:
             obj, cfg = load_entry(path, settings)
             if args.setpoints is not None:
@@ -102,7 +102,9 @@ def main(argv=None):
                     cfg["support_exceptions"].append(support_permission(configured, scans[pid], bg,
                                                        "Explicit CLI extrapolation permission"))
             result = process(obj, cfg)
-            saved = save_dat(result, args.dat) if args.dat else export_run(result, args.output, args.run_name)
+            from output_settings import default_output, validate_output, save_output_dat, export_output_run
+            output = validate_output(output, obj.sha256) if output else default_output(obj.sha256, path)
+            saved = save_output_dat(result, args.dat, output) if args.dat else export_output_run(result, args.output, args.run_name, output)
             summary.append({"input": path, "status": "success", "rows": result["rows"],
                             "saved": saved, "migration_notes": result["config"].get("migration_notes", [])})
         except (ValueError, OSError, KeyError, TypeError) as exc:

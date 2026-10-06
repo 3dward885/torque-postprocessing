@@ -2,12 +2,12 @@
   {
     "id": "summary",
     "title": "Overview",
-    "text": "Torque Data Postprocessing 1.4 treats angular torque measurements from supported DAT files.\n\nThe workflow is Open data → Subtract background → optional Center zero → Save treated data. Temperatures come from experimental settings or explicit metadata. Backgrounds come from the same file and experimental temperature, including backgrounds acquired afterward.\n\nThe supported instrument CSV has the documented 32-field header with 14–32 recorded fields. The documented four-column TSV uses K, Oe, degrees and N m. This is not a universal DAT importer.\n\nThe established method uses six-significant-digit Decimal torque inputs, an unweighted degree-six background fit, subtraction, then centering. The [0,200] scaling domain is a polynomial basis definition, not a restriction on the acquisition span. No smoothing, interpolation or sample-position correction is applied. The ordinary DAT remains torque in N m; an optional presentation export can create molar plots and a separate molar DAT using supplied sample normalization.\n\nTreated DAT contains K, T, degrees and N m. Original measured values remain in the ledger. This release provides a Windows installer; it keeps the numerical method and existing angle-range behavior."
+    "text": "Torque Data Postprocessing 1.5 supports the existing raw layouts and scientific processing. Open data, subtract background, optionally center zero, then use Output to save torque or molar torque. Ordinary treated data remains in N m. Background samples are excluded from signal DATs. Position correction remains deferred."
   },
   {
     "id": "workflow",
     "title": "How to use the software",
-    "text": "1. Open data and select the file.\n\n2. Open Acquisition settings. Enter the experimental temperatures separated by spaces or commas. Check the allowed deviation. Use a selected-scan override only when needed.\n\n3. Optionally select Angle range, for example 0 and 200 degrees. Samples outside it will not influence the fit or centering.\n\n4. Check Background for each signal scan. Select a candidate explicitly when needed; use Allow background extrapolation only when you intend to evaluate outside its measured angular coverage. Click Apply background after changing that choice.\n\n5. Click Subtract background. This also applies automatic centering using the saved policy, midrange by default. Changing upstream settings requires this calculation again.\n\n6. Optionally select a processed signal and click Center zero. Drag the baseline or enter an offset in N m, then Apply. This step is not mandatory.\n\n7. Save treated data to a new DAT filename. Keep its .dat.details audit folder. Use File > Save settings for later GUI/CLI replay.\n\nOpen Help with F1, including from an acquisition or zero-adjustment dialog. Hover over controls for one second for a short explanation. Press Esc to dismiss a tooltip."
+    "text": "Open data, set experimental conditions and angle limits, select backgrounds and Subtract background. This also applies ordinary centering (midrange by default); Center zero is optional fine-tuning in N m. In Output choose Torque (N m), or Molar torque (N m/mol), enter the measured sample mass plus molar mass or known amount, then Apply. Save torque data creates one ordinary DAT; Save both data files creates ordinary and separate molar DATs. Save plots creates grouped JPEGs only. Save settings preserves each file's committed choices for GUI/CLI replay."
   },
   {
     "id": "options",
@@ -35,8 +35,8 @@
       {
         "id": "save_dat",
         "title": "Save treated data",
-        "tip": "Save corrected torque as DAT. Requires all included scans to be processed and saved adjustments to be valid.",
-        "text": "Save four columns in acquisition order: temperature (K), magnetic field (T), sample position (deg), torque (N m). Background scans are not exported as signal. A matching .dat.details folder records settings, a raw snapshot, row ledger, provenance and hashes. Existing filenames are not overwritten. The selected plot view does not change the data saved."
+        "tip": "Save the selected file in acquisition order: K, T, degrees, N m.",
+        "text": "Save the selected file in acquisition order: K, T, degrees, N m. In Molar mode Save both data files also writes a separate N m/mol DAT. Keep the adjacent .dat.details folder, including replay.json and output.json. Existing files are never overwritten. Resolve draft sample and zero changes and pending scans first. The View dropdown does not change saved data."
       },
       {
         "id": "files",
@@ -83,8 +83,8 @@
       {
         "id": "view",
         "title": "Plot view",
-        "tip": "Choose Raw, Corrected, Background fit or Processing steps. This changes the plot only.",
-        "text": "Raw: original measured torque versus measured position for retained samples.\n\nCorrected: background-subtracted and centered torque.\n\nBackground fit: retained background samples and degree-six fitted curve.\n\nProcessing steps: raw torque, evaluated background, subtracted torque and centered torque together.\n\nProcessed views require a processed signal. When results are unavailable, the selector and plot both show Raw. Processed views use the established nominal angle convention. Save treated data always writes corrected torque."
+        "tip": "View changes visualization only.",
+        "text": "View changes visualization only. Corrected uses the committed Output quantity; molar values come from the same serialized N m tokens as the molar DAT. Raw, Background fit and Processing steps show their actual N m quantities. Center zero edits N m. Draft sample edits must be applied or cancelled before corrected preview. Missing/stale processing cannot be displayed as valid."
       },
       {
         "id": "activity",
@@ -95,8 +95,8 @@
       {
         "id": "save_settings",
         "title": "Save settings",
-        "tip": "Save input-file locations and committed settings for later GUI or CLI replay.",
-        "text": "Use File > Save settings. Apply or Cancel any draft baseline first. This saves settings, not a substitute for the raw data. Keep the raw input available at its saved location; the file hash must still match. View and tooltip choices are not numerical settings."
+        "tip": "Save raw-file locations, scientific settings and each file's committed quantity, sample entries and rotation.",
+        "text": "Save raw-file locations, scientific settings and each file's committed quantity, sample entries and rotation. Apply or Cancel drafts first. Old sessions open in Torque mode. Input hashes must match. Output settings do not change baseline fingerprints."
       },
       {
         "id": "load_settings",
@@ -119,8 +119,8 @@
       {
         "id": "figure_export",
         "title": "Export figure",
-        "tip": "Save the selected processed view as PDF and 300-dpi PNG. Requires valid results and Arial.",
-        "text": "Use Tools > Export figure after processing. Choose Corrected, Background fit or Processing steps; the Raw view is not exported by this command. Select an unused output folder/name combination. Scientific figures use the established Arial Regular formatting. Figure export does not change treated DAT values."
+        "tip": "Save the selected processed view as PDF and 300-dpi PNG with matching units.",
+        "text": "Save the selected processed view as PDF and 300-dpi PNG with matching units. Corrected follows Output; Background fit and Processing steps remain N m. Requires Arial and valid processing. Use a new output path. Grouped JPEGs are available through Save plots."
       },
       {
         "id": "details",
@@ -331,6 +331,36 @@
         "title": "Plot: Layout",
         "tip": "Adjust the embedded plot layout. This does not change data or centering.",
         "text": "Adjust the embedded plot layout. This does not change data or centering."
+      },
+      {
+        "id": "output_quantity",
+        "title": "Output quantity",
+        "tip": "Choose torque or molar torque for this file. Shared by corrected preview, data and plots.",
+        "text": "Choose torque or molar torque for this file. Shared by corrected preview, data and plots."
+      },
+      {
+        "id": "output_amount",
+        "title": "Sample amount",
+        "tip": "Enter positive finite sample mass in mg and molar mass in g/mol, or amount in mol. Decimal and scientific notation are accepted. Molar mass alone is insufficient.",
+        "text": "Enter positive finite sample mass in mg and molar mass in g/mol, or amount in mol. Decimal and scientific notation are accepted. Molar mass alone is insufficient."
+      },
+      {
+        "id": "output_apply",
+        "title": "Apply sample changes",
+        "tip": "Validate and save this file's draft sample quantities. No background refit or zero change.",
+        "text": "Validate and save this file's draft sample quantities. No background refit or zero change."
+      },
+      {
+        "id": "output_cancel",
+        "title": "Cancel sample changes",
+        "tip": "Restore this file's last committed output settings. Other files are unaffected.",
+        "text": "Restore this file's last committed output settings. Other files are unaffected."
+      },
+      {
+        "id": "output_save_paths",
+        "title": "Paired data filenames",
+        "tip": "Choose the ordinary N m DAT path. The separate molar filename updates below; neither file is overwritten.",
+        "text": "Save both data files shows the ordinary path and the automatically derived molar path before writing. Browse or edit the ordinary path, check both names and units, then Save both data files. Cancel writes nothing. Existing DAT or details paths block the pair. Both outputs use one committed processing result and their shared ordinary-DAT details folder."
       }
     ]
   },
@@ -369,25 +399,25 @@
   {
     "id": "treated_plots",
     "title": "Treated plots and optional molar output",
-    "text": "Tools > Export treated plots creates JPEG images from the same retained, committed samples as the treated DAT. Select files and confirm each rotation number. Each input/rotation/temperature gets a separate image; field values identify the marker series. Repeated scans are retained separately, without averaging or fitting. Separate input files are never silently merged.\n\nImages use Arial Regular, a white background and 8 x 6 inches at 300 dpi (2400 x 1800 pixels). The only figure text is the rotation/temperature heading, axes and field legend. No fitted curves, connecting lines or processing notes are added.\n\nChoose Torque (N m) or Molar torque (N m/mol). Molar output also saves a separate four-column molar DAT; Save treated data continues to write the ordinary N m file. It never changes the background subtraction, zero adjustment or raw measurements.\n\nMolar mass alone cannot determine the amount of sample. Supply sample mass (mg) and molar mass (g/mol), or an independently known amount (mol), for each selected file. The normalization is user-provided: tau_molar = tau / n = tau * M / m, with mass in g. The relevant molar basis is the formula/molecule used to define M and n. No mass, amount or molar mass is inferred from a filename.\n\nA new treated_plots folder holds the JPEGs and any molar DATs. The plots.details folder records the choices, exact conversion factor, image/data hashes, source identities and replay settings. Rotation suggestions come from filenames and must be checked. Plot settings do not change numerical baseline bindings.",
+    "text": "Use the main Output section to select Torque (N m) or Molar torque (N m/mol). Save plots exports one JPEG per file, rotation and temperature using committed treated signal samples and field markers. No fitted curves or background scans are included. Sample quantities remain independent for each file. Plot saving writes JPEGs and details, never DATs; use Save torque data or Save both data files for data.",
     "children": [
       {
         "id": "export_treated_plots",
         "title": "Export treated plots",
-        "tip": "Save one 300-dpi JPEG per input, rotation and temperature from committed treated data. Molar mode also saves a separate molar DAT.",
-        "text": "Export is available after background subtraction and resolution of all included scans. Apply or cancel any zero-adjustment draft first. Choose a destination; the application creates a new folder and preserves previous exports."
+        "tip": "Save grouped JPEGs using each selected file's committed Output quantity.",
+        "text": "Save grouped JPEGs using each selected file's committed Output quantity. Select files and check rotation labels. Set sample quantities in the main window. This action saves no DAT. Complete valid processing is required."
       },
       {
         "id": "plot_quantity",
         "title": "Plot quantity",
-        "tip": "Choose treated torque in N m, or molar torque in N m/mol with your sample normalization. The ordinary DAT stays in N m.",
-        "text": "Torque uses the serialized treated DAT values directly. Molar torque multiplies those same values by 1/n. The separate molar DAT and plotted markers use the same converted values."
+        "tip": "Quantity is selected in the main Output section and shared by corrected preview, data and plots.",
+        "text": "Quantity is selected in the main Output section and shared by corrected preview, data and plots. Torque is the default. Molar mode requires an accepted sample amount. Raw/background/stages and Center zero remain in N m."
       },
       {
         "id": "plot_normalization",
         "title": "Mass, molar mass or amount",
-        "tip": "For each file, enter sample mass (mg) and molar mass (g/mol), or amount (mol). Values must be positive and finite; molar mass alone is insufficient.",
-        "text": "Choose Sample mass and molar mass, or Amount in moles. Values belong to each input independently. The factor is calculated with 50-digit Decimal precision; multiplication preserves the exported N m token times the recorded factor. This computational precision is not a claim about experimental uncertainty.\n\nSoftware example only: 2 mg with M = 400 g/mol gives n = 5e-6 mol and a factor of 200000 mol^-1. A treated torque of 1e-6 N m becomes 0.2 N m/mol. The same result follows from an independently entered amount of 5e-6 mol."
+        "tip": "Use Output: Sample mass (mg) plus Molar mass (g/mol), or Amount (mol).",
+        "text": "Use Output: Sample mass (mg) plus Molar mass (g/mol), or Amount (mol). n = mass_mg/(1000*molar_mass_g_mol); molar torque = treated torque/n. Values must be positive and finite. Molar mass alone is insufficient. Mass and molar mass must describe the same chemical basis. No sample quantity is inferred."
       },
       {
         "id": "plot_rotation",
@@ -407,5 +437,10 @@
     "id": "troubleshooting",
     "title": "Troubleshooting",
     "text": "Center zero is disabled: select a processed signal scan and wait for any running task. Background scans cannot be centered here.\n\nSave treated data is disabled: process the file and resolve included scans or stale active zero adjustments. Explicit exclusions are recorded; the application does not silently save a partial file.\n\nSettings changed: the old result is invalid. The preview returns to Raw; click Subtract background again.\n\nMissing/ambiguous temperature: enter the actual experimental targets or assign the selected scan explicitly. A measured value is not automatically an integer-K target.\n\nInvalid input: use finite numbers and the units shown. Temperature lists accept spaces or commas; scan-start row lists use commas. Duplicate temperature targets are rejected.\n\nInsufficient coverage or fit rank: choose an appropriate background or angle interval. At least seven distinct background angles and a finite valid fit are required. Extrapolation requires an explicit choice.\n\nStale accepted baseline: upstream data/settings or the numerical environment changed. Review and Apply a new setting, or remove the old adjustment. The program must not silently reuse it.\n\nOutput already exists: choose a new filename. Keep raw inputs, references and earlier runs unchanged.\n\nFont issue: Tools > Details reports the resolved font. Scientific figure export requires Arial Regular; a fallback preview does not count as a compliant export.\n\nMoving raw files: saved sessions contain paths. Reopen the data at its new location and use verified matching settings; do not bypass the raw-file hash check.\n\nMolar plots require both sample mass and molar mass, or the amount in moles. Missing, zero or nonfinite inputs are rejected. Figure export does not infer sample normalization."
+  },
+  {
+    "id": "output_examples",
+    "title": "Output examples and troubleshooting",
+    "text": "Software example only: 2 mg and 400 g/mol gives 5e-6 mol. Entering Amount (mol) = 5e-6 gives the same factor 200000 mol^-1. These are not measured Ho2sq3 sample quantities.\n\nA missing, zero, negative, nonfinite or unusable amount blocks molar saving with an inline explanation. Apply or Cancel before changing files, quantity, saving settings or exporting. A positive but physically wrong mass cannot be detected automatically; check units and the calculated amount.\n\nSwitch clean settings back to Torque to save ordinary N m; accepted sample entries remain available. To save plots in both quantities, export in each mode without reprocessing. Settings belong to the selected file and never spread to another sample. Raw/background/stages and torque-zero controls stay in N m.\n\nSave settings, then replay: TorqueDataCLI.exe process --session settings.json --dat sample_treated.dat. A molar session also saves sample_molar.dat; old sessions save only ordinary data. Keep the details/replay.json file for reproducing exported settings."
   }
 ]

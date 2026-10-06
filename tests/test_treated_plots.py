@@ -121,7 +121,7 @@ class TreatedPlotTests(unittest.TestCase):
         out = Path(export_treated_plots([(self.result, MASS), (self.result, {"rotation": "2"})], self.folder))
         info = json.loads((out / "plots.details/plots.json").read_text())
         self.assertEqual(len(info["files"]), 2)
-        self.assertEqual(len(list(out.glob("*.dat"))), 1)
+        self.assertEqual(len(list(out.glob("*.dat"))), 0)
         for item in info["files"]:
             self.assertEqual(item["plots"][0]["points"], 82)
             with Image.open(out / item["plots"][0]["filename"]) as image:

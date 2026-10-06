@@ -27,7 +27,7 @@ def main(archive, output):
         zipped.extractall(source)
     env = os.environ.copy()
     env.pop("PYTHONPATH", None)
-    before = json.loads((ROOT / "validation/windows_app_v1.4_build1/before.json").read_text(encoding="utf-8"))
+    before = json.loads((ROOT / "validation/v15_before/before.json").read_text(encoding="utf-8"))
     def run(arguments, label):
         done = subprocess.run([sys.executable, *map(str, arguments)], cwd=output, env=env,
                               capture_output=True, text=True, encoding="utf-8", errors="replace",
@@ -42,7 +42,7 @@ def main(archive, output):
          "--session", ROOT / "examples/Ho2sq3_0_to_200.json"], "hidden_gui")
     check = json.loads((output / "hidden_gui/report.json").read_text(encoding="utf-8"))
     assert Path(check["module_directory"]).resolve() == source
-    assert check["status"] == "PASS" and check["help_topics"] == 69
+    assert check["status"] == "PASS" and check["help_topics"] >= 74
     report = {"status": "PASS", "source": str(source), "package_entries": len(names),
               "three_DATs_byte_equal": True, "extracted_GUI_Help_plots_molar": True,
               "windows_withdrawn": True, "archive_sha256": hashlib.sha256(archive.read_bytes()).hexdigest()}

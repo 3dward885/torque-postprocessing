@@ -36,8 +36,18 @@ Official PyPI URLs and verified wheel hashes: windows/dependency_wheels.json.
 Python, Tcl/Tk and applicable dependency/build-tool licenses are included.
 Microsoft Arial is resolved from Windows, not redistributed.
 
+RELEASE FOLDER NAMES
+The verified former build3 folder is now Torque_Data_Postprocessing_1.4_final.
+The earlier mislabeled final is build2. Later archived attempts are build3_incomplete
+and build4, ordered by their recorded build times. Only final is the current release.
+Folder names and current documentation changed; installer/portable bytes did not.
+Recorded test logs retain their original paths. Commands below use the new path.
+The source update ZIP was refreshed for documentation/state paths only; its
+unchanged application/test/Help contents are verified in
+validation/release_rename_v1.4/source_archive_update.json.
+
 DELIVERED BINARY
-releases/Torque_Data_Postprocessing_1.4_build3/
+releases/Torque_Data_Postprocessing_1.4_final/
   Torque_Data_Postprocessing_1.4_Setup_x64.exe
   Torque_Data_Postprocessing_1.4_portable_x64.zip (optional alternative)
   build_info.json, bundle_manifest.json, SHA256SUMS.txt
@@ -157,15 +167,15 @@ require re-review if numerical inputs/source/environment genuinely change.
 No automatic updates, telemetry, file associations or system Python changes.
 
 TESTED COMMANDS (PowerShell in the active checkout; use new outputs on repeat)
-.\.build-venv\Scripts\python.exe tools\build_windows.py --output releases\Torque_Data_Postprocessing_1.4_build3
+.\.build-venv\Scripts\python.exe tools\build_windows.py --output releases\Torque_Data_Postprocessing_1.4_final
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 .\.venv\Scripts\python.exe tests\windows_bundle.py --bundle "validation\d é\Torque Data Postprocessing" --before validation\windows_app_v1.4_build1\before.json --output validation\v14_bundle_final
-.\.venv\Scripts\python.exe tests\windows_installer.py --setup releases\Torque_Data_Postprocessing_1.4_build3\Torque_Data_Postprocessing_1.4_Setup_x64.exe --manifest releases\Torque_Data_Postprocessing_1.4_build3\bundle_manifest.json --before validation\windows_app_v1.4_build1\before.json --output validation\w14j
+.\.venv\Scripts\python.exe tests\windows_installer.py --setup releases\Torque_Data_Postprocessing_1.4_final\Torque_Data_Postprocessing_1.4_Setup_x64.exe --manifest releases\Torque_Data_Postprocessing_1.4_final\bundle_manifest.json --before validation\windows_app_v1.4_build1\before.json --output validation\w14j
 .\.venv\Scripts\python.exe tests\workflow_isolation.py --session examples\Ho2sq3_manual_demo.json --output validation\v14_isolation
 .\.venv\Scripts\python.exe tests\figures.py --session examples\Ho2sq3_0_to_200.json --output validation\v14_figures
-.\.venv\Scripts\python.exe tests\windows_distribution.py --release releases\Torque_Data_Postprocessing_1.4_build3 --output validation\windows_app_v1.4_build1\distribution.json
-.\.venv\Scripts\python.exe tools\package_windows_source.py --output releases\Torque_Data_Postprocessing_1.4_build3\Torque_Data_Postprocessing_v1.4_source_update.zip
-.\.venv\Scripts\python.exe tests\windows_source.py --archive releases\Torque_Data_Postprocessing_1.4_build3\Torque_Data_Postprocessing_v1.4_source_update.zip --output validation\v14_source_final
+.\.venv\Scripts\python.exe tests\windows_distribution.py --release releases\Torque_Data_Postprocessing_1.4_final --output validation\windows_app_v1.4_build1\distribution.json
+.\.venv\Scripts\python.exe tools\package_windows_source.py --output releases\Torque_Data_Postprocessing_1.4_final\Torque_Data_Postprocessing_v1.4_source_update.zip
+.\.venv\Scripts\python.exe tests\windows_source.py --archive releases\Torque_Data_Postprocessing_1.4_final\Torque_Data_Postprocessing_v1.4_source_update.zip --output validation\v14_source_final
 
 The actual binary harness executed TorqueDataCLI.exe process --session <absolute
 examples/Ho2sq3_0_to_200.json> --dat <absolute output path>, and the other named

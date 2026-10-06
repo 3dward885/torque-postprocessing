@@ -1,0 +1,358 @@
+TORQUE DATA POSTPROCESSING v1.5 — VISIBLE MOLAR OUTPUT
+Execution prompt v1.0 | 6 October 2026
+
+EXECUTION BOUNDARY
+
+Preparing or reviewing this prompt does not authorize implementation. Execute it
+only when the user explicitly asks you to execute it. Once authorized, implement
+the patch, validate it and deliver the updated software; do not stop at a proposal.
+
+TASK
+
+Deliver Torque Data Postprocessing v1.5 with optional molar conversion visible
+in the main workflow. Use the approved UX proposal: one compact Output section,
+per-file sample quantities, a consistent corrected preview, and clear data/plot
+saving actions. Keep torque in N m as the default.
+
+Use one agent and minimal maintainable Python. Reuse Tkinter/ttk, Matplotlib,
+the existing normalization arithmetic, GUI/CLI core, Help and Windows packaging.
+Explain the integration briefly, then complete the authorized work without
+routine confirmation. Avoid unrelated redesign or refactoring.
+
+Run tests in the background with withdrawn Tk windows and programmatic events.
+Do not open foreground windows, move the pointer, send desktop keystrokes,
+capture the desktop, or close/control the user's application. Do not install
+over the user's real installation. Do not write into the GitHub checkout,
+commit, push, publish, deploy or repeat scientific model discovery.
+
+1. ESTABLISH THE ACTUAL v1.4 BASE
+
+Active checkout:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\Codex Torque\torque-postprocessing
+
+Manual GitHub destination; do not modify:
+D:\OneDrive - Florida State University\FSU\Github\torque-postprocessing
+
+Read applicable AGENTS.md, README.md, README.txt, CHANGELOG.txt and
+Torque_GUI_project_state_v1.0.json. Inspect actual Git HEAD/status and environment.
+Preserve user edits. The historical HEAD b9517f489a35dcf3984ea48356fc3d12956e7c5c
+predates the working application; do not reset or build the patch against HEAD.
+
+Inspect app.py, plot_export_dialog.py, treated_plots.py, plots.py, storage.py,
+cli.py, baseline.py, baseline_editor.py, help_content.json, ui_help.py,
+installation_check.py, packaging files and relevant tests.
+
+At prompt preparation, observed v1.4 behavior is:
+- Main Save treated data saves four-column torque DAT in N m.
+- Molar conversion is under Tools -> Export treated plots -> Plot quantity.
+- That dialog resets quantity to Torque and method to Sample mass and molar mass.
+- Sample entries are remembered per source/file in app.plot_choices while open,
+  and recorded with plot exports, but not in ordinary saved sessions.
+- Selecting molar output exports grouped JPEGs and a separate molar DAT.
+- The main preview and torque-zero editor use N m.
+
+Recheck these observations; extend newer working behavior instead of overwriting it.
+
+The verified v1.4 release directory is:
+releases/Torque_Data_Postprocessing_1.4_final/
+Its Setup SHA-256 is:
+704014ad58a824589f05aec7e99b942b73b15849923d8c85a62b5f7c598375f2
+
+Capture a fresh, uniquely named pre-patch snapshot of relevant working sources,
+settings, numerical fingerprint, accepted-baseline bindings and representative
+ordinary/molar outputs. Use the actual v1.4 working contents as the comparison
+basis. Preserve all earlier releases, reports, raw data and archived evidence.
+
+2. MAKE OUTPUT CHOICE VISIBLE
+
+Add one always-visible, compact Output section associated with the selected
+raw file. Keep the four processing steps recognizable:
+Open data -> Subtract background -> optional Center zero -> Save treated data.
+
+Use these labels and arrangement as the implementation guide; adapt spacing
+to the current window without shrinking the scientific plot unnecessarily.
+
+Ordinary mode:
+  Output for: <selected filename>
+  Quantity:  [Torque (N m)]  [Molar torque (N m/mol)]
+             radio buttons; Torque selected by default
+  [Save torque data...]  [Save torque plots...]
+
+Molar mode additionally shows:
+  Amount from: [Sample mass and molar mass]
+  Sample mass (mg): [          ]   Molar mass (g/mol): [          ]
+  Calculated amount: <value> mol
+  [Apply]  [Cancel]
+  Data: N m + N m/mol     Plots: N m/mol
+  [Save both data files...]  [Save molar plots...]
+
+The alternative Amount from choice is "Amount in moles". It replaces the mass
+fields with "Amount (mol)" and a read-only effective amount. Do not require both
+methods, or use values from the inactive method.
+
+Reuse or relocate existing save actions; avoid duplicate controls. File-menu
+saving and Ctrl+S must follow the same effective output choice and safeguards.
+Add direct access to grouped plot saving in this section. Tools may retain
+equivalent shortcuts.
+
+One committed quantity/method/sample setting belongs to each input file.
+Data saving, corrected preview and grouped plots share it. Remove the plot
+dialog's independent quantity/sample editor. It may retain file selection and
+rotation labels, and show each file's effective quantity/amount read-only.
+Batch exports must use each file's own settings, including mixed quantities;
+never propagate another sample's amount silently.
+
+New files start with Torque selected and blank sample quantities. Selecting
+another file shows that file's choices. Rotation remains a presentation label;
+do not use it, a compound name or temperature as the identity of a sample.
+
+3. VALIDATE AND COMMIT SAMPLE QUANTITIES
+
+Require either:
+  sample mass (mg) AND molar mass (g/mol), or amount (mol).
+
+The physical conversion remains:
+  n = mass_mg / (1000 * molar_mass_g_mol)
+  molar torque = treated torque / n
+
+Molar mass alone is insufficient. Never infer mass, amount, purity or a
+normalization factor from filenames, compound names or another file.
+
+Reuse treated_plots.normalization(), converted_token() and molar_text().
+Preserve the current 50-digit Decimal factor calculation and exact Decimal
+multiplication of already serialized N m tokens. Do not recompute the factor
+through a rounded displayed amount, or introduce binary64 conversion arithmetic.
+Binary64 remains appropriate for rendering the resulting plotted values.
+
+Accept ordinary decimal/scientific notation. Validate missing, malformed, zero,
+negative, nonfinite and numerically unusable values, including existing
+overflow/underflow checks. Show a short inline message beside the relevant
+fields, such as "Enter a positive sample mass in mg". Explain disabled saving
+where it appears. Avoid repeated confirmation dialogs.
+
+Show a read-only amount in scientific notation with explicit mol units. Display
+rounding is for readability only. Do not claim that validation can detect a
+physically incorrect but positive user-entered mass. Brief Help must explain
+that mass and molar mass must refer to the same chemical basis.
+
+Sample edits are drafts:
+- Apply validates and commits the selected file's method/values.
+- Cancel restores its last committed settings.
+- Switching methods changes which draft fields are used, with clear units.
+- Resolve dirty drafts through Apply or Cancel before file/quantity navigation,
+  settings save/load, or data/plot export. Do not silently apply or discard them.
+- Explain a blocked action inline: "Apply or cancel sample changes."
+- Switching to Torque with clean state restores ordinary display/output;
+  retain inactive accepted sample values for later reuse.
+- Switching to Molar with missing/unusable values shows the fields and blocks
+  molar output. Do not display a stale converted preview as valid.
+- Cancelled file/save dialogs do not commit settings or create outputs.
+
+Keep draft/committed sample state independent of baseline-editor drafts.
+Preserve the baseline editor's existing dirty-edit rules.
+
+4. KEEP PREVIEW AND SAVING UNAMBIGUOUS
+
+With a valid processed signal selected, Corrected preview uses the committed
+quantity and axis label: "Torque (N m)" or "Molar torque (N m/mol)".
+Molar previews must use the same converted serialized torque tokens as molar
+DAT/JPEG output. Quantity/sample changes refresh only presentation and export
+state; they must not require background subtraction again.
+
+Raw, Background fit and Processing steps continue to describe their actual
+N m quantities truthfully. The torque-zero editor remains in N m, including its
+offset entry. Explain this distinction briefly in Help. Keep View synchronized
+with actual data; unavailable/stale processed results must not appear valid.
+Existing PDF/PNG figure saving must match the displayed quantity and labels.
+
+Save torque data:
+- Save the existing four-column N m DAT through a normal Save As dialog.
+- Preserve existing serialization, acquisition order, metadata and ledger.
+
+Save both data files:
+- Save an ordinary N m DAT and a separate N m/mol DAT derived from that same
+  committed result. Never replace the ordinary DAT with normalized values.
+- Use clear companion names, normally <stem>_treated.dat and <stem>_molar.dat.
+  Make both intended filenames/units clear before saving.
+- If either output or details path exists, require a new name; never overwrite.
+- Validate all outputs before publication. Reuse staged writes and safe rollback
+  so a failed pair is not reported as complete; clean up only files created by
+  that attempt. Never delete pre-existing outputs or unrelated files.
+- Record sample inputs, method, calculated amount/factor, units, source/output
+  hashes and the settings needed for replay in existing adjacent details.
+  Reuse provenance conventions rather than introducing a separate log system.
+
+Save plots:
+- Export grouped treated JPEGs only. Remove the incidental DAT creation from
+  the plotting action; data saving is now directly available in the main window.
+- Retain grouping by file, rotation and experimental temperature, separate
+  acquisitions, no background rows, no averaging, and acquisition identities.
+- Use the committed quantity for each selected file and quantity-specific names.
+- Retain 8 x 6 inches, 300 dpi/2400 x 1800 pixels, white background, Arial Regular,
+  labels 22 pt, ticks 18 pt, legends 12 pt or existing 9 pt dense stacks,
+  black left/bottom axes 1.2 pt, outward major/minor ticks 6/3 pt, no grid.
+- Show experimental markers only: no fitted or connecting curves.
+- Figure text remains limited to rotation/temperature heading, axis labels/ticks
+  and field legend. Do not add mass/amount, filenames or explanatory annotations.
+- To export plots in both quantities, switch the clean committed choice and
+  export again. Do not add a second conversion or quantity-selection system.
+
+5. SAVE SETTINGS AND SUPPORT HEADLESS REPLAY
+
+Persist committed per-file quantity, method, entered Decimal values, rotation
+presentation label and normalization provenance in a small optional, versioned
+output-settings block separate from numerical processing settings.
+
+Bind it to the file/source identity and hash. Preserve portability; do not treat
+the developer's absolute path as sufficient identity. New or changed inputs must
+not inherit a previous sample's quantities silently. Unknown versions, invalid
+active values and mismatched bindings must fail clearly rather than be ignored.
+
+Old sessions without the block remain readable and default to Torque with blank
+sample quantities. Retained inactive values do not affect ordinary output.
+Do not repurpose old, obsolete molar processing fields as newly accepted sample
+measurements. Do not forge acceptance or rewrite numerical/baseline digests.
+
+Reuse the existing session format and extend it minimally. Keep numerical recipe,
+processing configuration and baseline schema versions unchanged unless a real
+compatibility change is demonstrated. Version the new output block independently.
+Read/write it beside each file's existing processing record, and include it in
+the exported replay settings. Document any migration.
+
+Use the same committed settings and conversion/export helpers in GUI and CLI.
+Extend the existing session replay route to produce the selected data outputs:
+old/Torque sessions produce N m; accepted Molar sessions produce both DATs.
+Retain old CLI calls and useful exit codes. Keep obsolete historical molar flags
+explicitly obsolete; update their guidance to the new workflow. Do not add a
+parallel set of normalization formulas or a new CLI framework.
+
+Changing quantity, mass, molar mass, amount or rotation must not change u, the
+ordinary N m data, accepted torque offsets or their numerical fingerprints.
+It invalidates affected molar previews/exports only. Derive every conversion
+from the original committed N m tokens; repeated toggling/saving never compounds it.
+
+6. PRESERVE THE SCIENTIFIC AND INSTALLER CONTRACTS
+
+Preserve existing import support, measured/nominal coordinates, tokens, scan
+identities, user setpoints/tolerances and inclusive checks, angle-range selection,
+background matching/coverage permissions, raw snapshots and complete row ledger.
+
+Preserve numerical order exactly:
+six-significant-digit Decimal torque tokens -> existing unweighted degree-six
+background polynomial on the [0,200] scaled basis -> evaluation at retained
+nominal angles -> subtraction -> ordinary/accepted centering once -> binary64
+.8g N m serialization. Molar conversion occurs afterward.
+
+No smoothing, resampling, recalibration, synthetic points or numerical retuning.
+Background scans remain excluded from treated signal DATs. Preserve all manual
+torque adjustment behavior and stale-binding checks.
+
+Sample-position offset correction in degrees remains DEFERRED. Do not implement
+angle shifts, its controls/settings/CLI options, endpoint changes or new rounding.
+
+Recompute the actual pre/post numerical fingerprint. At preparation it is:
+ce5bcc72bf3fe23873d78b1b4c0e487e14da54cbbc909976c065556bb4e96d7a
+Treat that as an expectation to verify, not proof. Include numerical source in
+the frozen package so inspect.getsource-based verification works. Keep output
+preferences, Help, branding and display state outside numerical fingerprints.
+
+Update current application, executable properties, installer and current docs
+to 1.5, keeping the app name exactly "Torque Data Postprocessing". Record the
+installer build separately. Do not relabel historical reports/archives/recipes.
+
+Reuse the verified PyInstaller one-directory and Inno Setup workflow and pinned
+runtime/build dependencies. Preserve stable installer AppId, per-user installation,
+Start-menu entry, optional desktop shortcut, user-data/log locations, path checks,
+uninstaller preservation and no automatic closing of running applications.
+Do not redistribute Arial, add automatic updates/telemetry/file associations,
+or require end-user Python/environment setup.
+
+7. FOCUSED VALIDATION
+
+Use new validation/output directories and a fresh pre-patch v1.4 comparison.
+Run current unit tests and focused withdrawn-widget, source/bundled replay and
+installer checks. Add meaningful tests for the changes; reuse existing helpers.
+Do not rerun discovery or archived validation mains that overwrite evidence.
+
+Required observed gates:
+A. Discovery/workflow: quantity is visible in the main window, default Torque;
+   both input methods, inline errors, calculated amount, disabled-action reasons,
+   tooltips after one second, keyboard access and local Help work.
+B. State: Apply/Cancel, dirty navigation/saving, quantity/method switches, per-file
+   independence, inactive settings, save/load, old-session migration and cancelled
+   dialogs behave as specified. No data or unit mismatch after file/scan changes.
+C. Arithmetic/output: ordinary DAT is byte-identical to fresh v1.4 output;
+   molar tokens agree exactly with the existing v1.4 arithmetic. Synthetic tests
+   cover mass/amount equivalence, decimal/scientific notation, invalid inputs,
+   overflow/underflow, repeated conversion, collisions and failure rollback.
+D. Preview/plots: converted plotted samples agree with molar DAT, labels/filenames
+   agree with quantities, grouped plots contain only treated signal samples,
+   plot saving creates no DAT, and raw/background/zero views retain truthful units.
+   Check Arial resolution, JPEG size, allowed text, clipping and readability
+   using offscreen figures; do not call this a visible whole-window review.
+E. Replay/science: GUI and CLI selected outputs agree; old CLI/session routes
+   remain compatible; no refitting/recentering on normalization changes;
+   manual offsets, fingerprint/u digest and stale-binding protections survive.
+   Preserve exact ordinary regression, source-row accounting and protected hashes.
+F. Distribution: extracted source and actual frozen/installed GUI/CLI exercise
+   the new controls, Help/settings and both DATs. Check resource loading,
+   dependency independence and installer update/uninstall against an isolated
+   test copy, leaving user data intact. No real application installation is modified.
+
+Reuse examples/Ho2sq3_full_range.json, Ho2sq3_0_to_200.json and the valid accepted
+manual-offset example. Locate the raw fixture through current settings/state;
+the directory was renamed, so do not assume an obsolete path.
+Raw identity: 269380 bytes, SHA-256:
+04edb7daae1c04a4330cb49a2cd46de5111ee00c643cef8e6e510b1be258e04c
+
+Established accounting to verify:
+1754 raw rows/34 scans; full range 1296 signal + 458 background rows;
+0-200 degrees 1023 signal + 368 retained background + 363 excluded rows.
+Previously observed unit count was 49; report the actual current count.
+Reuse historical comparisons where relevant, with their documented recipes.
+
+The user already confirmed experimental temperatures/backgrounds and scoped
+P022-P024 full-range extrapolation. Do not ask again or extend permission.
+No actual Ho2sq3 sample mass/molar mass/amount or independent treated reference
+has been supplied. Use clearly labelled synthetic normalization for software
+validation; do not invent experimental quantities or claim physical validation.
+
+Report each gate PASS/FAIL/BLOCKED from current observations. Distinguish hidden
+widget/event tests, offscreen plot inspection, restricted-PATH runtime testing,
+clean-machine testing and visible installer/UI review. If a check is unavailable,
+give its precise cause and complete independent checks. Keep existing unsigned
+installer and clean-machine limitations honest; do not claim SmartScreen approval.
+
+8. DELIVER v1.5 AND STOP
+
+Update README.md/README.txt, CHANGELOG.txt, local Help/tooltips and the existing
+compact project state with actual behavior, migration, launch/replay/build/test
+commands, observed validation and limitations. Keep scientific/deferred work
+separate from software completion.
+
+Deliver locally:
+- Verified Torque_Data_Postprocessing_1.5_Setup_x64.exe.
+- v1.5 source/update ZIP for manual GitHub copying, preserving paths; include
+  source, tests, Help, packaging, documentation and this exact execution prompt.
+- SHA-256 checksums, concise implementation/validation report, and precise fixture
+  identities/locations sufficient to reproduce tests.
+- Representative ordinary DAT/replay settings from established processing choices;
+  molar example DAT/settings explicitly labelled synthetic when normalization
+  quantities are software fixtures. Keep generated evidence outside source ZIP.
+- Portable binary ZIP if supported by the existing build workflow.
+
+Exclude .git, environments, build tools, credentials, research raw/reference data,
+personal sessions and generated runs/evidence from source/update archives.
+Keep binaries separate. List required source removals explicitly, if any.
+Check archive contents/hashes and replay from an extracted copy.
+
+Keep build attempts numbered. Only the verified deliverable belongs in
+releases/Torque_Data_Postprocessing_1.5_final/; update CURRENT_RELEASE.txt to
+identify it clearly. Preserve the v1.4 final release and historical build names.
+Do not label an unverified intermediate build "final".
+
+Finish with a brief change summary, absolute Setup/source/report links, installation
+steps, exact tested replay/build/test commands, a compact observed gate table,
+specific limitations, and a suggested GitHub commit summary/description.
+State whether a clean Windows machine and visible installer UI were actually
+tested. The user manages installation and commits/pushes manually. Then stop.

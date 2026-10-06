@@ -135,7 +135,8 @@ def export_run(result, output_folder, run_name=None):
         (stage / "SHA256SUMS.txt").write_text("".join(f"{digest}  {name}\n" for name, digest in sorted(hashes.items())), encoding="utf-8")
         if final.exists():
             raise InputError(f"Output collision: {final}.")
-        stage.rename(final)
+        from treated_plots import publish_directory
+        publish_directory(stage, final)
         return str(final)
     except BaseException:
         # Remove only the unique staging directory created by this call.
@@ -146,21 +147,33 @@ def export_run(result, output_folder, run_name=None):
 def save_session(path, entries):
     parent = Path(path).resolve().parent
     files = []
-    for raw, config in entries:
+    for entry in entries:
+        raw, config = entry[:2]
         raw = Path(raw).resolve()
         try:
             relative = os.path.relpath(raw, parent)
         except ValueError:
             relative = str(raw)
-        files.append({"path": relative, "settings": config})
+        item = {"path": relative, "settings": config}
+        if len(entry) == 3:
+            from output_settings import validate_output
+            item["output"] = validate_output(entry[2], config["input_sha256"])
+        files.append(item)
     atomic_json(path, {"session_version": "1.0", "files": files})
 
 
-def load_session(path):
+def load_session(path, include_output=False):
     doc = load_config(path)
     if doc.get("session_version") != "1.0" or not isinstance(doc.get("files"), list):
         raise InputError("Expected a version 1.0 session with a files list.")
     try:
-        return [(str((Path(path).resolve().parent / item["path"]).resolve()), item["settings"]) for item in doc["files"]]
+        entries = []
+        for item in doc["files"]:
+            raw = str((Path(path).resolve().parent / item["path"]).resolve())
+            cfg = item["settings"]
+            from output_settings import validate_output
+            output = validate_output(item["output"], cfg["input_sha256"]) if "output" in item else None
+            entries.append((raw, cfg, output) if include_output else (raw, cfg))
+        return entries
     except (KeyError, TypeError) as exc:
         raise InputError("Each session file needs a path and settings object.") from exc

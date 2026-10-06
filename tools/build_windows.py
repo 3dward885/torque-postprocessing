@@ -63,7 +63,10 @@ def compiler():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True, help="New directory for this build")
+    parser.add_argument("--build-number", type=int, default=1, help="Positive installer build number")
     args = parser.parse_args()
+    if args.build_number < 1:
+        parser.error("--build-number must be positive.")
     if sys.platform != "win32" or platform.machine().lower() not in ("amd64", "x86_64"):
         parser.error("Build with 64-bit Python on Windows.")
     if platform.python_version() != "3.12.14":
@@ -103,7 +106,7 @@ def main():
     from pipeline import UPSTREAM_IMPLEMENTATION
     from io_profiles import APP_VERSION
     info = {"app_name": "Torque Data Postprocessing", "app_version": APP_VERSION,
-            "installer_build": 1, "built_utc": datetime.now(timezone.utc).isoformat(),
+            "installer_build": args.build_number, "built_utc": datetime.now(timezone.utc).isoformat(),
             "python": platform.python_version(), "platform": platform.platform(), "packages": versions,
             "numerical_implementation_sha256": UPSTREAM_IMPLEMENTATION,
             "source_sha256": {p.name: digest(p) for p in ROOT.glob("*.py")},
@@ -137,7 +140,7 @@ def main():
     shutil.copyfile(stage / "build_info.json", bundle / "_internal/build_info.json")
     manifest["_internal/build_info.json"] = digest(bundle / "_internal/build_info.json")
     (output / "bundle_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    run([str(iscc), f"/DBundleDir={bundle}", f"/DOutputPath={output}", f"/DMaxAppPath={max_path}",
+    run([str(iscc), f"/DBundleDir={bundle}", f"/DOutputPath={output}", f"/DMaxAppPath={max_path}", f"/DBuildNumber={args.build_number}",
          str(ROOT / "windows/installer.iss")], output / "inno.log", cwd=ROOT)
     portable = output / f"Torque_Data_Postprocessing_{APP_VERSION}_portable_x64.zip"
     with zipfile.ZipFile(portable, "x", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:

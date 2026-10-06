@@ -1,0 +1,38 @@
+Torque Data Postprocessing 1.5 - manual GitHub source update
+
+For ordinary use, run the separate Torque_Data_Postprocessing_1.5_Setup_x64.exe.
+The source archive is for maintaining your project in GitHub Desktop.
+
+1. Back up the GitHub checkout and inspect its uncommitted changes.
+2. Extract Torque_Data_Postprocessing_v1.5_source_update.zip.
+3. Copy its project files into the GitHub checkout, preserving subfolders and
+   reviewing replacements. Close any source-based application yourself first.
+4. Review the diff, commit and push manually.
+
+This is the complete current source/update, including output_settings.py,
+output_controls.py, Help, tests and Windows build files. No removals are required.
+Do not copy .git, environments, build_tools, releases, validation, evidence or
+runs into the source commit. Keep the installer/portable runtime ZIP separate.
+No files were copied to the GitHub checkout by this task.
+
+Output choices now appear in the main window. Sample quantities are committed
+per file with Apply/Cancel and saved in a separate version-1 output block.
+Processing configuration 1.2 and baseline schema 2 remain unchanged.
+Old sessions default to ordinary torque. Use v1.5 to replay v1.5 output settings.
+Molar data saving produces ordinary plus separate molar DATs. Plot saving now
+creates JPEGs/details only. Corrected previews use the selected units; raw,
+background/stages and manual torque-zero editing remain in N m.
+
+PACKAGE_MANIFEST.json lists archive members/hashes and the fresh v1.4 working
+snapshot used as the comparison basis. FIXTURE_LOCATIONS_v1.5.json identifies
+external scientific fixtures; research measurements are not in this archive.
+
+Suggested commit summary:
+Release v1.5 with visible per-file molar output controls
+
+Suggested description:
+Add a main Output section for torque or molar torque, with validated sample
+quantities, Apply/Cancel, saved per-file choices and matching corrected previews.
+Save ordinary and separate molar DATs through GUI or CLI replay; keep grouped
+JPEG export separate. Preserve torque arithmetic and baseline bindings.
+Update Help, regression tests and the self-contained Windows installer.

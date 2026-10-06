@@ -40,18 +40,24 @@
     "midrange_samples": "Actual retained signal rows after optional angle-range selection"
   },
   "current_core_sha256": {
-    "app.py": "74778058b9ff7dc4bc2d62a9363f1fe501fc50ac0a8617790b95ccf7144620f1",
+    "app.py": "12200a52ed009387ad04ae19cfbb3764fac0752b709b4138540a39e24f04d0ff",
     "baseline.py": "d646eb9c28e7f94c032a4e7b5439f0e5ef63edb22ce918a348573d953a262e75",
     "baseline_editor.py": "23900cb77f0213c3a1162d09e9a4c2281706db458a439ef7f6b7999ee2b24a6c",
-    "cli.py": "83adc6eefeb1b51b8fa3e2abbc96f946398a97292f6afaa1f09b839fefae8d50",
+    "cli.py": "5e3eee7e278f5c563bc309229041d3b143e7b2ba9c3e72c2620913408b27446e",
+    "desktop.py": "659c71347549fb07bc599f3bca491e132d113536e8f361d02fe404989bde97bd",
     "input_fields.py": "098bdecfe0467eb7e83f596fbd74a63116dd470a79f54ad18feff9a3d8b20eee",
-    "io_profiles.py": "546d5ff60d30108c898c01295281c9c5811a8cac8298916368a67f77f9a7b0ce",
+    "installation_check.py": "5a321efa26f161d2eaf92295cb17eb3efa3698eea470d870388cf516f442d517",
+    "io_profiles.py": "d762bafca3e7b41b155c3f7ac1dd03631b89b1d16750662a1f2673626e12abdc",
+    "output_controls.py": "2b5621a73047420dec9af185cb70b47e4a25dfdc37cbae1be952aea9e7754efc",
+    "output_settings.py": "5abc27c9d527ef1748962721776e78c930eb20ecfc279d9acfd8520fe8b4cad1",
     "pipeline.py": "cec5705d093ea5591cc2a0874ebbcbdf8cf8b573089b58794f1efd3f09c16d35",
-    "plots.py": "b0410b9a3ec775d99d06907d744c7b4d9256691e9dd5fa755d8a23fa7eb33b57",
+    "plots.py": "d79acaef57720d839685e4fc6bf78d138fcfbfd1db13edfa278d36b553cd4df4",
+    "plot_export_dialog.py": "f6fe5424370fe7261b0314446229556a63f9c62037573a2bf2e1c2424f86a84f",
     "presets.py": "9ee51f73ccc1f0a557b78b694b13afa464ea673658cdbcd0a4f9ef5a7ac1cee2",
     "setup_environment.py": "130eb2d3b98cf7781eba4e013f5eee48e0a0978a8aeadb2133dc37f2eb332ab2",
-    "storage.py": "4334b654a8a4696ebc2f5d7ffa46243da08c68b73c706bd30ac984c041c4328e",
-    "ui_help.py": "16d6b949e1ed89204ac55b6243b6e07824418480205fb6ef2285548f55a96e67",
+    "storage.py": "1e78be26584e33969c86624b34b1cef2b312859a6653249e14b2cfd1a77fe635",
+    "treated_plots.py": "2c1fc8bcb0694592535eca9b866d8647c88db2e694bb4536b082583859dc8268",
+    "ui_help.py": "a983cedc1fd0dc8eb752bbf2dbbfa3cd94d1aefa5f6884b3f1347ffdbc566c27",
     "validate.py": "416c8d822068a9e8a7942bdf39a9263490e998b92dd7ec613b5e16194a679660"
   },
   "current_source_commit": "b9517f489a35dcf3984ea48356fc3d12956e7c5c (base; v1.2 and v1.3 working changes uncommitted)",
@@ -77,22 +83,27 @@
     "Optional molar normalization is separate from the processing core: user-entered mass in mg and molar mass in g/mol, or amount in mol; normal DAT remains N m.",
     "Molar factor uses 50-digit Decimal division and exact Decimal multiplication of serialized D; same converted values supply molar plots and separate DAT.",
     "Use only rotation/temperature heading, axes/ticks and field legend in the grouped figures; Arial/white/300 dpi.",
-    "Installer rejects unrelated occupied folders and DLL paths over the computed 180-character directory limit; no Windows settings changed."
+    "Installer rejects unrelated occupied folders and DLL paths over the computed 180-character directory limit; no Windows settings changed.",
+    "v1.5: one per-file Output section shares committed presentation settings across corrected preview, data and plots; output settings stay outside numerical configuration and baseline bindings.",
+    "v1.5: data saving owns the ordinary/molar DAT pair; plotting saves JPEGs/details only.",
+    "v1.5: sample drafts require Apply/Cancel; optional output schema version 1 is saved beside each scientific session entry.",
+    "v1.5: raw/background/stages and torque-zero editor remain N m; position correction remains deferred.",
+    "v1.5: data staging uses the existing bounded Windows publication retry after an observed transient WinError 5; ordinary torque and binding hashes remain unchanged."
   ],
   "delivery": {
-    "directory": "releases/Torque_Data_Postprocessing_1.4_build3",
-    "installer": "Torque_Data_Postprocessing_1.4_Setup_x64.exe",
-    "installer_sha256": "704014ad58a824589f05aec7e99b942b73b15849923d8c85a62b5f7c598375f2",
-    "portable": "Torque_Data_Postprocessing_1.4_portable_x64.zip",
-    "portable_sha256": "9f505b8c4bcd1e78acc2daa7df8891b09facfb11a35832fd7a7f33ac6ee1024f",
-    "source_update": "Torque_Data_Postprocessing_v1.4_source_update.zip",
-    "installer_build": 1,
+    "directory": "releases/Torque_Data_Postprocessing_1.5_final",
+    "installer": "Torque_Data_Postprocessing_1.5_Setup_x64.exe",
+    "installer_build": 3,
+    "installer_sha256": "f19b4852395e5a95e050897fcd59e80ef568cbf13a500d1ccd7b62ebe972970e",
+    "portable": "Torque_Data_Postprocessing_1.5_portable_x64.zip",
+    "portable_sha256": "387c444e3f9037b53115d7b58a55cc74fbd0d92a71168b9b24f3240dcbf757ca",
+    "source_update": "Torque_Data_Postprocessing_v1.5_source_update.zip",
+    "source_replay": "validation/v15_source_candidate_check/report.json; final archive check validation/v15_source_final/report.json",
+    "report": "WINDOWS_INSTALLER_REPORT_v1.5.txt",
+    "representative": "validation/v15_delivery",
     "signed": false,
-    "report": "WINDOWS_INSTALLER_REPORT_v1.4.txt",
-    "representative": "validation/windows_app_v1.4_build1/representative",
-    "source_archive_status": "Verified source archive and extracted-copy replay; final hashes listed beside delivery.",
     "required_removals": [],
-    "source_update_report": "validation/v14_source_final/report.json"
+    "release_name": "Verified installer build 3 renamed final; build1/build2 superseded. v1.4 artifacts unchanged."
   },
   "derived_quantities": [
     "Retained actual rows in the optional angle range",
@@ -153,8 +164,8 @@
     "verified_rows": 818,
     "historical_record": true
   },
-  "next_step": "User installs the delivered Setup and reviews the GUI on their PC; user copies the source update and commits/pushes manually through GitHub Desktop. No further automatic work scheduled.",
-  "objective": "Deliver the self-contained Windows application plus grouped treated-data JPEGs and optional separately normalized molar DAT, preserving the scientific core.",
+  "next_step": "User closes any running app, installs v1.5 from the final folder, and copies the source update for manual GitHub review/commit/push. No automatic work scheduled.",
+  "objective": "Deliver visible per-file torque/molar output with shared preview, data, plots and reproducible settings, plus the v1.5 Windows installer.",
   "provided_settings": [
     "Experimental temperature setpoints and per-scan assignments, with source",
     "Tolerance values and nominal angle/field conventions",
@@ -174,7 +185,7 @@
   ],
   "repository": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\torque-postprocessing",
   "state_filename_retained_for_continuity": "Torque_GUI_project_state_v1.0.json",
-  "status": "v1.4 complete: self-contained Windows installer, treated JPEGs and separate optional molar DAT; all available runtime, numerical, installer and extracted-source gates passed. Clean-machine validation unavailable and visible UI review not performed.",
+  "status": "v1.5 implemented and available runtime, numerical, hidden-GUI, installer and extracted-source checks passed. Clean-machine testing unavailable; visible UI review not performed.",
   "units": {
     "D": "N m",
     "angles": "deg",
@@ -197,39 +208,29 @@
     "Historical reference-selected previous-Rot1 centering, algorithm uniqueness/transfer and the physical basis of archived normalization factors remain unestablished.",
     "Uniform sample-position correction and endpoint/rounding choices remain deferred."
   ],
-  "updated_utc": "2026-10-06T03:15:27.456912+00:00",
+  "updated_utc": "2026-10-06T13:39:24.256474+00:00",
   "verified_results": {
-    "unit_tests": 49,
-    "historical_cases_A_D_exact": 6,
-    "historical_case_rows_A_D_exact": 5405,
-    "historical_distinct_reference_rows": 3519,
-    "historical_distinct_raw_rows": 4869,
-    "Ho2sq3_raw_rows": 1754,
-    "Ho2sq3_scans": 34,
-    "Ho2sq3_full_range_signal_rows": 1296,
-    "Ho2sq3_background_rows": 458,
-    "Ho2sq3_0_to_200_signal_rows": 1023,
-    "Ho2sq3_0_to_200_background_rows": 368,
-    "Ho2sq3_outside_rows": 363,
-    "pre_packaging_DATs_byte_identical": 3,
-    "all_example_upstream_bindings_unchanged": true,
-    "GUI_CLI_DAT_byte_identical": true,
-    "GUI_windows_withdrawn": true,
-    "reference_denied_CLI": true,
-    "Arial_figure_pairs": 3,
-    "help_topics": 69,
-    "protected_files_unchanged": 196,
-    "restricted_PATH_frozen_runtime": true,
-    "installed_GUI_CLI_replay": true,
-    "installer_update_locked_rollback_uninstall": true,
-    "molar_DAT_exact_Decimal_products": true,
-    "ordinary_DAT_unchanged_by_plot_quantity": true,
-    "whole_window_visual_inspection": "Not performed: windows withdrawn",
-    "clean_machine": "BLOCKED: no clean Windows VM/sandbox available",
-    "extracted_source_update": true
+    "unit_tests": 57,
+    "unit_log": "validation/v15_units_release.txt",
+    "hidden_GUI": "validation/v15_gui_final/report.json",
+    "existing_usability_groups": 7,
+    "help_topics": 75,
+    "fresh_v1_4_exact_pairs": 3,
+    "regression": "validation/v15_regression_release/report.json",
+    "reference_isolation": "validation/v15_isolation_release/report.json",
+    "portable_runtime": "validation/v15_bundle_final/report.json",
+    "installed_runtime_and_lifecycle": "validation/w15/report.json",
+    "historical_case_rows": 5405,
+    "distinct_reference_rows": 3519,
+    "protected_files": 196,
+    "payload_files": 1310,
+    "source_replay": "validation/v15_source_candidate_check/report.json",
+    "final_source_verification": "validation/v15_source_final/report.json",
+    "numerical_fingerprint_unchanged": true,
+    "molar_validation": "Synthetic 2 mg/400 g/mol = 5e-6 mol; not experimental sample values."
   },
-  "verified_results_basis": "Observed v1.4 tests; final runtime under validation/v14_bundle_final and validation/w14j. Prior/intermediate failures retained separately.",
-  "version": "1.4",
+  "verified_results_basis": "Current v1.5 reports listed in WINDOWS_INSTALLER_REPORT_v1.5.txt. Earlier intermediate failures retained. Final-source code/resources were replayed from the candidate archive; final member/hash and extraction checks accompany the release.",
+  "version": "1.5",
   "historical_v1_1": {
     "state_before_v1_2": "validation/import_workflow_v1.2/before/Torque_GUI_project_state_v1.0.json",
     "report": "BASELINE_IMPLEMENTATION_REPORT_v1.1.txt"
@@ -252,89 +253,15 @@
     "range_request": "User requested configurable sample-position bounds and exclusion of endpoint backlash artifacts before centering. 0–200 degrees is an example, not a default."
   },
   "pending_next_patch": {
-    "recorded_on": "2026-10-04",
-    "source": "User selected six usability changes for v1.3 and explicitly deferred sample-position offset correction on 4 October 2026.",
-    "status": "All six usability items implemented and tested in v1.3.",
-    "changes": [
-      {
-        "id": "temperature_field_labels",
-        "change": "Rename the general list to Temperatures in this file (K) and the optional selected-scan field to Override selected scan temperature (K).",
-        "scope": "The list supplies candidate experimental setpoints for the file; an assignment requires one unique match within the configured tolerance. The override applies only to selected scans. A blank override leaves current explicit assignments unchanged.",
-        "validation": "Check labels, units, selected-scan scope and unchanged assignment/override behavior in withdrawn Tk widgets.",
-        "status": "Complete in v1.3; unit and withdrawn-widget/workflow gates passed."
-      },
-      {
-        "id": "temperature_list_separators",
-        "change": "Accept temperature lists separated by whitespace, commas, or a mixture; retain support for existing comma-separated input and show a concise input-format hint.",
-        "scope": "Parse arbitrary finite user values without adding built-in targets or changing tolerance arithmetic, setpoint precedence, scan assignment or saved numerical values.",
-        "validation": "Verify equivalent comma/space/mixed lists, leading/trailing whitespace, noninteger values, and continued rejection of malformed/nonfinite or duplicate entries; preserve settings save/load and CLI replay.",
-        "status": "Complete in v1.3; unit and withdrawn-widget/workflow gates passed."
-      },
-      {
-        "id": "plot_view_matches_displayed_data",
-        "recorded_on": "2026-10-04",
-        "change": "Keep the View dropdown synchronized with the displayed data. When processing is pending or invalidated and the plot falls back to raw measurements, display Raw rather than Corrected, Background fit or Processing steps.",
-        "scope": "Use the actual selected scan and available processing result to determine which views are available. A request for an unavailable processed view must not silently show raw data under that label. Preserve the raw preview, processing/export safeguards and numerical behavior; this is a display correction.",
-        "validation": "Exercise initial import, acquisition/angle-range/background changes, scan switching, partial or failed processing and successful reprocessing in withdrawn Tk widgets. Verify the selected view agrees with plot labels/data throughout and that processed views become available when the selected scan has a valid result.",
-        "status": "Complete in v1.3; unit and withdrawn-widget/workflow gates passed."
-      },
-      {
-        "id": "delayed_hover_help",
-        "recorded_on": "2026-10-04",
-        "change": "Add concise contextual help after 1 second of hovering over a control or its labelled option area.",
-        "timing": "Initial delay: 1000 ms. This user-accepted recommendation supersedes the earlier 5-second proposal; it is not a universal industry standard. Start or reset the timer when entering or changing the target control; cancel on leaving, clicking or closing the containing window.",
-        "scope": "Cover main-window controls, menus where practical, acquisition settings including expanded controls, background/extrapolation selection, plot views and zero-adjustment controls. Briefly explain purpose, units, scope, accepted input syntax and effect on processing/output where relevant. Include disabled controls, explaining their enabling condition. Tooltips must not take focus, change settings or obstruct interaction. Put detailed instructions and worked examples in the Help menu; reuse descriptions where practical.",
-        "validation": "Use withdrawn Tk widget/event tests for the 1000 ms delay, cancellation, target changes, visibility while reading, Esc dismissal without immediate reopening, pointer exit, disabled controls and window cleanup. Verify help matches actual behavior, and perform visible layout review only when foreground interaction is authorized.",
-        "visibility": "Keep help visible while the user reads it with the pointer over the control or tooltip; do not dismiss on an automatic reading timeout. Dismiss when the pointer leaves both the control and tooltip, when Esc is pressed, on interaction or when the containing window closes. Esc dismissal must remain effective until a new hover entry; do not immediately reopen the tooltip under a stationary pointer.",
-        "accepted_on": "2026-10-04",
-        "status": "Complete in v1.3; unit and withdrawn-widget/workflow gates passed."
-      },
-      {
-        "id": "help_menu_and_expandable_guide",
-        "recorded_on": "2026-10-04",
-        "change": "Add Help beside File and Tools. Open an in-application help viewer with an expandable/collapsible topic tree and readable explanatory text.",
-        "topics": [
-          "Summary: supported inputs, processing method, torque units, and output files.",
-          "How to use the software: open DAT, enter acquisition settings, choose angle range/background, subtract background with automatic centering, optionally adjust zero, and save treated DAT.",
-          "Control reference: explain every option including file versus selected-scan setpoints, allowed deviations, background selection/extrapolation, angle bounds, view choices, automatic/manual centering, and settings/figure export.",
-          "Worked examples: arbitrary temperature lists and selected-scan overrides; 2.49238 K versus a user-provided 2.5 K setpoint with 0.2 K deviation; selecting 0-200 degrees from a wider scan before fitting/centering/export; explicit extrapolation when signal extends beyond background coverage; manual-offset sign and Apply/Cancel/Reset; saving and reloading settings.",
-          "Troubleshooting: why centering/save controls are disabled, reprocessing after changes, missing or ambiguous setpoints, insufficient background coverage, invalid input, stale offsets and existing output filenames."
-        ],
-        "scope": "Use plain scientific language and concrete examples. Treat temperatures, bounds and offsets in examples as supplied or illustrative settings rather than production defaults or calibration claims. Distinguish measurements, fitted predictions and manual choices. Reuse concise control descriptions between hover help and the guide where practical; keep the guide local and independent of internet access.",
-        "validation": "Verify Help menu and tree expand/collapse navigation, topic readability and agreement with actual GUI/CLI behavior. Include help for every exposed option; preserve processing, raw data and export behavior.",
-        "status": "Complete in v1.3; unit and withdrawn-widget/workflow gates passed."
-      },
-      {
-        "id": "activity_indicator_only_while_busy",
-        "recorded_on": "2026-10-04",
-        "change": "Hide the activity bar whenever the application is idle. Show and animate it only while a background task is running.",
-        "scope": "Cover loading, processing and saving operations that use the existing task worker. Start hidden, show on task start, then stop/reset and hide on completion or failure; use the same cleanup for cancellation if supported. Retain useful textual status and stable toolbar layout. The bar remains an activity indicator, not a percentage-complete display; do not imply quantitative progress or change numerical processing.",
-        "validation": "Check initial idle state, task start, successful completion, error handling and repeated tasks using withdrawn Tk widgets. Verify the bar is absent when idle, animates only while busy and does not leave pending animation callbacks after closure.",
-        "status": "Complete in v1.3; unit and withdrawn-widget/workflow gates passed."
-      }
-    ],
-    "target_version": "1.3"
+    "target_version": "1.5",
+    "status": "Complete; no further patch authorized",
+    "scope": "Main Output, independent sample settings, matching previews/data/plots, GUI/CLI replay and Windows distribution."
   },
   "next_patch_execution_prompt": {
-    "path": "Torque_GUI_v1.3_execution_prompt_v1.1.txt",
-    "prompt_version": "1.1",
-    "target_version": "1.3",
-    "prepared_on": "2026-10-04",
-    "sha256": "c1d4375b4899d4437b2bb95c5e5ae427179b4b1996876ddab8cdcb15ab9c69ea",
-    "bytes": 16364,
-    "status": "Executed for v1.3. Revised prompt bytes preserved.",
-    "supersedes": "Torque_GUI_v1.3_execution_prompt_v1.0.txt",
-    "pending_change_ids": [
-      "temperature_field_labels",
-      "temperature_list_separators",
-      "plot_view_matches_displayed_data",
-      "delayed_hover_help",
-      "help_menu_and_expandable_guide",
-      "activity_indicator_only_while_busy"
-    ],
-    "excluded_deferred_change_ids": [
-      "uniform_sample_position_offset"
-    ]
+    "path": "Torque_Data_Postprocessing_v1.5_execution_prompt_v1.0.txt",
+    "sha256": "bf2341f020b4dd463a6e421d7dc394433d44f2c7ac826c2d920e93d4c1c6e182",
+    "status": "Executed for v1.5; exact prompt bytes retained.",
+    "target_version": "1.5"
   },
   "superseded_execution_prompts": [
     {
@@ -361,7 +288,7 @@
   "deferred_changes": [
     {
       "id": "uniform_sample_position_offset",
-      "status": "Deferred by explicit user request; excluded from v1.3 and v1.4.",
+      "status": "Deferred by explicit user request; excluded from v1.3, v1.4 and v1.5.",
       "deferred_on": "2026-10-04",
       "request": "Add an optional user-entered constant sample-position correction to account for a known experimental torque-probe position error.",
       "controls_requested_for_future_discussion": {
@@ -402,7 +329,7 @@
       "whole_window_visual_inspection": "Not performed: all GUI test windows withdrawn"
     }
   },
-  "current_help_sha256": "71cab9f2441bc267911c8043c5ffea1d0ff1c09f17b7b406676dfdf4b850e5fb",
+  "current_help_sha256": "1853fd052264f6999ee94bb6b40c2e562532c1a9ee5fded795741c6853202802",
   "startup_fix": {
     "date": "2026-10-05",
     "reported_copy": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\torque-postprocessing\\Torque_Postprocessing_v1.3_source",
@@ -472,5 +399,81 @@
     }
   },
   "app_name": "Torque Data Postprocessing",
-  "release_date": "2026-10-05"
+  "release_date": "2026-10-06",
+  "historical_v1_4": {
+    "version": "1.4",
+    "status": "v1.4 complete: self-contained Windows installer, treated JPEGs and separate optional molar DAT; all available runtime, numerical, installer and extracted-source gates passed. Clean-machine validation unavailable and visible UI review not performed.",
+    "delivery": {
+      "directory": "releases/Torque_Data_Postprocessing_1.4_final",
+      "installer": "Torque_Data_Postprocessing_1.4_Setup_x64.exe",
+      "installer_sha256": "704014ad58a824589f05aec7e99b942b73b15849923d8c85a62b5f7c598375f2",
+      "portable": "Torque_Data_Postprocessing_1.4_portable_x64.zip",
+      "portable_sha256": "9f505b8c4bcd1e78acc2daa7df8891b09facfb11a35832fd7a7f33ac6ee1024f",
+      "source_update": "Torque_Data_Postprocessing_v1.4_source_update.zip",
+      "installer_build": 1,
+      "signed": false,
+      "report": "WINDOWS_INSTALLER_REPORT_v1.4.txt",
+      "representative": "validation/windows_app_v1.4_build1/representative",
+      "source_archive_status": "Documentation/state paths refreshed after folder rename; original ZIP preserved and all non-documentation content verified unchanged.",
+      "required_removals": [],
+      "source_update_report": "validation/v14_source_final/report.json",
+      "release_folder_names": {
+        "current": "Torque_Data_Postprocessing_1.4_final",
+        "current_previous_name": "Torque_Data_Postprocessing_1.4_build3",
+        "older_final_now": "Torque_Data_Postprocessing_1.4_build2",
+        "old_build2_now": "Torque_Data_Postprocessing_1.4_build4",
+        "interrupted_release_now": "Torque_Data_Postprocessing_1.4_build3_incomplete",
+        "reason": "User requested unambiguous final naming; archived attempts numbered chronologically.",
+        "audit": "validation/release_rename_v1.4",
+        "installer_and_portable_bytes_unchanged": true
+      }
+    },
+    "verified_results": {
+      "unit_tests": 49,
+      "historical_cases_A_D_exact": 6,
+      "historical_case_rows_A_D_exact": 5405,
+      "historical_distinct_reference_rows": 3519,
+      "historical_distinct_raw_rows": 4869,
+      "Ho2sq3_raw_rows": 1754,
+      "Ho2sq3_scans": 34,
+      "Ho2sq3_full_range_signal_rows": 1296,
+      "Ho2sq3_background_rows": 458,
+      "Ho2sq3_0_to_200_signal_rows": 1023,
+      "Ho2sq3_0_to_200_background_rows": 368,
+      "Ho2sq3_outside_rows": 363,
+      "pre_packaging_DATs_byte_identical": 3,
+      "all_example_upstream_bindings_unchanged": true,
+      "GUI_CLI_DAT_byte_identical": true,
+      "GUI_windows_withdrawn": true,
+      "reference_denied_CLI": true,
+      "Arial_figure_pairs": 3,
+      "help_topics": 69,
+      "protected_files_unchanged": 196,
+      "restricted_PATH_frozen_runtime": true,
+      "installed_GUI_CLI_replay": true,
+      "installer_update_locked_rollback_uninstall": true,
+      "molar_DAT_exact_Decimal_products": true,
+      "ordinary_DAT_unchanged_by_plot_quantity": true,
+      "whole_window_visual_inspection": "Not performed: windows withdrawn",
+      "clean_machine": "BLOCKED: no clean Windows VM/sandbox available",
+      "extracted_source_update": true
+    },
+    "verified_results_basis": "Observed v1.4 tests; final runtime under validation/v14_bundle_final and validation/w14j. Prior/intermediate failures retained separately.",
+    "current_core_sha256": {
+      "app.py": "74778058b9ff7dc4bc2d62a9363f1fe501fc50ac0a8617790b95ccf7144620f1",
+      "baseline.py": "d646eb9c28e7f94c032a4e7b5439f0e5ef63edb22ce918a348573d953a262e75",
+      "baseline_editor.py": "23900cb77f0213c3a1162d09e9a4c2281706db458a439ef7f6b7999ee2b24a6c",
+      "cli.py": "83adc6eefeb1b51b8fa3e2abbc96f946398a97292f6afaa1f09b839fefae8d50",
+      "input_fields.py": "098bdecfe0467eb7e83f596fbd74a63116dd470a79f54ad18feff9a3d8b20eee",
+      "io_profiles.py": "546d5ff60d30108c898c01295281c9c5811a8cac8298916368a67f77f9a7b0ce",
+      "pipeline.py": "cec5705d093ea5591cc2a0874ebbcbdf8cf8b573089b58794f1efd3f09c16d35",
+      "plots.py": "b0410b9a3ec775d99d06907d744c7b4d9256691e9dd5fa755d8a23fa7eb33b57",
+      "presets.py": "9ee51f73ccc1f0a557b78b694b13afa464ea673658cdbcd0a4f9ef5a7ac1cee2",
+      "setup_environment.py": "130eb2d3b98cf7781eba4e013f5eee48e0a0978a8aeadb2133dc37f2eb332ab2",
+      "storage.py": "4334b654a8a4696ebc2f5d7ffa46243da08c68b73c706bd30ac984c041c4328e",
+      "ui_help.py": "16d6b949e1ed89204ac55b6243b6e07824418480205fb6ef2285548f55a96e67",
+      "validate.py": "416c8d822068a9e8a7942bdf39a9263490e998b92dd7ec613b5e16194a679660"
+    },
+    "next_step": "User installs the delivered Setup and reviews the GUI on their PC; user copies the source update and commits/pushes manually through GitHub Desktop. No further automatic work scheduled."
+  }
 }

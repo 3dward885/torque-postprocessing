@@ -1,0 +1,163 @@
+Torque Data Postprocessing v1.5 - implementation and validation
+6 October 2026 | Windows x64 | installer build 3
+
+OUTCOME
+Implemented the main per-file Output controls, optional molar quantities with
+Apply/Cancel, consistent corrected preview, paired DAT saving and independent
+JPEG saving. GUI/CLI replay shares the same committed output block and arithmetic.
+Old sessions without that block default to torque; no numerical recipe or
+baseline schema change. Position correction remains deferred.
+
+SOURCE AND ENVIRONMENT
+Active checkout: torque-postprocessing under the user's Codex Torque directory.
+Git HEAD: b9517f489a35dcf3984ea48356fc3d12956e7c5c; working-tree changes preserved.
+Fresh v1.4 snapshot: validation/v15_before/before.json and source/.
+Python 3.12.14, NumPy 2.3.5, Matplotlib 3.10.8, Tcl/Tk 8.6.12.
+Windows 11 build 26300 x64. Build tools remain pinned: PyInstaller 6.22.3,
+hooks 2026.8, Inno Setup 7.1.0. Compiler download hashes and signature checks
+are recorded by the existing build pipeline.
+Numerical fingerprint unchanged:
+ce5bcc72bf3fe23873d78b1b4c0e487e14da54cbbc909976c065556bb4e96d7a
+
+DESIGN
+output_controls.py owns the compact draft/committed sample controls and paired
+filename dialog. output_settings.py validates the separate source-hash-bound
+version-1 output block and reuses the existing normalization/token arithmetic.
+Scientific configuration stays version 1.2; baseline schema stays version 2.
+Only corrected preview uses chosen molar units. Raw/background/stages and the
+manual torque-zero editor remain N m.
+Molar DATs are generated from serialized N m torque, using the existing 50-digit
+Decimal factor and exact product. No refit, recenter or accumulated conversion.
+Save plots writes JPEGs/details only. The ordinary DAT details folder records
+both data outputs, normalization and replay settings.
+Data publication reuses bounded Windows access/sharing-lock retries and safe
+rollback. Collisions never overwrite existing files.
+
+OBSERVED GATES
+A PASS - Main Output controls, input methods, inline validation, calculated amount,
+         disabled explanations, local Help and existing one-second hover behavior.
+B PASS - Apply/Cancel, dirty guards, independent files, inactive values, quantity
+         changes, settings save/load, old defaults and cancelled dialogs.
+C PASS - 57 unit tests. Three fresh v1.4 ordinary/molar pairs byte-identical.
+         Invalid input, precision, overflow/underflow, repeated conversion,
+         collision, rollback and transient-lock recovery exercised.
+D PASS - Corrected molar preview matches exported tokens; other views retain
+         truthful N m units. Actual JPEGs are 2400x1800 at 300 dpi, white, Arial,
+         markers only. Two PDFs embed Arial. Offscreen 2.5 K and 250 K JPEGs
+         visually inspected; no desktop or visible whole-window capture.
+E PASS - Source and actual frozen/installed GUI/CLI outputs agree for ordinary and
+         molar data. Accepted offsets/fingerprints preserved. Reference-isolated
+         replay passes. Protected input/archive identities unchanged.
+F PASS (binary) - Actual frozen and installed runtime, local Help, source-based
+         fingerprinting, short Unicode/spaced paths, system-only PATH, startup
+         error logs, silent installation, repeat update, locked-file rollback,
+         uninstall and user-data preservation.
+F PASS (source) - Extracted source replay, new controls, Help and both data outputs
+         passed in validation/v15_source_candidate_check. The final archive differs
+         only in completion documentation/state and its manifest; member hashes
+         and the extracted final copy are checked separately.
+
+CURRENT EVIDENCE
+validation/v15_units_release.txt: 57 tests, OK.
+validation/v15_gui_final/report.json: real Tk widgets, every window withdrawn;
+  75 local Help topics and the complete selected-output workflow.
+validation/v15_usability/report.json: 7 existing usability/event groups passed.
+validation/v15_regression_release/report.json: three exact ordinary/molar pairs,
+  accepted bindings and protected fixtures.
+validation/v15_isolation_release/report.json: zero processing reference reads;
+  a deliberately attempted treated-reference read is denied.
+validation/v15_bundle_final/report.json: final build-3 portable runtime.
+validation/w15/report.json and installed_checks/: actual installer and installed
+  GUI/CLI workflow; test registration and shortcuts removed afterward.
+validation/v15_distribution.json: 1310 payload files, 103442442 bytes;
+  source/resource/license hashes checked, private research inputs excluded.
+validation/v15_gui_final/font_checks.json: generated after final source checks;
+  current offscreen figure evidence also exists under its figures/molar_figures.
+  Visually inspected JPEG files: validation/v15_gui_third/molar_plots/ (2.5/250 K).
+
+ACCOUNTING AND REGRESSION
+Ho2sq3: 1754 raw rows, 34 scans; full range 1296 signal and 458 background rows.
+0-200 degrees: 1023 signal, 368 retained background, 363 outside the interval.
+All original rows remain accounted for; background rows are absent from treated
+signal DATs.
+Six historical A-D cases: 5405 case rows, covering 3519 distinct reference rows
+and 4869 distinct raw rows. Current D exact-reference matches:
+  Ho2thd4Pc Rot1 midrange: 818/818
+  Ho2thd4Pc Rot2 midrange: 938/938
+  Previous Rot2 midrange: 820/820
+  Previous Rot1 mean: 615/943
+  Previous Rot1 midrange: 328/943
+  Previous Rot1 diagnostic selection: 943/943
+The diagnostic selector remains historical reference-selected evidence, not a
+production choice. Ordinary D maximum serialized discrepancy from pre-patch
+output is zero N m. Synthetic molar discrepancy is zero N m/mol.
+196 protected source/measurement/reference/evidence files and archived fixture
+packages were checked. No scientific model discovery was rerun.
+
+INSTALLER OBSERVATIONS
+Exit codes: unrelated directory refusal 7; overlong path refusal 1; install 0;
+repeat update 0; locked-file update abort 5; uninstall 0.
+The test held only its isolated executable file open; no user's program was closed.
+Setup keeps the stable AppId and per-user installation location. Optional desktop
+shortcut remains unchecked. Existing files/settings outside the program payload
+survive uninstallation. Tests left no test registration/shortcuts.
+
+RELEASE
+Verified binary folder:
+releases/Torque_Data_Postprocessing_1.5_final/
+It is build 3, promoted from 1.5_build3 after runtime/installer checks; EXE and
+portable ZIP bytes did not change. Numbered build1/build2 are superseded attempts.
+Build 1 preceded final legacy-default/layout fixes. Build 2 exposed a transient
+Windows staging rename lock during the last historical case. Build 3 includes
+the bounded retry and passes that replay.
+Installer:
+Torque_Data_Postprocessing_1.5_Setup_x64.exe
+SHA-256 f19b4852395e5a95e050897fcd59e80ef568cbf13a500d1ccd7b62ebe972970e
+Portable:
+Torque_Data_Postprocessing_1.5_portable_x64.zip
+SHA-256 387c444e3f9037b53115d7b58a55cc74fbd0d92a71168b9b24f3240dcbf757ca
+Source/update and all artifact checksums are listed in the final folder.
+Source archive verification: validation/v15_source_final/report.json and
+Torque_Data_Postprocessing_v1.5_source_update.package_verification.json.
+The earlier candidate replay and the final archive use identical source/Help/tests.
+All three v1.4 release artifact hashes were rechecked and are unchanged.
+No source removals are required. No GitHub checkout changes, commits or pushes.
+
+REPRESENTATIVE OUTPUT
+validation/v15_delivery/Ho2sq3_0_to_200_treated.dat and ordinary_session.json.
+validation/v15_delivery/synthetic_normalization/ contains the separate test pair
+and replay settings. Its 2 mg, 400 g/mol (5e-6 mol) quantities are SYNTHETIC
+software fixtures, not measured Ho2sq3 normalization. No actual sample mass,
+molar mass or amount or independent treated reference was supplied.
+
+TESTED COMMANDS (PowerShell from the active checkout)
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe desktop.py --check-installation validation\v15_gui_final --session examples\Ho2sq3_0_to_200.json
+.\.venv\Scripts\python.exe tests\output_regression.py --before validation\v15_before\before.json --output validation\v15_regression_release
+.\.build-venv\Scripts\python.exe tools\build_windows.py --output releases\Torque_Data_Postprocessing_1.5_build3 --build-number 3
+.\.venv\Scripts\python.exe tests\windows_bundle.py --bundle "validation\g é\Torque Data Postprocessing" --before validation\v15_before\before.json --output validation\v15_bundle_final
+.\.venv\Scripts\python.exe tests\windows_installer.py --setup releases\Torque_Data_Postprocessing_1.5_build3\Torque_Data_Postprocessing_1.5_Setup_x64.exe --manifest releases\Torque_Data_Postprocessing_1.5_build3\bundle_manifest.json --before validation\v15_before\before.json --output validation\w15
+The build3 folder in recorded commands was subsequently renamed final.
+Source package check:
+.\.venv\Scripts\python.exe tests\windows_source.py --archive releases\Torque_Data_Postprocessing_1.5_final\Torque_Data_Postprocessing_v1.5_source_update.zip --output validation\v15_source_final
+Use a new directory for reruns; existing validation outputs are preserved.
+
+Headless replay (the same operation was exercised in source/frozen/installed tests):
+TorqueDataCLI.exe process --session settings.json --dat sample_treated.dat
+A molar session additionally saves sample_molar.dat. Old sessions save N m only.
+End-user launch: run Setup, then Torque Data Postprocessing from the Start menu.
+Developer launch: .\.venv\Scripts\python.exe app.py
+
+LIMITATIONS
+BLOCKED: clean-machine validation; no clean Windows VM/Sandbox is available here.
+System-only PATH and bundled-module-path checks are not equivalent to that test.
+NOT PERFORMED: visible installer/whole-window usability review, per the user's
+background-only requirement. GUI evidence is withdrawn widgets/events.
+UNSIGNED: Setup/application have no supplied publisher signing certificate;
+no verified-publisher or SmartScreen approval claim.
+Other Windows builds, Windows 10, ARM64 and non-Windows platforms are untested.
+Saved torque offsets remain environment-bound; legitimate environment mismatches
+require review/reacceptance. No safeguards were disabled.
+Positive but physically wrong sample entries cannot be detected automatically.
+Historical normalization/selection/transfer questions remain separate from this
+software release. Position correction and endpoint/rounding questions are deferred.

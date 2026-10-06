@@ -119,63 +119,113 @@ def check_installation(output, session=None):
                 if report["font"].startswith("Arial Regular verified:"):
                     export_figure(app.selected()["result"], pred["pass_id"], output / "figures", "background")
                     report["checks"].append("Bundled PDF and PNG figure export")
+                    from treated_plots import molar_text, normalization
+                    from output_settings import output_paths
                     from PIL import Image
                     saved = treated_text(app.selected()["result"])
+                    panel = app.output
+                    record = app.selected()
+                    assert panel.mode == "torque" and not panel.sample.winfo_manager()
+                    assert panel.frame.winfo_manager() == "pack"
                     app.export_plots()
                     dialog = app.plot_dialog
-                    assert dialog.window.state() == "withdrawn"
-                    assert dialog.quantity.get() == "Torque (N m)"
-                    assert all(not w.winfo_manager() for row in dialog.numeric for w in row)
+                    assert dialog.window.state() == "withdrawn" and not hasattr(dialog, "quantity")
                     with patch("plot_export_dialog.filedialog.askdirectory", return_value=str(output / "torque_plots")):
                         dialog.export_button.invoke()
                     wait()
                     torque_folder = next((output / "torque_plots").glob("treated_plots_*"))
                     assert not list(torque_folder.glob("*.dat"))
+                    original_result = record["result"]
+                    original_binding = json.dumps(report["bindings"], sort_keys=True)
+                    record["output"]["source"] = "Synthetic software-test normalization; not this sample's measured mass"
+                    panel.radios[1].invoke()
+                    assert panel.dirty and panel.sample.winfo_manager() == "pack"
+                    assert panel.save_button.instate(["disabled"])
+                    panel.values["mass_mg"].set("0")
+                    panel.values["molar_mass_g_mol"].set("400")
+                    panel.apply_button.invoke()
+                    assert "positive finite" in panel.note.get()
+                    panel.values["mass_mg"].set("2")
+                    with patch("app.run_entry", side_effect=AssertionError("Output change refitted data")):
+                        panel.apply_button.invoke()
+                    assert not panel.dirty and record["output"]["quantity"] == "molar"
+                    assert "5.000000E-6" in panel.amount.get()
+                    assert app.canvas.figure.axes[0].get_ylabel() == "Molar torque (N m/mol)"
+                    assert record["result"] is original_result
+                    assert treated_text(record["result"]) == saved
+                    # Dirty settings cannot silently cross files, save, or change quantity.
+                    panel.values["mass_mg"].set("3")
+                    app.save_configuration(output / "must_not_save.json")
+                    assert not (output / "must_not_save.json").exists()
+                    panel.radios[0].invoke()
+                    assert panel.quantity.get() == "molar"
+                    key = app.add_record(record["path"], record["raw"], record["cfg"])
+                    app.files.selection_set(key)
+                    app.refresh_selected()
+                    assert app.selected() is record
+                    panel.cancel_button.invoke()
+                    app.files.selection_set(key)
+                    app.refresh_selected()
+                    assert app.output.quantity.get() == "torque" and app.output.values["mass_mg"].get() == ""
+                    app.remove_selected()
+                    app.files.selection_set(record["key"])
+                    app.refresh_selected()
+                    root.update()
+                    assert app.output.values["mass_mg"].get() == "2"
+                    # The paired save dialog exposes both actual paths before writing.
+                    app.export_all()
+                    pair = app.output_save_dialog
+                    assert pair.window.state() == "withdrawn"
+                    pair.path.set(str(output / "selected_treated.dat"))
+                    assert str(output / "selected_molar.dat") in pair.companion.get()
+                    pair.save_button.invoke()
+                    wait()
+                    assert (output / "selected_treated.dat").read_text() == saved
+                    assert (output / "selected_molar.dat").read_text() == molar_text(record["result"], normalization(record["output"]))
+                    app.save_configuration(output / "molar_session.json")
+                    app.load_configuration(output / "molar_session.json")
+                    wait()
+                    assert app.output.mode == "molar" and app.output.values["mass_mg"].get() == "2"
+                    app.process_all()
+                    wait()
+                    record = app.selected()
+                    assert treated_text(record["result"]) == saved
                     app.export_plots()
                     dialog = app.plot_dialog
-                    dialog.quantity.set("Molar torque (N m/mol)")
-                    dialog.update_fields()
-                    values = next(iter(dialog.rows.values()))[3]
-                    values["mass_mg"].set("0")
-                    values["molar_mass_g_mol"].set("400")
                     dialog.export(folder=output / "molar_plots")
-                    assert "positive finite" in dialog.error.get() and not app.busy
-                    values["mass_mg"].set("2")
-                    dialog.source = "Synthetic software-test normalization; not this sample's measured mass"
-                    with patch("plot_export_dialog.filedialog.askdirectory", return_value=str(output / "molar_plots")):
-                        dialog.export_button.invoke()
                     wait()
                     molar_folder = next((output / "molar_plots").glob("treated_plots_*"))
-                    info = json.loads((molar_folder / "plots.details/plots.json").read_text())
+                    assert not list(molar_folder.glob("*.dat"))
+                    info = json.loads((molar_folder / "plots.details/plots.json").read_text(encoding="utf-8"))
                     item = info["files"][0]
                     assert Decimal(item["normalization"]["factor_mol_inverse"]) == Decimal(200000)
-                    molar_rows = list(csv.reader((molar_folder / item["molar_DAT"]["filename"]).read_text().splitlines(), delimiter="\t"))
-                    rows = app.selected()["result"]["output_rows"]
-                    assert len(molar_rows) == len(rows) + 1
-                    for converted, original in zip(molar_rows[1:], rows):
-                        assert converted[:3] == original[:3]
-                        assert Decimal(converted[3]) == Decimal(original[3]) * 200000
-                    assert len(item["plots"]) == len({r[0] for r in rows})
+                    rows = record["result"]["output_rows"]
                     assert sum(p["points"] for p in item["plots"]) == len(rows)
                     for picture in item["plots"]:
                         with Image.open(molar_folder / picture["filename"]) as image:
                             assert image.size == (2400, 1800) and image.info["dpi"] == (300, 300)
-                    assert treated_text(app.selected()["result"]) == saved
+                    export_figure(record["result"], pred["pass_id"], output / "molar_figures",
+                                  "centered", output=record["output"])
+                    panel = app.output
+                    panel.method.set("Amount in moles")
+                    panel.values["amount_mol"].set("5e-6")
+                    panel.apply_button.invoke()
+                    assert record["output"]["method"] == "amount"
+                    panel.radios[0].invoke()
+                    assert panel.mode == "torque" and not panel.sample.winfo_manager()
+                    assert "N m/mol" not in app.canvas.figure.axes[0].get_ylabel()
+                    panel.radios[1].invoke()
+                    assert not panel.dirty and panel.mode == "molar"
+                    assert treated_text(record["result"]) == saved
+                    app.export_all()
+                    app.output_save_dialog.window.destroy()
                     app.export_plots()
-                    dialog = app.plot_dialog
-                    assert next(iter(dialog.rows.values()))[3]["mass_mg"].get() == "2"
-                    dialog.quantity.set("Molar torque (N m/mol)")
-                    dialog.method.set("Amount in moles")
-                    dialog.method_box.event_generate("<<ComboboxSelected>>")
-                    root.update()
-                    assert dialog.numeric[0][2].winfo_manager() == "grid"
-                    assert not dialog.numeric[0][0].winfo_manager()
-                    dialog.window.destroy()  # Cancel must leave core data and settings unchanged.
-                    assert treated_text(app.selected()["result"]) == saved
+                    app.plot_dialog.window.destroy()
+                    assert not app.busy
                     report["plot_export"] = {"torque": str(torque_folder), "molar": str(molar_folder),
                         "temperature_groups": len(item["plots"]), "treated_rows": len(rows),
-                        "normalization": "Software fixture: 2 mg, 400 g/mol; not experimental"}
-                    report["checks"].append("Treated JPEG GUI export, invalid mass, amount control, separate exact molar DAT, Cancel and unchanged N m data")
+                        "normalization": "Software fixture: 2 mg, 400 g/mol, or 5e-6 mol; not experimental"}
+                    report["checks"].append("Visible per-file Output, invalid entries, Apply/Cancel, dirty guards, file independence, amount mode, paired filenames/DAT, saved normalization, matching preview/PDF/PNG/JPEG, no plot DAT or refit")
                 assert sha256(record["path"]) == report["raw_sha256"]
             assert root.state() == "withdrawn" and not app.busy
             report["status"] = "PASS"

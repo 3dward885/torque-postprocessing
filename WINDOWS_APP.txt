@@ -1,7 +1,7 @@
-Torque Data Postprocessing 1.4 - Windows application
+Torque Data Postprocessing 1.5 - Windows application
 
 INSTALL
-Double-click Torque_Data_Postprocessing_1.4_Setup_x64.exe and follow Setup.
+Double-click Torque_Data_Postprocessing_1.5_Setup_x64.exe and follow Setup.
 Open Torque Data Postprocessing from the Start menu. A desktop shortcut is optional.
 Python, Tk and the required numerical/plotting libraries are included.
 Installation and processing require no network connection or Python setup.
@@ -14,20 +14,19 @@ Use Angle range before processing to exclude unwanted endpoint measurements.
 Help > User guide, or F1, opens the local instructions and examples.
 Source files and existing output files are never overwritten by processing.
 
-PRESENTATION PLOTS AND OPTIONAL MOLAR DATA
-After processing, choose Tools > Export treated plots.
-Check the rotation number for each file and choose Torque (N m) or
-Molar torque (N m/mol). One white-background, Arial JPEG is saved per file,
-rotation and temperature, with separate field markers and no fitted curves.
-JPEGs are 2400 x 1800 pixels at 300 dpi, suitable for PowerPoint.
-Molar output needs the sample mass in mg AND molar mass in g/mol, or a known
-amount in moles. Molar mass alone is insufficient: molar torque = torque / n.
-Enter these quantities independently for each sample/file. No quantity is inferred.
-Molar mode also saves a separate four-column *_molar.dat in N m/mol.
-The ordinary Save treated data output remains in N m.
-The plots.details folder records normalization, source hashes and replay settings.
-Images contain only rotation/temperature heading, axis labels and field legend.
-Keep the details folder with the images/data for reproducibility.
+OUTPUT
+Choose Torque (N m), or Molar torque (N m/mol), in the main Output section.
+Molar mode needs Sample mass (mg) plus Molar mass (g/mol), or Amount (mol).
+Molar mass alone is insufficient: n = mass_mg/(1000*molar_mass_g_mol).
+Check the calculated amount and Apply. Cancel discards drafts. Each file has
+its own quantities; no values are inferred or copied from another sample.
+Save both data files shows the ordinary and molar filenames before writing.
+Save plots produces grouped white Arial JPEGs (2400 x 1800, 300 dpi), with
+experimental markers only. Plot saving writes no DAT. Corrected preview uses
+the chosen units; raw/background/stages and Center zero remain in N m.
+Save settings preserves output choices; a molar session replays both DATs.
+Old sessions default to Torque. Keep the .dat.details and plots.details folders.
+Existing outputs are never overwritten. Position correction is still deferred.
 
 FILES
 Default installation: %LOCALAPPDATA%\Programs\Torque Data Postprocessing
@@ -55,5 +54,5 @@ Accepted zero adjustments still validate source, numerical settings and runtime.
 A different Windows/Python/NumPy environment can require reviewing and applying
 an old adjustment again. These checks have not been disabled for packaging.
 
-Windows 64-bit build. See WINDOWS_INSTALLER_REPORT_v1.4.txt in the source project
+Windows 64-bit build. See WINDOWS_INSTALLER_REPORT_v1.5.txt in the source project
 for the actual validation and limits. No automatic updating or telemetry added.

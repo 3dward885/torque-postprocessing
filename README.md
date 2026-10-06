@@ -1,4 +1,4 @@
-# Torque Data Postprocessing 1.4
+# Torque Data Postprocessing 1.5
 
 Active checkout: this folder under
 `D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\Codex Torque\torque-postprocessing`.
@@ -7,7 +7,10 @@ historical. The user manages commits and pushes through GitHub Desktop.
 
 ## Install and start on Windows
 
-Run **Torque_Data_Postprocessing_1.4_Setup_x64.exe**, then open
+The verified release is in `releases/Torque_Data_Postprocessing_1.5_final/`.
+Numbered build folders are retained attempts. The verified deliverable is named final. Earlier releases remain available.
+
+Run **Torque_Data_Postprocessing_1.5_Setup_x64.exe**, then open
 **Torque Data Postprocessing** from the Start menu. Python, Tcl/Tk, NumPy,
 Matplotlib and local Help are bundled. No Python installation, setup script or
 internet connection is needed for ordinary use.
@@ -27,7 +30,7 @@ Logs and Matplotlib cache remain in
 writable user data. Save outputs to your chosen folder.
 
 See `WINDOWS_APP.txt` for end-user instructions and
-`WINDOWS_INSTALLER_REPORT_v1.4.txt` for observed build/test results.
+`WINDOWS_INSTALLER_REPORT_v1.5.txt` for observed build/test results.
 
 ## Developer source setup and launch
 
@@ -89,10 +92,9 @@ Tk 8.6.12. Other platforms have not been tested.
    discards the draft; **Reset** creates a zero-offset draft requiring Apply;
    **Remove override** restores ordinary centering. Dirty drafts must be applied
    or cancelled before navigation, settings changes or saving.
-6. **Save treated data…** opens a normal Save As dialog. Output has four columns:
-   temperature (K), magnetic field (T), sample position (deg), torque (N m).
-   This operation always saves torque in N m. A matching `.dat.details` folder contains
-   settings, raw snapshot, row ledger, provenance and hashes.
+6. Use the main **Output** section to choose Torque or optional Molar torque,
+   then save the selected data/plots as described below. Ordinary data remains
+   four columns: K, T, degrees, N m, with its adjacent details folder.
 
 Save/load settings and figure export are in the menus. Files and results are
 independent. Settings can be applied to several selected scans using Ctrl/Shift
@@ -104,50 +106,68 @@ Existing output files are never overwritten. Unresolved scans and stale active
 adjustments block saving; explicit exclusions are available in acquisition
 settings and recorded in the ledger.
 
-## Treated JPEG plots and optional molar DAT
+## Output quantity, data and plots
 
-After subtraction/centering, choose **Tools > Export treated plots…**.
-Select the processed files, check each rotation number, and choose the quantity:
+The main **Output** section belongs to the selected file. **Torque (N m)** is
+the default. **Save torque data** saves the ordinary four-column DAT;
+**Save torque plots** saves grouped JPEGs.
 
-- **Torque (N m)** exports one JPEG per input file, rotation and temperature.
-- **Molar torque (N m/mol)** exports the same plots normalized by sample amount,
-  plus a separate four-column `*_molar.dat` for each selected input.
+For molar output:
 
-For each sample independently, enter **sample mass (mg) and molar mass (g/mol)**,
-or choose **Amount in moles** and enter the known amount. Molar mass alone cannot
-normalize torque. The calculation is
-`n = mass_mg / (1000 * molar_mass_g_mol)`,
+1. Choose **Molar torque (N m/mol)**.
+2. Enter **Sample mass (mg)** and **Molar mass (g/mol)**, or select
+   **Amount in moles** and enter **Amount (mol)**.
+3. Check **Calculated amount**, then **Apply**.
+4. Use **Save both data files** for ordinary N m and separate N m/mol DATs.
+   The save window shows both filenames before writing; Browse selects the
+   ordinary filename and the molar companion updates automatically.
+   Use **Save molar plots** for JPEGs only.
+
+Molar mass alone cannot determine sample amount:
+`n = mass_mg / (1000 * molar_mass_g_mol)`;
 `molar_torque = treated_torque / n`.
-Mass must refer to the measured sample, with the same chemical basis as the molar
-mass. No quantities, purity corrections or reference multipliers are inferred.
+Mass and molar mass must refer to the same chemical basis. Nothing is inferred
+from compound names or filenames. A positive but physically incorrect mass
+cannot be detected automatically; check units and the calculated amount.
 
-The reciprocal-amount factor is calculated with 50-digit Decimal precision.
-Each molar DAT value is the exact Decimal product of that recorded factor and
-the already serialized treated N m value; no background fit or zero is recalculated.
-The numerical precision is not an experimental uncertainty claim.
-JPEGs use the same molar values, converted to binary64 for plotting.
+Sample changes are drafts until Apply. Cancel restores the committed values.
+Apply or Cancel before changing files/quantity or saving. Invalid inputs show
+an inline explanation. Each file has independent values. Switching clean settings
+to Torque retains inactive sample entries. Decimal/scientific notation is accepted.
 
-Images are 8 × 6 inches, 2400 × 1800 pixels at 300 dpi, with Arial Regular,
-white background and experimental markers only. Text is limited to the
-rotation/temperature heading, axis labels/ticks and field legend. No fits,
-connecting curves, insets or extra annotations are added.
-Background scans are excluded. Repeated scans remain separate samples.
-Different input files are kept separate even when they have the same rotation
-and temperature, to avoid mixing samples.
+Corrected preview and its PDF/PNG export use the selected quantity. Raw,
+Background fit, Processing steps and Center zero retain N m. Changing sample
+quantities never refits, recenters or modifies the underlying treated torque.
+The factor uses the existing 50-digit Decimal calculation; each molar value is
+the exact Decimal product of that factor and the serialized N m torque token.
+The read-only amount is rounded for display only.
 
-Rotation is an editable presentation label, suggested from an explicit Rot/Rotation
-filename token. It does not alter scan identities or processing.
-Unprocessed/incomplete files cannot be exported; resolve or explicitly exclude
-affected scans first. Changing the plot quantity never changes ordinary DAT output,
-baseline settings or numerical fingerprints.
+Data and plots share the main Output settings. The plot dialog selects files
+and rotation labels, and shows effective units/amount read-only. It saves
+JPEGs and details only, with no incidental DAT. To export both plot quantities,
+switch clean output mode and save each in a new folder. Batch files keep their
+individual choices.
 
-Each export creates a new folder containing JPEGs, optional molar DATs and
-`plots.details`. Its `plots.json` records sample quantities, factor, source/output
-hashes and scan membership; `settings.json` retains processing replay settings.
-Quantities are remembered while the application is open and recorded with each
-export. They are separate from the ordinary processing-session schema.
-Keep these details with the output. No actual sample mass or amount has been
-supplied for Ho2sq3; distributed molar test results are labelled software fixtures.
+JPEGs are 8 x 6 inches, 2400 x 1800 pixels at 300 dpi, Arial Regular, white,
+experimental markers only. Text is limited to rotation/temperature heading,
+axis labels/ticks and field legend. No fitted/connecting curves or added
+sample-quantity annotations. Background scans are excluded; distinct acquired
+scans and files are not averaged or merged.
+
+**Save settings** retains committed output choices in an optional version-1
+`output` block beside each file's scientific `settings`. Processing configuration
+1.2 and baseline schema 2 are unchanged. Old sessions open in Torque mode with
+blank sample quantities. Legacy molar processing options remain obsolete.
+
+The ordinary DAT's `.dat.details` folder contains the scientific settings, raw
+snapshot, ledger and provenance, plus `output.json` and `replay.json`.
+Keep that folder with both DATs. The latter session reproduces the selected output:
+a Torque/old session saves ordinary DAT; a Molar session saves both DATs.
+Input hashes must match. Unknown output versions or active invalid quantities
+fail explicitly; output preferences do not change numerical baseline bindings.
+
+No actual sample mass, molar mass or amount has been supplied for Ho2sq3.
+Molar validation examples are explicitly synthetic software fixtures.
 
 ## Usability in v1.3
 
@@ -254,67 +274,34 @@ a recorded notice. Legacy molar CLI options/config fields remain rejected by the
 processing command; optional molar presentation export is separate. Historical
 molar outputs and archival packages remain unchanged.
 
-## Build and validate v1.4
+## Build and validate v1.5
 
-Tested on Windows 11 build 26300 x64, Python 3.12.14, NumPy 2.3.5,
-Matplotlib 3.10.8 and Tk 8.6.12. PyInstaller 6.22.3 and Inno Setup 7.1.0 x64
-build the offline application. `windows/dependency_wheels.json` records official
-download URLs and wheel hashes. The builder verifies the pinned compiler download
-and its vendor signature; no publisher certificate signs the resulting application.
-
-Observed: 49 unit tests; withdrawn GUI workflow/Help/plot checks; three exact
-pre-packaging DAT replays with unchanged accepted bindings; six historical cases
-with 5405 exact A–D case rows; 196 protected files unchanged. Actual installed
-GUI/CLI data agree. Silent installation, repeat update, locked-file rollback,
-shortcut targets and uninstall/data preservation passed.
-
-A clean Windows machine without development tools was not available. Executables
-passed with Python-related environment variables cleared and System32-only PATH.
-This is not a clean-machine test. Whole-window and visible installer UI review
-were not performed under the background-only instruction. JPEGs were inspected
-offscreen; Arial resolution and PDF embedding were checked.
-
-Maintainer commands from this checkout (choose unused output names on repeat):
+End users use Setup; these commands are for maintainers in this checkout.
+Keep the existing pinned numerical and build dependencies. Use a fresh output
+directory for each test/build, and keep portable extraction paths short.
 
 ```powershell
-py -3.12 -m venv .build-venv
-.\.build-venv\Scripts\python.exe -m pip install -r requirements-build.txt
-.\.build-venv\Scripts\python.exe tools\build_windows.py --output releases\Torque_Data_Postprocessing_1.4_build3
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe tests\windows_bundle.py --bundle "validation\d é\Torque Data Postprocessing" --before validation\windows_app_v1.4_build1\before.json --output validation\v14_bundle_final
-.\.venv\Scripts\python.exe tests\windows_installer.py --setup releases\Torque_Data_Postprocessing_1.4_build3\Torque_Data_Postprocessing_1.4_Setup_x64.exe --manifest releases\Torque_Data_Postprocessing_1.4_build3\bundle_manifest.json --before validation\windows_app_v1.4_build1\before.json --output validation\w14j
+.\.venv\Scripts\python.exe tests\output_regression.py --before validation\v15_before\before.json --output validation\NEW_regression
+.\.venv\Scripts\python.exe desktop.py --check-installation validation\NEW_hidden_gui --session examples\Ho2sq3_0_to_200.json
+.\.build-venv\Scripts\python.exe tools\build_windows.py --output releases\Torque_Data_Postprocessing_1.5_NEW_BUILD
 ```
 
-The build environment requires the recorded Python 3.12.14 runtime; the shown
-`py` command is a setup example and must resolve to that version. The actual build
-command above was tested with the existing isolated environment. The installer
-harness refuses to run if an existing real installation is registered. It creates
-only a temporary test installation and removes its shortcuts/registration.
-Extract the portable ZIP to a short path before running the bundle check.
-Installation directories are limited to 180 UTF-16 code units for the bundled
-Windows DLL loader; Setup enforces this without changing Windows settings.
+The installation check uses withdrawn real Tk widgets and programmatic events.
+Tests for the actual bundle, installer lifecycle and extracted source are
+`tests/windows_bundle.py`, `tests/windows_installer.py` and
+`tests/windows_source.py`. Each offers `--help`; the report lists the exact
+commands executed and observed gates. Installer tests refuse to modify an
+existing real installation. A system-only PATH test is not a clean Windows VM.
 
-Installed CLI replay (use your actual settings/output paths):
+The source/update ZIP includes current sources, Help, packaging and tests,
+plus precise external fixture locations in `FIXTURE_LOCATIONS_v1.5.json`.
+It excludes environments, binary releases, research measurements and generated
+evidence. User sample amounts are not built-in defaults. No source removals are
+required for this patch.
 
-```powershell
-& "$env:LOCALAPPDATA\Programs\Torque Data Postprocessing\TorqueDataCLI.exe" process --session "C:\data\settings.json" --dat "C:\data\treated.dat"
-```
-
-The final source/update ZIP contains packaging code, tests and Help, with
-paths preserved for a manual GitHub copy. No files require deletion. Research
-measurements and generated evidence are excluded; `FIXTURE_LOCATIONS_v1.4.json`
-records exact local fixture paths/hashes for the full regression suite. Generic
-synthetic tests are included. Keep existing local research fixtures to run all
-tests; a source ZIP alone deliberately contains no experimental raw data.
-
-Current report: `WINDOWS_INSTALLER_REPORT_v1.4.txt`. Earlier reports below remain
-historical evidence.
-
-To verify a delivered source archive from an extracted copy:
-
-```powershell
-.\.venv\Scripts\python.exe tests\windows_source.py --archive releases\Torque_Data_Postprocessing_1.4_build3\Torque_Data_Postprocessing_v1.4_source_update.zip --output validation\v14_source_final
-```
+See `WINDOWS_INSTALLER_REPORT_v1.5.txt` for current validation and limitations.
+The v1.4 report and all older releases remain historical evidence.
 
 ## Historical v1.3 validation
 
@@ -386,13 +373,13 @@ No treated reference was supplied for Ho2sq3, so its new exports are not claimed
 to reproduce an independent historical treatment. Previous Rot1 diagnostic
 centering choices remain reference-selected; an autonomous selector, historical
 algorithm uniqueness and the physical basis of historical molar factors remain
-unresolved scientific questions. Optional v1.4 normalization uses explicit user
+unresolved scientific questions. Optional molar normalization uses explicit user
 quantities; it does not validate those historical factors.
 
 This working tree is based on commit
 `b9517f489a35dcf3984ea48356fc3d12956e7c5c`; current working changes remain uncommitted in this active checkout.
 The project-state filename remains `Torque_GUI_project_state_v1.0.json` for
-continuity; its current version field is 1.4.
+continuity; its current version field is 1.5.
 
 Historical source/test/help archive: `Torque_Postprocessing_v1.3_source.zip`.
 Its example paths point to the included raw fixture. The separate

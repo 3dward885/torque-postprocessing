@@ -19,6 +19,8 @@ from baseline_editor import BaselineEditor, dispose_canvas
 from cli import load_entry, run_entry
 from storage import save_dat, load_session, save_session, json_text
 from plots import make_figure, raw_figure, export_figure, font_status
+from output_settings import default_output, save_output_dat, output_paths
+from output_controls import OutputControls, MolarSaveDialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 ROOT = Path(__file__).resolve().parent
@@ -56,7 +58,6 @@ class App:
         self.extrapolate = tk.BooleanVar(value=False)
         self.buttons = {}
         self.help_window = None
-        self.plot_choices = {}
         self.hover = self.help_for(root)
         self.build_ui()
         root.protocol("WM_DELETE_WINDOW", self.close)
@@ -86,6 +87,7 @@ class App:
         style.configure("Treeview", rowheight=26)
         menu = tk.Menu(self.root)
         file_menu = tk.Menu(menu, tearoff=False)
+        self.file_menu = file_menu
         for label, action in [("Open data…", self.add_files), ("Save treated data…", self.export_all),
                               ("Save settings…", self.save_configuration), ("Load settings…", self.load_configuration),
                               ("Remove selected file", self.remove_selected), ("Close", self.close)]:
@@ -106,7 +108,7 @@ class App:
         toolbar = ttk.Frame(outer)
         toolbar.pack(fill="x")
         for label, command in [("Open data…", self.add_files), ("Subtract background", self.process_all),
-                               ("Center zero…", self.review_baseline), ("Save treated data…", self.export_all)]:
+                               ("Center zero…", self.review_baseline)]:
             button = ttk.Button(toolbar, text=label, command=command)
             button.pack(side="left", padx=(0, 8))
             self.buttons[label] = button
@@ -135,14 +137,16 @@ class App:
         left, right = ttk.Frame(panes), ttk.Frame(panes)
         panes.add(left, weight=4)
         panes.add(right, weight=6)
-        self.passes = ttk.Treeview(left, columns=("T", "B", "n", "role"), show="tree headings", selectmode="extended")
+        scan_area = ttk.Frame(left)
+        scan_area.pack(fill="both", expand=True)
+        self.passes = ttk.Treeview(scan_area, columns=("T", "B", "n", "role"), show="tree headings", selectmode="extended")
         self.passes.heading("#0", text="Scan")
         self.passes.column("#0", width=65, stretch=False)
         for key, label, width in [("T", "T (K)", 130), ("B", "B (T)", 110),
                                    ("n", "Points", 55), ("role", "Role", 90)]:
             self.passes.heading(key, text=label)
             self.passes.column(key, width=width, minwidth=45)
-        scroll = ttk.Scrollbar(left, orient="vertical", command=self.passes.yview)
+        scroll = ttk.Scrollbar(scan_area, orient="vertical", command=self.passes.yview)
         self.passes.configure(yscrollcommand=scroll.set)
         scroll.pack(side="right", fill="y")
         self.passes.pack(fill="both", expand=True)
@@ -159,7 +163,13 @@ class App:
         self.extrapolation_check.pack(anchor="w")
         self.hover.attach(self.extrapolation_check, "extrapolation")
         self.hover.attach(ttk.Button(association, text="Apply background", command=self.apply_background), "apply_background").pack(anchor="e", pady=3)
-        ttk.Label(left, textvariable=self.details, wraplength=420).pack(fill="x", pady=6)
+        details_label = ttk.Label(left, textvariable=self.details, wraplength=420)
+        details_label.pack(fill="x", pady=6)
+        self.output = OutputControls(self, left)
+        self.output.frame.pack_configure(side="bottom", before=scan_area)
+        details_label.pack_configure(side="bottom", before=scan_area)
+        association.pack_configure(side="bottom", before=scan_area)
+        self.buttons["Save treated data…"] = self.output.save_button
         controls = ttk.Frame(right)
         controls.pack(fill="x", padx=10)
         ttk.Label(controls, text="View").pack(side="left")
@@ -239,12 +249,14 @@ class App:
             p = self.selected_pass()
             processed = p and any(v["pass_id"] == p.id for v in ((r or {}).get("result") or {}).get("passes", []))
             self.buttons["Center zero…"].configure(state="normal" if processed else "disabled")
+        self.output.refresh()
 
-    def add_record(self, path, obj=None, cfg=None, error=""):
+    def add_record(self, path, obj=None, cfg=None, error="", output=None):
         self.counter += 1
         key = f"F{self.counter}"
         record = {"key": key, "path": str(Path(path).resolve()), "raw": obj, "cfg": cfg, "obj": None,
                   "result": None, "saved": None, "state": error, "error": error}
+        record["output"] = output or default_output((cfg or {}).get("input_sha256", ""), path)
         if obj:
             record["obj"] = configure_acquisition(obj, cfg["acquisition"])
             record["state"] = f"{len(obj.rows)} measurements; {len(record['obj'].passes)} scans"
@@ -293,6 +305,9 @@ class App:
         self.plot_message.pack(fill="both", expand=True)
 
     def refresh_selected(self, event=None):
+        if self.output.record is not self.selected() and not self.output.require_clean():
+            self.files.selection_set(self.output.record["key"])
+            return
         if self.editor and self.selected() is not self.editor.record:
             if not self.guard_baseline(close=True):
                 self.files.selection_set(self.editor.record["key"])
@@ -301,6 +316,7 @@ class App:
         self.passes.delete(*self.passes.get_children())
         self.clear_plot()
         r = self.selected()
+        self.output.bind_record(r)
         if not r or not r.get("obj"):
             self.update_view()
             self.details.set(r["error"] if r else "")
@@ -350,7 +366,9 @@ class App:
         self.clear_plot()
         try:
             if pred and self.view.get() != "Raw":
-                fig = make_figure(r["result"], p.id, self.view_key(), preview=True)
+                if self.view.get() == "Corrected" and self.output.dirty:
+                    raise InputError("Apply or cancel sample changes to view corrected output.")
+                fig = make_figure(r["result"], p.id, self.view_key(), preview=True, output=r["output"])
             else:
                 fig = raw_figure(p, preview=True)
             self.plot_message.pack_forget()
@@ -450,13 +468,21 @@ class App:
             return self.show_error("Subtract the background before saving.")
         if not r["result"]["exportable"]:
             return self.show_error("Resolve the listed scans or explicitly exclude them in Acquisition settings before saving.")
+        if path is None and r["output"]["quantity"] == "molar":
+            self.output_save_dialog = MolarSaveDialog(self, r)
+            return
         path = path or filedialog.asksaveasfilename(parent=self.root, title="Save treated data",
             initialfile=Path(r["path"]).stem + "_treated.dat", defaultextension=".dat", filetypes=[("DAT", "*.dat")])
         if path:
+            try:
+                paths = output_paths(path, r["output"])
+            except InputError as exc:
+                return self.show_error(exc)
             def done(saved):
                 r["saved"] = saved
-                self.status.set("Saved " + saved)
-            self.submit("Saving treated data…", lambda: save_dat(r["result"], path), done)
+                self.status.set("Saved " + " and ".join(str(p) for p in paths))
+            result, output = copy.deepcopy(r["result"]), copy.deepcopy(r["output"])
+            self.submit("Saving treated data…", lambda: save_output_dat(result, path, output), done)
 
     def save_configuration(self, path=None):
         if self.busy or not self.guard_baseline(close=True):
@@ -466,7 +492,7 @@ class App:
             try:
                 if any(r["cfg"] is None for r in self.records.values()):
                     raise InputError("Resolve failed imports before saving settings.")
-                save_session(path, [(r["path"], r["cfg"]) for r in self.records.values()])
+                save_session(path, [(r["path"], r["cfg"], r["output"]) for r in self.records.values()])
                 self.status.set("Settings saved.")
             except (ValueError, OSError) as exc:
                 self.show_error(exc)
@@ -479,11 +505,11 @@ class App:
             return
         def job():
             imports = []
-            for raw, cfg in load_session(path):
+            for raw, cfg, output in load_session(path, include_output=True):
                 obj, cfg = load_entry(raw, cfg)
                 if cfg["input_sha256"] != obj.sha256:
                     raise InputError("Settings do not match this raw file.")
-                imports.append((raw, obj, cfg, ""))
+                imports.append((raw, obj, cfg, "", output))
             return imports
         def done(imports):
             self.records.clear()
@@ -508,6 +534,8 @@ class App:
         text.configure(state="disabled")
 
     def save_plot(self):
+        if self.busy or not self.guard_baseline(close=True):
+            return
         r, p = self.selected(), self.selected_pass()
         if not r or not p or not r.get("result"):
             return
@@ -516,7 +544,7 @@ class App:
             try:
                 if self.view.get() == "Raw":
                     raise InputError("Choose Corrected, Background fit or Processing steps for figure export.")
-                export_figure(r["result"], p.id, folder, self.view_key())
+                export_figure(r["result"], p.id, folder, self.view_key(), output=r["output"])
                 self.status.set("Figure saved as PDF and PNG.")
             except (ValueError, OSError) as exc:
                 self.show_error(exc)
@@ -530,6 +558,8 @@ class App:
         self.plot_dialog = PlotExportDialog(self)
 
     def guard_baseline(self, close=False):
+        if hasattr(self, "output") and not self.output.require_clean():
+            return False
         if self.editor:
             if not self.editor.require_clean():
                 return False
