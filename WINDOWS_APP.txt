@@ -1,0 +1,59 @@
+Torque Data Postprocessing 1.4 - Windows application
+
+INSTALL
+Double-click Torque_Data_Postprocessing_1.4_Setup_x64.exe and follow Setup.
+Open Torque Data Postprocessing from the Start menu. A desktop shortcut is optional.
+Python, Tk and the required numerical/plotting libraries are included.
+Installation and processing require no network connection or Python setup.
+The installer is not digitally signed with a publisher certificate.
+
+USE
+Open data -> Subtract background -> optional Center zero -> Save treated data.
+Use Acquisition settings for your experimental temperatures and tolerances.
+Use Angle range before processing to exclude unwanted endpoint measurements.
+Help > User guide, or F1, opens the local instructions and examples.
+Source files and existing output files are never overwritten by processing.
+
+PRESENTATION PLOTS AND OPTIONAL MOLAR DATA
+After processing, choose Tools > Export treated plots.
+Check the rotation number for each file and choose Torque (N m) or
+Molar torque (N m/mol). One white-background, Arial JPEG is saved per file,
+rotation and temperature, with separate field markers and no fitted curves.
+JPEGs are 2400 x 1800 pixels at 300 dpi, suitable for PowerPoint.
+Molar output needs the sample mass in mg AND molar mass in g/mol, or a known
+amount in moles. Molar mass alone is insufficient: molar torque = torque / n.
+Enter these quantities independently for each sample/file. No quantity is inferred.
+Molar mode also saves a separate four-column *_molar.dat in N m/mol.
+The ordinary Save treated data output remains in N m.
+The plots.details folder records normalization, source hashes and replay settings.
+Images contain only rotation/temperature heading, axis labels and field legend.
+Keep the details folder with the images/data for reproducibility.
+
+FILES
+Default installation: %LOCALAPPDATA%\Programs\Torque Data Postprocessing
+Startup logs/cache: %LOCALAPPDATA%\Torque Data Postprocessing
+Treated data and its .dat.details folder go to your chosen Save As location.
+Keep saved data outside the installation directory.
+Uninstall through Windows Settings > Apps. Saved data is not removed.
+Install an update with the same Setup destination after closing the application
+yourself. Setup does not close running programs. A locked-file update stops
+without replacing the existing installation. Logs/cache remain after uninstall;
+you may remove that app-specific user-data folder manually if no longer needed.
+
+PORTABLE COPY
+Alternatively extract the portable ZIP and run Torque Data Postprocessing.exe.
+Keep it together with TorqueDataCLI.exe and the entire _internal folder.
+Moving only the EXE will not work. No setup scripts are needed.
+Use a short installation/extraction location. Setup rejects paths that exceed
+the bundled Windows libraries' path-length limit; the default location is suitable.
+
+HEADLESS REPLAY (PowerShell)
+& "$env:LOCALAPPDATA\Programs\Torque Data Postprocessing\TorqueDataCLI.exe" process --session "C:\path\settings.json" --dat "C:\path\treated.dat"
+Use a new output filename. The command has the same options as cli.py.
+Settings contain raw-file paths; move/update those paths when relocating data.
+Accepted zero adjustments still validate source, numerical settings and runtime.
+A different Windows/Python/NumPy environment can require reviewing and applying
+an old adjustment again. These checks have not been disabled for packaging.
+
+Windows 64-bit build. See WINDOWS_INSTALLER_REPORT_v1.4.txt in the source project
+for the actual validation and limits. No automatic updating or telemetry added.

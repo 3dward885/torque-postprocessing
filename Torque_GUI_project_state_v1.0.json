@@ -20,7 +20,10 @@
     "workflow_execution_prompt_sha256": "dfb5388469ae041542d1552d8e2e3392f1008a6860bb59a1c3936f4682e75b16",
     "raw_path_note": "Original folder was renamed to 20260928 Maglab Measurements - SCM6; identity unchanged.",
     "usability_execution_prompt": "Torque_GUI_v1.3_execution_prompt_v1.1.txt",
-    "usability_execution_prompt_sha256": "c1d4375b4899d4437b2bb95c5e5ae427179b4b1996876ddab8cdcb15ab9c69ea"
+    "usability_execution_prompt_sha256": "c1d4375b4899d4437b2bb95c5e5ae427179b4b1996876ddab8cdcb15ab9c69ea",
+    "installer_execution_prompt": "Torque_Data_Postprocessing_Windows_installer_execution_prompt_v1.0.txt",
+    "installer_execution_prompt_sha256": "8174884ad462a388b023443ee817d5cb9baba66121d582ccf1b6c6c8ca27dec2",
+    "v1_4_scope_additions": "V1.4_SCOPE_ADDITIONS.txt"
   },
   "base_commit": "b9517f489a35dcf3984ea48356fc3d12956e7c5c",
   "baseline_contract": {
@@ -67,28 +70,29 @@
     "v1.3: shared space/comma Decimal temperature entry; no numerical function or coordinate changes.",
     "v1.3: honest view availability, idle activity hiding, one-second hover help and local F1 topic tree.",
     "v1.3: old accepted settings keep identical bindings and replay without reacceptance in the tested environment.",
-    "v1.3: source/update packages compared against the saved pre-patch v1.2 working tree; no writes to GitHub checkout."
+    "v1.3: source/update packages compared against the saved pre-patch v1.2 working tree; no writes to GitHub checkout.",
+    "Use pinned PyInstaller one-directory plus per-user Inno Setup; windowed GUI, CLI and local Help bundled.",
+    "Retain processing config 1.2 and baseline schema 2; preserve inspect.getsource fingerprint using original numerical source in the bundle.",
+    "Grouped JPEGs use committed serialized treated torque and original retained nominal angles, per input/rotation/temperature, without fits or averaging.",
+    "Optional molar normalization is separate from the processing core: user-entered mass in mg and molar mass in g/mol, or amount in mol; normal DAT remains N m.",
+    "Molar factor uses 50-digit Decimal division and exact Decimal multiplication of serialized D; same converted values supply molar plots and separate DAT.",
+    "Use only rotation/temperature heading, axes/ticks and field legend in the grouped figures; Arial/white/300 dpi.",
+    "Installer rejects unrelated occupied folders and DLL paths over the computed 180-character directory limit; no Windows settings changed."
   ],
   "delivery": {
-    "active_working_copy": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\torque-postprocessing",
-    "copy_verification": "validation/local_copy_2026-10-03/copy_verification.json",
-    "historical_release_report": "BASELINE_IMPLEMENTATION_REPORT_v1.1.txt",
-    "startup_validation": "validation/local_copy_2026-10-03/startup_and_replay.json",
-    "current_report": "USABILITY_IMPLEMENTATION_REPORT_v1.3.txt",
-    "example_treated_data": "runs/Ho2sq3_0_to_200_v1.3.dat",
-    "current_validation": "validation/usability_v1.3",
-    "example_settings": [
-      "examples/Ho2sq3_full_range.json",
-      "examples/Ho2sq3_0_to_200.json",
-      "examples/Ho2sq3_manual_demo.json"
-    ],
-    "source_zip": "Torque_Postprocessing_v1.3_source.zip",
-    "github_update_zip": "Torque_Postprocessing_v1.3_GitHub_update.zip",
-    "update_instructions": "UPDATE_v1.3.txt",
-    "package_validation": "validation/usability_v1.3/package_checks_final.json",
-    "github_ready_folder": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\Torque_Postprocessing_v1.3_GitHub_ready_2026-10-05\\torque-postprocessing",
-    "github_ready_zip": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\Torque_Postprocessing_v1.3_GitHub_ready_2026-10-05.zip",
-    "github_compared_commit": "f444708dc8425181652daa5addc55add183a31da"
+    "directory": "releases/Torque_Data_Postprocessing_1.4_build3",
+    "installer": "Torque_Data_Postprocessing_1.4_Setup_x64.exe",
+    "installer_sha256": "704014ad58a824589f05aec7e99b942b73b15849923d8c85a62b5f7c598375f2",
+    "portable": "Torque_Data_Postprocessing_1.4_portable_x64.zip",
+    "portable_sha256": "9f505b8c4bcd1e78acc2daa7df8891b09facfb11a35832fd7a7f33ac6ee1024f",
+    "source_update": "Torque_Data_Postprocessing_v1.4_source_update.zip",
+    "installer_build": 1,
+    "signed": false,
+    "report": "WINDOWS_INSTALLER_REPORT_v1.4.txt",
+    "representative": "validation/windows_app_v1.4_build1/representative",
+    "source_archive_status": "Verified source archive and extracted-copy replay; final hashes listed beside delivery.",
+    "required_removals": [],
+    "source_update_report": "validation/v14_source_final/report.json"
   },
   "derived_quantities": [
     "Retained actual rows in the optional angle range",
@@ -131,8 +135,9 @@
   "implementation_validation_environment": {
     "matplotlib": "3.10.8",
     "numpy": "2.3.5",
-    "platform": "Windows-11-10.0.26200-SP0",
-    "python": "3.12.14"
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.12.14",
+    "packaging": "PyInstaller 6.22.3 / Inno Setup 7.1.0 x64"
   },
   "local_copy": {
     "accepted_baseline_status": "BLOCKED by the existing environment-binding safeguard; settings were preserved and not reaccepted.",
@@ -148,8 +153,8 @@
     "verified_rows": 818,
     "historical_record": true
   },
-  "next_step": "User may copy the prepared GitHub-ready project into the existing GitHub checkout, preserving .git and local data, then review/commit/push manually. The package includes the startup fix.",
-  "objective": "Complete six v1.3 usability changes while preserving all v1.2 numerical/settings contracts.",
+  "next_step": "User installs the delivered Setup and reviews the GUI on their PC; user copies the source update and commits/pushes manually through GitHub Desktop. No further automatic work scheduled.",
+  "objective": "Deliver the self-contained Windows application plus grouped treated-data JPEGs and optional separately normalized molar DAT, preserving the scientific core.",
   "provided_settings": [
     "Experimental temperature setpoints and per-scan assignments, with source",
     "Tolerance values and nominal angle/field conventions",
@@ -164,30 +169,37 @@
     "No model discovery, hidden selector, smoothing, regridding, fabricated samples or reference-derived baseline",
     "Blanket removal of observable tolerances is superseded by review/correction of reference selection.",
     "Hardcoded experimental temperature targets, including 2 K or 2.5 K, and fallback temperature grids are forbidden.",
-    "Molar conversion, visible profile selection and export-format choices removed from the current workflow.",
+    "The v1.2 removal of molar processing remains applicable to ordinary DAT/legacy CLI fields. User authorized optional molar presentation plots plus a separate molar DAT for v1.4, based on explicit sample amount or mass plus molar mass.",
     "Full-acquisition extrema for centering superseded when the user explicitly selects a narrower angular interval."
   ],
   "repository": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\torque-postprocessing",
   "state_filename_retained_for_continuity": "Torque_GUI_project_state_v1.0.json",
-  "status": "v1.3 complete; all six usability and numerical/replay/package gates passed. Whole-window visual inspection not performed under background-only constraint.",
+  "status": "v1.4 complete: self-contained Windows installer, treated JPEGs and separate optional molar DAT; all available runtime, numerical, installer and extracted-source gates passed. Clean-machine validation unavailable and visible UI review not performed.",
   "units": {
     "D": "N m",
     "angles": "deg",
     "delta_and_offsets": "N m",
     "raw_field": "Oe",
     "output_field": "T",
-    "temperature": "K"
+    "temperature": "K",
+    "optional_molar_DAT_and_plots": "N m/mol",
+    "sample_mass_entry": "mg",
+    "molar_mass_entry": "g/mol",
+    "amount_entry": "mol"
   },
   "unresolved": [
-    "No independently treated reference supplied for Ho2sq3.",
-    "Full-window visual inspection not performed; real Tk widgets and Matplotlib mouse events passed in hidden windows.",
-    "macOS/Linux and other environments untested.",
-    "Historical previous-Rot1 autonomous centering selection remains unresolved; diagnostic choices remain reference-selected.",
-    "Historical algorithm uniqueness and transfer claims remain unestablished; physical molar normalization is outside this torque-only processor."
+    "No independently treated reference for Ho2sq3.",
+    "No actual Ho2sq3 sample mass, molar mass or amount supplied; molar validation uses labelled software fixtures.",
+    "Clean Windows VM/sandbox unavailable; restricted-PATH tests are not clean-machine validation.",
+    "Visible installer UI and whole-window manual interaction were not tested under the background-only instruction.",
+    "Unsigned installer/application; no publisher certificate supplied.",
+    "Other Windows builds, Windows 10, ARM64, macOS and Linux remain untested.",
+    "Historical reference-selected previous-Rot1 centering, algorithm uniqueness/transfer and the physical basis of archived normalization factors remain unestablished.",
+    "Uniform sample-position correction and endpoint/rounding choices remain deferred."
   ],
-  "updated_utc": "2026-10-05T12:35:52.406308+00:00",
+  "updated_utc": "2026-10-06T03:15:27.456912+00:00",
   "verified_results": {
-    "unit_tests": 42,
+    "unit_tests": 49,
     "historical_cases_A_D_exact": 6,
     "historical_case_rows_A_D_exact": 5405,
     "historical_distinct_reference_rows": 3519,
@@ -195,25 +207,29 @@
     "Ho2sq3_raw_rows": 1754,
     "Ho2sq3_scans": 34,
     "Ho2sq3_full_range_signal_rows": 1296,
+    "Ho2sq3_background_rows": 458,
     "Ho2sq3_0_to_200_signal_rows": 1023,
+    "Ho2sq3_0_to_200_background_rows": 368,
+    "Ho2sq3_outside_rows": 363,
+    "pre_packaging_DATs_byte_identical": 3,
+    "all_example_upstream_bindings_unchanged": true,
     "GUI_CLI_DAT_byte_identical": true,
     "GUI_windows_withdrawn": true,
     "reference_denied_CLI": true,
     "Arial_figure_pairs": 3,
+    "help_topics": 69,
     "protected_files_unchanged": 196,
-    "reports_directory": "validation/usability_v1.3",
-    "whole_window_visual_inspection": "Not performed: all GUI test windows withdrawn",
-    "v12_example_DATs_byte_identical": 3,
-    "all_example_upstream_bindings_unchanged": true,
-    "usability_widget_checks": 7,
-    "workflow_widget_checks": 8,
-    "extracted_source_replay": true,
-    "extracted_v12_update_overlay_replay": true,
-    "help_resource_loaded_outside_CWD": true,
-    "package_preflight": "validation/usability_v1.3/package_preflight.json"
+    "restricted_PATH_frozen_runtime": true,
+    "installed_GUI_CLI_replay": true,
+    "installer_update_locked_rollback_uninstall": true,
+    "molar_DAT_exact_Decimal_products": true,
+    "ordinary_DAT_unchanged_by_plot_quantity": true,
+    "whole_window_visual_inspection": "Not performed: windows withdrawn",
+    "clean_machine": "BLOCKED: no clean Windows VM/sandbox available",
+    "extracted_source_update": true
   },
-  "verified_results_basis": "v1.3 observed on Windows build 26300; reports preserve intermediate failures and final successful checks separately.",
-  "version": "1.3",
+  "verified_results_basis": "Observed v1.4 tests; final runtime under validation/v14_bundle_final and validation/w14j. Prior/intermediate failures retained separately.",
+  "version": "1.4",
   "historical_v1_1": {
     "state_before_v1_2": "validation/import_workflow_v1.2/before/Torque_GUI_project_state_v1.0.json",
     "report": "BASELINE_IMPLEMENTATION_REPORT_v1.1.txt"
@@ -345,7 +361,7 @@
   "deferred_changes": [
     {
       "id": "uniform_sample_position_offset",
-      "status": "Deferred by explicit user request; excluded from v1.3.",
+      "status": "Deferred by explicit user request; excluded from v1.3 and v1.4.",
       "deferred_on": "2026-10-04",
       "request": "Add an optional user-entered constant sample-position correction to account for a known experimental torque-probe position error.",
       "controls_requested_for_future_discussion": {
@@ -386,7 +402,7 @@
       "whole_window_visual_inspection": "Not performed: all GUI test windows withdrawn"
     }
   },
-  "current_help_sha256": "08dbe71b6c54c044242ea3be3fdf4c58e663caddc71a9b80375b5fcb0788d27e",
+  "current_help_sha256": "71cab9f2441bc267911c8043c5ffea1d0ff1c09f17b7b406676dfdf4b850e5fb",
   "startup_fix": {
     "date": "2026-10-05",
     "reported_copy": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\torque-postprocessing\\Torque_Postprocessing_v1.3_source",
@@ -403,5 +419,58 @@
       "user-identified extracted copy"
     ],
     "old_release_archives": "Preserved; apply the startup-fix ZIP to another v1.3 copy."
-  }
+  },
+  "historical_v1_3": {
+    "state_before_packaging": "validation/windows_app_v1.3_build1/before/source/Torque_GUI_project_state_v1.0.json",
+    "report": "USABILITY_IMPLEMENTATION_REPORT_v1.3.txt",
+    "verified_results": {
+      "unit_tests": 42,
+      "historical_cases_A_D_exact": 6,
+      "historical_case_rows_A_D_exact": 5405,
+      "historical_distinct_reference_rows": 3519,
+      "historical_distinct_raw_rows": 4869,
+      "Ho2sq3_raw_rows": 1754,
+      "Ho2sq3_scans": 34,
+      "Ho2sq3_full_range_signal_rows": 1296,
+      "Ho2sq3_0_to_200_signal_rows": 1023,
+      "GUI_CLI_DAT_byte_identical": true,
+      "GUI_windows_withdrawn": true,
+      "reference_denied_CLI": true,
+      "Arial_figure_pairs": 3,
+      "protected_files_unchanged": 196,
+      "reports_directory": "validation/usability_v1.3",
+      "whole_window_visual_inspection": "Not performed: all GUI test windows withdrawn",
+      "v12_example_DATs_byte_identical": 3,
+      "all_example_upstream_bindings_unchanged": true,
+      "usability_widget_checks": 7,
+      "workflow_widget_checks": 8,
+      "extracted_source_replay": true,
+      "extracted_v12_update_overlay_replay": true,
+      "help_resource_loaded_outside_CWD": true,
+      "package_preflight": "validation/usability_v1.3/package_preflight.json"
+    },
+    "delivery": {
+      "active_working_copy": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\torque-postprocessing",
+      "copy_verification": "validation/local_copy_2026-10-03/copy_verification.json",
+      "historical_release_report": "BASELINE_IMPLEMENTATION_REPORT_v1.1.txt",
+      "startup_validation": "validation/local_copy_2026-10-03/startup_and_replay.json",
+      "current_report": "USABILITY_IMPLEMENTATION_REPORT_v1.3.txt",
+      "example_treated_data": "runs/Ho2sq3_0_to_200_v1.3.dat",
+      "current_validation": "validation/usability_v1.3",
+      "example_settings": [
+        "examples/Ho2sq3_full_range.json",
+        "examples/Ho2sq3_0_to_200.json",
+        "examples/Ho2sq3_manual_demo.json"
+      ],
+      "source_zip": "Torque_Postprocessing_v1.3_source.zip",
+      "github_update_zip": "Torque_Postprocessing_v1.3_GitHub_update.zip",
+      "update_instructions": "UPDATE_v1.3.txt",
+      "package_validation": "validation/usability_v1.3/package_checks_final.json",
+      "github_ready_folder": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\Torque_Postprocessing_v1.3_GitHub_ready_2026-10-05\\torque-postprocessing",
+      "github_ready_zip": "D:\\OneDrive - Florida State University\\FSU\\Research\\Instrument Characterizations\\Torque Magnetometry\\Codex Torque\\Torque_Postprocessing_v1.3_GitHub_ready_2026-10-05.zip",
+      "github_compared_commit": "f444708dc8425181652daa5addc55add183a31da"
+    }
+  },
+  "app_name": "Torque Data Postprocessing",
+  "release_date": "2026-10-05"
 }

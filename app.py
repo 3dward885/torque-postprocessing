@@ -37,7 +37,7 @@ configure_tk()
 class App:
     def __init__(self, root):
         self.root = root
-        root.title(f"Torque Postprocessing {APP_VERSION}")
+        root.title(f"Torque Data Postprocessing {APP_VERSION}")
         root.geometry("1220x780")
         root.minsize(1000, 660)
         self.records, self.counter = {}, 0
@@ -56,6 +56,7 @@ class App:
         self.extrapolate = tk.BooleanVar(value=False)
         self.buttons = {}
         self.help_window = None
+        self.plot_choices = {}
         self.hover = self.help_for(root)
         self.build_ui()
         root.protocol("WM_DELETE_WINDOW", self.close)
@@ -92,6 +93,7 @@ class App:
         menu.add_cascade(label="File", menu=file_menu)
         tools_menu = tk.Menu(menu, tearoff=False)
         for label, action in [("Acquisition settings…", self.file_settings), ("Export figure…", self.save_plot),
+                              ("Export treated plots…", self.export_plots),
                               ("Details…", self.show_details)]:
             tools_menu.add_command(label=label, command=action)
         menu.add_cascade(label="Tools", menu=tools_menu)
@@ -182,7 +184,7 @@ class App:
     def show_error(self, error):
         self.last_error = str(error)
         self.status.set(str(error))
-        messagebox.showerror("Torque Postprocessing", str(error), parent=self.root)
+        messagebox.showerror("Torque Data Postprocessing", str(error), parent=self.root)
 
     def submit(self, message, job, callback):
         if self.busy or self.closed:
@@ -519,6 +521,14 @@ class App:
             except (ValueError, OSError) as exc:
                 self.show_error(exc)
 
+    def export_plots(self):
+        if self.busy or not self.guard_baseline(close=True):
+            return
+        if not any(r.get("result") and r["result"]["exportable"] for r in self.records.values()):
+            return self.show_error("Subtract the background and resolve pending scans before exporting treated plots.")
+        from plot_export_dialog import PlotExportDialog
+        self.plot_dialog = PlotExportDialog(self)
+
     def guard_baseline(self, close=False):
         if self.editor:
             if not self.editor.require_clean():
@@ -657,7 +667,7 @@ class AcquisitionDialog:
 def main():
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", action="version", version=f"Torque Postprocessing {APP_VERSION}")
+    parser.add_argument("--version", action="version", version=f"Torque Data Postprocessing {APP_VERSION}")
     parser.add_argument("--session")
     args = parser.parse_args()
     root = tk.Tk()

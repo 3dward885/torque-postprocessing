@@ -14,6 +14,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from app import App
+from io_profiles import APP_VERSION
 from storage import atomic_json, load_session
 from ui_help import help_tip
 
@@ -79,7 +80,7 @@ def main(raw, output):
 
     try:
         with patch("tkinter.Toplevel", HiddenToplevel), patch("app.messagebox.showerror"):
-            assert "1.3" in root.title()
+            assert root.title() == f"Torque Data Postprocessing {APP_VERSION}"
             assert app.progress.winfo_manager() == ""
             frame_size = app.progress.master.winfo_reqwidth(), app.progress.master.winfo_reqheight()
             release = threading.Event()
@@ -191,6 +192,7 @@ def main(raw, output):
             view("Corrected")
             app.export_all(output/"corrected_view.dat")
             wait()
+            assert (output/"corrected_view.dat").is_file(), app.last_error
             assert (output/"raw_view.dat").read_bytes() == (output/"corrected_view.dat").read_bytes()
             check("Stale adjusted previews unavailable; DAT bytes independent of selected plot view")
 

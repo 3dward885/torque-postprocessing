@@ -1,0 +1,40 @@
+Torque Data Postprocessing 1.4 — local manual GitHub update
+
+For ordinary use, install the separate Setup EXE. Source files are not needed.
+
+For GitHub Desktop:
+1. Close any developer/source copy of the app before replacing its Python files.
+2. Back up your GitHub checkout and review its uncommitted edits.
+3. Extract Torque_Data_Postprocessing_v1.4_source_update.zip.
+4. Copy its project files into your local torque-postprocessing GitHub folder,
+   preserving subfolders and reviewing replacements in GitHub Desktop.
+5. Review the diff, then commit and push yourself.
+
+The ZIP contains the complete current project source, Help, documentation,
+packaging files and tests. No files need deletion for this update.
+It excludes .git, environments, build tools, binaries, research measurements,
+personal sessions and generated runs/evidence. Generic synthetic test data and
+the project's named replay example settings are included.
+Do not add the installer or portable runtime ZIP to the source commit.
+Do not copy the local releases/, validation/, evidence/ or environment folders.
+
+PACKAGE_MANIFEST.json lists each included file's hash and the pre-packaging
+v1.3 source hashes. It is package metadata; it is not an application setting.
+FIXTURE_LOCATIONS_v1.4.json identifies the external preserved research fixtures
+needed for the full regression suite. It does not embed their contents.
+
+The usual configuration version 1.2 and accepted-baseline schema 2 are unchanged.
+Molar presentation settings are recorded separately with each plot export.
+Older molar processing options remain obsolete; they are not silently enabled.
+
+No GitHub checkout was changed, and no commit or push was performed.
+
+Suggested commit summary:
+Release v1.4 Windows installer and treated-data plot exports
+
+Suggested description:
+Package Torque Data Postprocessing with a self-contained Windows runtime,
+per-user installer, Start-menu launch, uninstaller and bundled CLI.
+Add grouped treated-data JPEGs and optional molar plots plus a separate molar
+DAT using explicit sample quantities. Preserve ordinary N m data and baseline
+bindings. Include background validation, Help and reproducible build sources.

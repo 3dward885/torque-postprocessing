@@ -1,0 +1,25 @@
+Torque Data Postprocessing v1.4 — accepted scope additions, 5 October 2026
+
+The saved Windows installer execution prompt is retained byte for byte.
+Later user instructions supersede its expected 1.3 version and torque-only
+presentation scope:
+
+- The user corrected the requested application version to 1.4.
+- Include grouped JPEG plotting in this release, using treated data.
+- Group by rotation and temperature, showing experimental markers by field.
+- Use the established Arial/white scientific formatting, not the dark reference
+  style. Ignore all fitted solid curves. Figure text is limited to the types in
+  the examples: rotation/temperature heading, axes/ticks and field legend.
+- Allow plotting treated torque in N m or molar torque in N m/mol.
+- The user requested molar-mass entry and accepted the clarification that sample
+  mass plus molar mass, or an amount in moles, is required.
+- Explicit scope answer: "Plots and a separate molar DAT".
+
+The ordinary treated DAT and shared subtraction/centering core remain in N m.
+Sample normalization is applied only after treated torque serialization; it is
+recorded separately from numerical baseline bindings and processing settings.
+No sample mass, molar mass or amount was supplied for the actual Ho2sq3 data.
+Molar quantities used in validation are labelled synthetic software examples.
+
+Position corrections in degrees and their unresolved endpoint/rounding policy
+remain deferred. No foreground tests, commits, pushes or publication authorized.

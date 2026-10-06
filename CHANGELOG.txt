@@ -1,3 +1,21 @@
+1.4 — 5 October 2026
+- Rename the current application Torque Data Postprocessing.
+- Bundle Python, Tcl/Tk, NumPy, Matplotlib, Help and licenses in a Windows x64
+  package with a per-user Setup wizard, Start-menu entry and uninstaller.
+- Provide console-free GUI startup, user-writable diagnostics/cache and bundled
+  CLI replay. Protect unrelated installation folders and reject overlong paths.
+- Add Tools > Export treated plots: Arial, white, 300-dpi JPEGs grouped by
+  input/rotation/temperature, separate field markers, no fitted/connecting curves.
+- Add optional molar plots and a separate molar DAT, using per-file sample mass
+  plus molar mass or known amount. Ordinary treated DAT stays in N m.
+- Preserve treated points and serialized torque; record normalization and replay
+  settings beside plots. No inferred mass, amount or molar normalization.
+- Retry brief Windows access/sharing failures when publishing completed plot
+  folders, with bounded attempts and no overwriting.
+- Numerical core/fingerprint, processing configuration 1.2 and baseline schema 2
+  unchanged. Position correction in degrees remains deferred.
+- See WINDOWS_INSTALLER_REPORT_v1.4.txt for observed validation and limitations.
+
 1.3 startup fix — 5 October 2026
 - Complete setup in the user's newly extracted source folder; its .venv was absent.
 - Preserve setup/launch logs and failure exit codes; show launch errors instead

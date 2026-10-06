@@ -1,0 +1,319 @@
+TORQUE DATA POSTPROCESSING — SELF-CONTAINED WINDOWS APPLICATION
+Execution prompt v1.0 | 5 October 2026
+
+EXECUTION BOUNDARY
+
+This document is an execution prompt for a future, explicitly authorized task.
+Creating or reviewing this document does not authorize building or installing
+anything. Execute it only when the user explicitly asks you to execute it.
+
+TASK
+
+Package the existing desktop processor as a self-contained Windows application
+named exactly "Torque Data Postprocessing". Deliver a normal Windows installer:
+the user runs Setup, opens the application from the Start menu, and processes
+data without installing Python, creating an environment, running setup scripts,
+or downloading dependencies.
+
+Preserve the working scientific application. This is packaging and application
+naming work, not a numerical update or interface redesign. Retain the current
+application version, expected 1.3; record the installer build separately.
+Recheck the actual source version and do not downgrade newer work. Keep
+configuration and numerical recipe versions unchanged unless a demonstrated
+compatibility need requires a documented migration.
+
+Use one agent and minimal maintainable Python. Explain the chosen integration
+briefly, then complete authorized implementation and validation without routine
+confirmation. Questions about feasibility alone do not authorize implementation.
+
+Keep tests in the background. Do not open foreground windows, move the pointer,
+send desktop keystrokes, capture the user's desktop, or close/control their
+running application. Do not commit, push, publish, deploy, register file
+associations, add automatic updates/telemetry, or change system-wide settings.
+The user installs the finished application and manages GitHub manually.
+
+1. ESTABLISH THE CURRENT SOURCE
+
+Active working repository:
+D:\OneDrive - Florida State University\FSU\Research\Instrument Characterizations\Torque Magnetometry\Codex Torque\torque-postprocessing
+
+Manual GitHub destination, not the active working copy:
+D:\OneDrive - Florida State University\FSU\Github\torque-postprocessing
+
+Read applicable AGENTS.md, README.md, README.txt, CHANGELOG.txt,
+Torque_GUI_project_state_v1.0.json, STARTUP_FIX_v1.3.txt, relevant source and
+tests. Inspect actual Git HEAD/status, Python/dependency versions and existing
+release files. Preserve all user changes and prior releases. Do not reset to
+the historical base commit b9517f489a35dcf3984ea48356fc3d12956e7c5c.
+
+IMPORTANT: an earlier installer attempt was stopped because the user had asked
+only a feasibility question. Its local files are unfinished work, not an
+approved or validated release. Inspect them before deciding what to reuse:
+- desktop.py and installation_check.py
+- requirements-build.txt
+- tools/build_windows.py
+- windows/Torque.spec, windows/installer.iss, windows/version_info.txt
+- WINDOWS_APP.txt and packaging entries in .gitignore
+- .build-venv/, build_tools/, build/, releases/
+- validation/installer_v1.3/
+
+The compact project state may predate these unfinished files. Do not infer
+completion from their presence or restart a previous command blindly.
+The prior attempt used PyInstaller and a portable Inno Setup compiler in the
+workspace. Audit actual contents, versions and signatures rather than assuming
+these tools or generated files are still usable.
+
+Save a fresh, uniquely named pre-change snapshot of relevant source/settings,
+Git status, hashes, numerical bindings and representative treated DATs. Reuse
+verified fixtures and earlier comparison helpers. Keep all new validation and
+release outputs separate from prior evidence.
+
+2. BUILD THE SMALLEST RELIABLE WINDOWS PACKAGE
+
+Prefer PyInstaller in one-directory mode plus an Inno Setup installer, unless
+inspection identifies a concrete reason to choose another maintainable solution.
+The installer contains the entire application directory; the user does not need
+to understand or manage that internal layout.
+
+Bundle the Python interpreter, required DLLs, Tk/Tcl, NumPy, Matplotlib, necessary
+plot backends, local Help resources and other actual runtime dependencies.
+Retain the pinned numerical dependency versions where possible. Use an isolated
+build environment; do not upgrade the working application's environment merely
+to install build tools. Document any unavoidable runtime change and test its
+numerical and saved-baseline consequences.
+
+Use official tool downloads. Pin and record versions, download locations and
+SHA-256 hashes; verify vendor signatures where supplied. Prefer build tools
+contained in the workspace over global installations. Include applicable
+third-party license/notices. Do not redistribute Microsoft Arial from this PC;
+use the installed Windows font and preserve the existing missing-font behavior.
+
+No Python, pip, compiler, command prompt, internet access or environment setup
+may be required on the end user's computer for installation or ordinary use.
+Do not ship a launcher that merely invokes this PC's Python, .venv or Codex
+runtime. Exclude research raw files, treated references, personal sessions,
+credentials, .git, build environments and generated evidence from the installed
+application. Generic software-test fixtures belong with tests, not as default
+experimental settings.
+
+Provide a reproducible maintainer build command and pinned build requirements.
+Clearly separate developer rebuild instructions from end-user installation.
+
+3. APPLY THE APPLICATION NAME CONSISTENTLY
+
+Use "Torque Data Postprocessing" in current window/dialog titles, Help branding,
+version reporting, executable file properties, installer pages, Start-menu and
+desktop shortcuts, installed-app listing, uninstaller and current user docs.
+
+Suggested deliverable names for version 1.3:
+- Torque Data Postprocessing.exe
+- TorqueDataCLI.exe
+- Torque_Data_Postprocessing_1.3_Setup_x64.exe
+
+Preserve historical report/archive names and contents. Do not globally replace
+old product names or versions in archival evidence, recipe identifiers,
+configuration keys, bindings or scientific records. Avoid renaming numerical
+modules solely for branding. Current provenance must still identify the actual
+version and source used, without rewriting old provenance.
+
+4. PROVIDE NORMAL INSTALLATION, STARTUP AND UNINSTALLATION
+
+Build a Windows x64 installer with:
+- A standard setup wizard and sensible installation location.
+- Per-user installation without administrator rights by default, such as
+  %LOCALAPPDATA%\Programs\Torque Data Postprocessing.
+- A Start-menu entry and an optional desktop shortcut.
+- A registered uninstaller available through Windows Settings > Apps.
+- A stable application identity for subsequent installer updates.
+- A launch option on completion that is never executed during silent tests.
+
+Do not automatically close a running application during installation or update.
+Handle locked files and interrupted/cancelled installation explicitly. Do not
+overwrite an unrelated directory or use broad deletion rules.
+
+Normal GUI launch must not leave a console window open. Retain useful startup
+and unexpected-error diagnostics in a user-writable location such as
+%LOCALAPPDATA%\Torque Data Postprocessing\logs, with a concise error message
+and log location if launch fails. Handle missing console streams safely.
+
+Keep caches/logs/settings outside the installation directory. Resolve bundled
+resources relative to the application, not the shell's current directory.
+Start-menu launch must work from an unrelated working directory, including
+paths with spaces and non-ASCII characters. Save treated data through the
+existing Save As workflow to a user-selected location.
+
+Keep settings portable and readable. Moving the program must not rewrite raw
+paths or fabricate missing raw data; report a moved/missing raw file clearly.
+Uninstallation must remove installed program files and shortcuts while leaving
+user raw data, treated outputs, saved settings and unrelated files intact.
+Document the remaining user-data/log location.
+
+If no publisher signing certificate is supplied, deliver an unsigned installer
+and state that limitation accurately. Do not invent a verified publisher, buy a
+certificate, disable Windows security or claim SmartScreen approval.
+
+5. PRESERVE THE SCIENTIFIC AND REPLAY CONTRACT
+
+Keep the same shared GUI/CLI processing core and four-step workflow:
+Open data -> Subtract background -> optional Center zero -> Save treated data.
+
+Preserve:
+- Supported raw layouts, tokens, measured/nominal coordinate distinction,
+  acquisition order and independent scan/source-row identities.
+- User-provided experimental setpoints and scoped assignments, configured
+  tolerances and inclusive comparisons. No hardcoded temperature targets.
+- Inclusive nominal-angle selection before fitting, centering, preview and
+  export; all original rows retained in the ledger.
+- Same-file/rotation and experimental-temperature background association,
+  including later-acquired backgrounds and scoped extrapolation permission.
+- Six-significant-digit Decimal torque quantization; the existing unweighted
+  degree-six background fit on the [0,200] scaled basis; evaluation at retained
+  nominal signal angles; subtraction; centering once; binary64 .8g export.
+- Four-column DAT: temperature (K), magnetic field (T), sample position (deg),
+  torque (N m). No molar conversion or extra intermediate rounding.
+- Background scans used for fitting are excluded from the treated signal DAT.
+  Their raw measurements and processing role remain in the existing raw snapshot
+  and row ledger accompanying the export.
+- Automatic mean/midrange behavior, optional manual torque adjustment, immutable
+  u, offset sign, Apply/Cancel/Reset/Remove, dirty-edit guards and no accumulated
+  shifts.
+- Lossless accepted offsets, upstream binding and recomputed-u validation,
+  atomic writes, collision protection and raw-file preservation.
+- Scientific plot formatting, Arial checks, dynamic bounds, local Help,
+  tooltips and accurate View/activity behavior.
+
+Sample-position correction in degrees remains DEFERRED. Do not implement angle
+shifts, new endpoint-retention rules or new angular rounding.
+
+CRITICAL PACKAGING CHECK:
+pipeline.py currently derives a numerical implementation fingerprint using
+inspect.getsource. Frozen bytecode alone may break this. Include the necessary
+original numerical source beside the bundled modules, or use an equally
+verifiable mechanism that preserves the established fingerprint exactly.
+Do not hardcode a replacement digest, forge acceptance, or weaken integrity
+checks. Preserve source hashes in exported provenance and include package
+metadata needed to report the actual NumPy/Matplotlib versions.
+
+At prompt preparation the expected numerical fingerprint is:
+ce5bcc72bf3fe23873d78b1b4c0e487e14da54cbbc909976c065556bb4e96d7a
+Recompute against the actual pre-change source; do not treat this text as proof.
+
+Accepted baselines also bind to their numerical environment. Confirm replay
+under the bundled runtime. If another Windows/runtime environment legitimately
+invalidates an old record, retain the safeguard, identify the exact mismatch,
+and explain how the user reviews/reaccepts it. Never silently reaccept it.
+Keep packaging/UI names, logs, timestamps and display state out of numerical
+fingerprints unless an existing genuine safeguard requires otherwise.
+
+Provide a bundled command-line executable using the same core and existing
+process/inspect/replay options. It must return useful exit codes and work without
+system Python. Preserve the source-based GUI/CLI entry points for developers.
+
+6. VALIDATE THE ACTUAL BUNDLE AND INSTALLER IN THE BACKGROUND
+
+Use new output directories. Run the current unit suite and focused tests
+appropriate to the changes. Reuse prior comparisons; do not rerun model discovery
+or archival scripts that overwrite evidence.
+
+A. Self-contained runtime and resources
+- Launch the actual bundled executables with Python-related environment
+  variables cleared and no development Python/venv on PATH.
+- Inspect loaded module/runtime paths to demonstrate use of bundled components.
+- Verify Tcl/Tk, embedded Matplotlib, local Help, source-based bindings,
+  dependency metadata and PDF/PNG export.
+- Test launch from another working directory and paths containing spaces and
+  non-ASCII characters; exercise fresh cache creation.
+- Test in an available clean Windows VM or sandbox without Python if possible.
+  Do not install/remove system Python or download/configure a new VM without
+  authorization. A restricted-PATH test on this development PC is not equivalent
+  to a clean-machine test; report that distinction.
+
+B. Scientific regression and replay
+- Compare actual bundled CLI outputs with the fresh pre-packaging DATs, using
+  exact byte/serialized-value checks, not relaxed tolerances.
+- Reuse examples/Ho2sq3_full_range.json, Ho2sq3_0_to_200.json and the accepted
+  manual-offset example where its environment binding is valid.
+- Expected established accounting: 1754 raw rows, 34 scans; 1296 full-range
+  signal rows and 458 background rows; for 0–200 degrees, 1023 signal rows,
+  368 retained background rows and 363 rows outside the interval.
+- Confirm background rows are excluded from treated signal DAT output, original
+  rows remain accounted for, and torque-only output is unchanged.
+- Recheck unchanged numerical fingerprints, saved bindings and protected-input/
+  archive hashes. Verify stale settings and filename collisions still fail.
+- Use existing historical comparisons where needed; no independent treated
+  reference exists for Ho2sq3. Do not manufacture one.
+
+C. Installed GUI workflow
+Exercise actual Tk widgets/events with every test window withdrawn:
+load -> acquisition settings/background selection -> subtract -> Center zero ->
+Apply -> settings save/reload -> treated DAT save.
+Verify installed GUI/CLI DAT equality, repeat processing without accumulated
+shifts, Help loading and figure exports. Test startup-error logging without
+displaying error dialogs during the automated check.
+A dedicated opt-in diagnostic entry point is acceptable; it must use the real
+application/core and must not run tests or alter settings during normal launch.
+Distinguish hidden widget checks/offscreen figure inspection from visible
+whole-window review. Do not claim a visible usability test was performed.
+
+D. Installer, update and uninstall
+- Test the actual installer silently in a new, bounded validation directory.
+- Use isolated test registration/shortcut locations where practical and ensure
+  an existing real installation is not modified. Do not leave test shortcuts.
+- Check the installed payload, metadata, intended shortcuts and executable
+  launch. Never trigger the finish-page GUI launch during testing.
+- Test a repeat installation/update only against that isolated test copy.
+- Uninstall that test copy; verify user-data sentinel files, saved DAT/settings
+  and raw fixtures survive. Verify all targets before recursive deletion/moving.
+- Record installer/uninstaller exit codes and retained logs. Do not require a
+  reboot, close unrelated processes or install into the user's normal app
+  location merely to run validation.
+
+E. Distribution checks
+- Inspect installer/package contents and manifests: required resources and
+  notices included, private data/build environments excluded.
+- Replay from the installed/extracted copy, not accidentally from the source
+  checkout. Confirm no dependency on absolute developer-machine paths.
+- Label each observed gate PASS/FAIL/BLOCKED. Give the precise cause of any
+  unavailable clean-machine, hidden-GUI or rendering check. A source unit test
+  alone does not establish that the frozen application or installer works.
+
+The raw file's path is recorded in the current example settings/project state;
+verify it rather than using a historical directory name. Expected identity:
+269380 bytes
+SHA-256: 04edb7daae1c04a4330cb49a2cd46de5111ee00c643cef8e6e510b1be258e04c
+
+The user already confirmed the nine experimental setpoints/backgrounds and
+full-range extrapolation for P022–P024. Do not ask again or extend permission to
+other scans silently.
+
+7. DOCUMENT, DELIVER AND STOP
+
+Update current README/CHANGELOG and the existing compact project state with:
+- The new application name and actual installer/build status.
+- Plain installation, launch, update and uninstall instructions.
+- Source/developer setup retained in a separate section.
+- Tested headless replay and maintainer build/test commands.
+- User-data/log locations, runtime versions and migration/reacceptance limits.
+- Observed checks and remaining limitations, without overwriting historical
+  reports or misrepresenting the earlier stopped build as a completed release.
+
+Deliver locally:
+1. The verified Windows setup EXE, clearly named and easy to locate.
+2. SHA-256 checksums and a concise build/validation report with actual versions,
+   source/fixture hashes, numerical comparison results and test output paths.
+3. Reproducible packaging source, build requirements and focused tests.
+4. A source/update ZIP suitable for the user's manual GitHub workflow. Preserve
+   paths, list required removals if any, and exclude .git, .venv/build tools,
+   private research data, personal sessions and generated evidence. Keep the
+   binary installer separate from the source ZIP.
+5. This execution prompt. A portable binary ZIP is optional; do not make it
+   another setup step for users choosing the installer.
+
+Verify artifact contents/hashes. Preserve all earlier releases. Do not copy
+into the GitHub checkout, commit, push or publish.
+
+Finish with a brief outcome, the absolute installer link, installation steps,
+exact tested replay/build commands, a compact observed gate table, specific
+limitations and a suggested GitHub commit summary/description. State whether
+a clean machine and visible installer UI were actually tested. Then stop.
+

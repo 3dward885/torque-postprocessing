@@ -2,7 +2,7 @@
   {
     "id": "summary",
     "title": "Overview",
-    "text": "Torque Postprocessing 1.3 treats angular torque measurements from supported DAT files.\n\nThe workflow is Open data → Subtract background → optional Center zero → Save treated data. Temperatures come from experimental settings or explicit metadata. Backgrounds come from the same file and experimental temperature, including backgrounds acquired afterward.\n\nThe supported instrument CSV has the documented 32-field header with 14–32 recorded fields. The documented four-column TSV uses K, Oe, degrees and N m. This is not a universal DAT importer.\n\nThe established method uses six-significant-digit Decimal torque inputs, an unweighted degree-six background fit, subtraction, then centering. The [0,200] scaling domain is a polynomial basis definition, not a restriction on the acquisition span. No smoothing, interpolation, molar conversion or sample-position correction is applied.\n\nTreated DAT contains K, T, degrees and N m. Original measured values remain in the ledger. This release changes usability; it keeps the numerical method and existing angle-range behavior."
+    "text": "Torque Data Postprocessing 1.4 treats angular torque measurements from supported DAT files.\n\nThe workflow is Open data → Subtract background → optional Center zero → Save treated data. Temperatures come from experimental settings or explicit metadata. Backgrounds come from the same file and experimental temperature, including backgrounds acquired afterward.\n\nThe supported instrument CSV has the documented 32-field header with 14–32 recorded fields. The documented four-column TSV uses K, Oe, degrees and N m. This is not a universal DAT importer.\n\nThe established method uses six-significant-digit Decimal torque inputs, an unweighted degree-six background fit, subtraction, then centering. The [0,200] scaling domain is a polynomial basis definition, not a restriction on the acquisition span. No smoothing, interpolation or sample-position correction is applied. The ordinary DAT remains torque in N m; an optional presentation export can create molar plots and a separate molar DAT using supplied sample normalization.\n\nTreated DAT contains K, T, degrees and N m. Original measured values remain in the ledger. This release provides a Windows installer; it keeps the numerical method and existing angle-range behavior."
   },
   {
     "id": "workflow",
@@ -367,8 +367,45 @@
     ]
   },
   {
+    "id": "treated_plots",
+    "title": "Treated plots and optional molar output",
+    "text": "Tools > Export treated plots creates JPEG images from the same retained, committed samples as the treated DAT. Select files and confirm each rotation number. Each input/rotation/temperature gets a separate image; field values identify the marker series. Repeated scans are retained separately, without averaging or fitting. Separate input files are never silently merged.\n\nImages use Arial Regular, a white background and 8 x 6 inches at 300 dpi (2400 x 1800 pixels). The only figure text is the rotation/temperature heading, axes and field legend. No fitted curves, connecting lines or processing notes are added.\n\nChoose Torque (N m) or Molar torque (N m/mol). Molar output also saves a separate four-column molar DAT; Save treated data continues to write the ordinary N m file. It never changes the background subtraction, zero adjustment or raw measurements.\n\nMolar mass alone cannot determine the amount of sample. Supply sample mass (mg) and molar mass (g/mol), or an independently known amount (mol), for each selected file. The normalization is user-provided: tau_molar = tau / n = tau * M / m, with mass in g. The relevant molar basis is the formula/molecule used to define M and n. No mass, amount or molar mass is inferred from a filename.\n\nA new treated_plots folder holds the JPEGs and any molar DATs. The plots.details folder records the choices, exact conversion factor, image/data hashes, source identities and replay settings. Rotation suggestions come from filenames and must be checked. Plot settings do not change numerical baseline bindings.",
+    "children": [
+      {
+        "id": "export_treated_plots",
+        "title": "Export treated plots",
+        "tip": "Save one 300-dpi JPEG per input, rotation and temperature from committed treated data. Molar mode also saves a separate molar DAT.",
+        "text": "Export is available after background subtraction and resolution of all included scans. Apply or cancel any zero-adjustment draft first. Choose a destination; the application creates a new folder and preserves previous exports."
+      },
+      {
+        "id": "plot_quantity",
+        "title": "Plot quantity",
+        "tip": "Choose treated torque in N m, or molar torque in N m/mol with your sample normalization. The ordinary DAT stays in N m.",
+        "text": "Torque uses the serialized treated DAT values directly. Molar torque multiplies those same values by 1/n. The separate molar DAT and plotted markers use the same converted values."
+      },
+      {
+        "id": "plot_normalization",
+        "title": "Mass, molar mass or amount",
+        "tip": "For each file, enter sample mass (mg) and molar mass (g/mol), or amount (mol). Values must be positive and finite; molar mass alone is insufficient.",
+        "text": "Choose Sample mass and molar mass, or Amount in moles. Values belong to each input independently. The factor is calculated with 50-digit Decimal precision; multiplication preserves the exported N m token times the recorded factor. This computational precision is not a claim about experimental uncertainty.\n\nSoftware example only: 2 mg with M = 400 g/mol gives n = 5e-6 mol and a factor of 200000 mol^-1. A treated torque of 1e-6 N m becomes 0.2 N m/mol. The same result follows from an independently entered amount of 5e-6 mol."
+      },
+      {
+        "id": "plot_rotation",
+        "title": "Rotation number",
+        "tip": "Confirm the rotation number used to name and label these plots. A suggestion may come from the filename; it does not alter the measurements.",
+        "text": "Enter a positive integer for each selected input. A Rot1 or Rotation1 filename supplies an editable suggestion. If no number can be found, enter it. Rotation labels are recorded with the plot export, outside numerical processing settings."
+      },
+      {
+        "id": "plot_files",
+        "title": "Files to plot",
+        "tip": "Checked files are included. A file must have a complete, current treated result; process unresolved files first.",
+        "text": "Each file retains independent normalization, scans and sample identity. Background-only scans and excluded angles are absent because plotting uses the treated signal rows. Files marked process first are unavailable."
+      }
+    ]
+  },
+  {
     "id": "troubleshooting",
     "title": "Troubleshooting",
-    "text": "Center zero is disabled: select a processed signal scan and wait for any running task. Background scans cannot be centered here.\n\nSave treated data is disabled: process the file and resolve included scans or stale active zero adjustments. Explicit exclusions are recorded; the application does not silently save a partial file.\n\nSettings changed: the old result is invalid. The preview returns to Raw; click Subtract background again.\n\nMissing/ambiguous temperature: enter the actual experimental targets or assign the selected scan explicitly. A measured value is not automatically an integer-K target.\n\nInvalid input: use finite numbers and the units shown. Temperature lists accept spaces or commas; scan-start row lists use commas. Duplicate temperature targets are rejected.\n\nInsufficient coverage or fit rank: choose an appropriate background or angle interval. At least seven distinct background angles and a finite valid fit are required. Extrapolation requires an explicit choice.\n\nStale accepted baseline: upstream data/settings or the numerical environment changed. Review and Apply a new setting, or remove the old adjustment. The program must not silently reuse it.\n\nOutput already exists: choose a new filename. Keep raw inputs, references and earlier runs unchanged.\n\nFont issue: Tools > Details reports the resolved font. Scientific figure export requires Arial Regular; a fallback preview does not count as a compliant export.\n\nMoving raw files: saved sessions contain paths. Reopen the data at its new location and use verified matching settings; do not bypass the raw-file hash check."
+    "text": "Center zero is disabled: select a processed signal scan and wait for any running task. Background scans cannot be centered here.\n\nSave treated data is disabled: process the file and resolve included scans or stale active zero adjustments. Explicit exclusions are recorded; the application does not silently save a partial file.\n\nSettings changed: the old result is invalid. The preview returns to Raw; click Subtract background again.\n\nMissing/ambiguous temperature: enter the actual experimental targets or assign the selected scan explicitly. A measured value is not automatically an integer-K target.\n\nInvalid input: use finite numbers and the units shown. Temperature lists accept spaces or commas; scan-start row lists use commas. Duplicate temperature targets are rejected.\n\nInsufficient coverage or fit rank: choose an appropriate background or angle interval. At least seven distinct background angles and a finite valid fit are required. Extrapolation requires an explicit choice.\n\nStale accepted baseline: upstream data/settings or the numerical environment changed. Review and Apply a new setting, or remove the old adjustment. The program must not silently reuse it.\n\nOutput already exists: choose a new filename. Keep raw inputs, references and earlier runs unchanged.\n\nFont issue: Tools > Details reports the resolved font. Scientific figure export requires Arial Regular; a fallback preview does not count as a compliant export.\n\nMoving raw files: saved sessions contain paths. Reopen the data at its new location and use verified matching settings; do not bypass the raw-file hash check.\n\nMolar plots require both sample mass and molar mass, or the amount in moles. Missing, zero or nonfinite inputs are rejected. Figure export does not infer sample normalization."
   }
 ]

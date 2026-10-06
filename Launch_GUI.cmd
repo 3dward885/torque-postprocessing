@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0" || exit /b 1
 set "TORQUE_LOG=%~dp0launch.log"
 if not exist ".venv\Scripts\pythonw.exe" goto missing_environment
-echo Starting Torque Postprocessing. Startup errors will appear here.
+echo Starting Torque Data Postprocessing. Startup errors will appear here.
 start "" /b /wait ".venv\Scripts\pythonw.exe" -u "%~dp0app.py" %* > "%TORQUE_LOG%" 2>&1
 set "TORQUE_EXIT=%errorlevel%"
 if "%TORQUE_EXIT%"=="0" exit /b 0

@@ -154,7 +154,7 @@ class HelpWindow:
         self.previous_grab = parent.grab_current()
         self.window = tk.Toplevel(parent)
         self.window.withdraw()
-        self.window.title("Torque Postprocessing Help")
+        self.window.title("Torque Data Postprocessing Help")
         self.window.geometry("980x680")
         self.window.minsize(760, 500)
         self.window.transient(parent)

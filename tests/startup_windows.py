@@ -38,8 +38,8 @@ def main(application, output):
     done = run(application, "call Launch_GUI.cmd --version")
     shutil.copyfile(application/"launch.log", output/"launch_success.log")
     assert done.returncode == 0, done.stdout+done.stderr
-    assert "Torque Postprocessing 1.3" in (output/"launch_success.log").read_text(encoding="utf-8")
-    report["checks"].append("Real pythonw CMD launch and argument forwarding return version 1.3")
+    assert "Torque Data Postprocessing 1.4" in (output/"launch_success.log").read_text(encoding="utf-8")
+    report["checks"].append("Real pythonw CMD launch and argument forwarding return version 1.4")
 
     scratch = output/"missing environment (test)"
     scratch.mkdir()

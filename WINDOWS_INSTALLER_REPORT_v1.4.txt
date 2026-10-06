@@ -1,0 +1,174 @@
+Torque Data Postprocessing 1.4 — installer build 1
+Delivery date: 5 October 2026
+
+SCOPE AND SOURCE
+Active checkout: torque-postprocessing under the user's Codex Torque research folder.
+Git base b9517f489a35dcf3984ea48356fc3d12956e7c5c; current work remains uncommitted.
+No reset, GitHub copy, commit, push, publication or live-desktop control performed.
+Fresh pre-packaging v1.3 source/settings/output hashes:
+  validation/windows_app_v1.3_build1/before/source/
+  validation/windows_app_v1.4_build1/before.json (same evidence, renamed scope)
+The installer prompt is preserved. V1.4_SCOPE_ADDITIONS.txt records the later
+user-authorized version, treated plots and separate optional molar DAT.
+
+INTEGRATION
+PyInstaller one-directory runtime and Inno Setup per-user installer.
+Windowed desktop.py entry logs startup errors to user-writable app data.
+TorqueDataCLI.exe uses the same processing core. Original numerical .py files
+remain beside frozen modules so inspect.getsource and provenance hashes work.
+Bundled dependency metadata reports the actual NumPy/Matplotlib versions.
+Tools > Export treated plots reads committed treated rows; it does not refit,
+recenter, average or alter the ordinary DAT. Per-file sample normalization is
+stored with plot exports, outside numerical settings/baseline fingerprints.
+Normal DAT stays N m; optional separate molar DAT is N m/mol.
+Position shifts, endpoint-rule changes and new angular rounding remain deferred.
+
+ACTUAL ENVIRONMENT / TOOLS
+Windows 11 10.0.26300 x64; Python 3.12.14; NumPy 2.3.5; Matplotlib 3.10.8;
+Tcl/Tk 8.6.12. PyInstaller 6.22.3, hooks 2026.8; Inno Setup 7.1.0 x64.
+Pinned runtime/build requirements retained. Build used .build-venv, independently
+of the working application environment. Compiler stayed in build_tools/.
+Official compiler download:
+https://github.com/jrsoftware/issrc/releases/download/is-7_1_0/innosetup-7.1.0-x64.exe
+SHA-256 0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f
+Vendor signature: valid, Pyrsys B.V. Compiler EXE and compiler DLL also checked.
+Official PyPI URLs and verified wheel hashes: windows/dependency_wheels.json.
+Python, Tcl/Tk and applicable dependency/build-tool licenses are included.
+Microsoft Arial is resolved from Windows, not redistributed.
+
+DELIVERED BINARY
+releases/Torque_Data_Postprocessing_1.4_build3/
+  Torque_Data_Postprocessing_1.4_Setup_x64.exe
+  Torque_Data_Postprocessing_1.4_portable_x64.zip (optional alternative)
+  build_info.json, bundle_manifest.json, SHA256SUMS.txt
+Setup: 31360026 bytes
+SHA-256 704014ad58a824589f05aec7e99b942b73b15849923d8c85a62b5f7c598375f2
+Portable ZIP: 46316927 bytes
+SHA-256 9f505b8c4bcd1e78acc2daa7df8891b09facfb11a35832fd7a7f33ac6ee1024f
+The directory suffix records the local build attempt; installer metadata records
+the first delivered installer build separately from application version 1.4.
+Earlier v1.3/v1.4 attempts remain diagnostic evidence, not current releases.
+
+OBSERVED GATES
+PASS — 49 unit tests, including dimensional normalization, finite/positive
+       input checks, exact converted tokens, independent scan grouping, marker/
+       label/font rules, stale-data rejection and bounded atomic publication.
+PASS — Actual final portable executables under System32-only PATH, with Python/
+       venv/Tcl/Matplotlib environment overrides cleared. Fresh cache, unrelated
+       working directory, spaced/accented bundle path. Module/runtime paths
+       verified inside the bundle; no developer Python invoked by the EXEs.
+PASS — Installed hidden real Tk workflow: load/settings/background, subtract,
+       manual zero Apply, repeat Apply, save/reload settings, DAT, Help 69 topics,
+       PDF/PNG, grouped JPEGs, invalid mass, amount control and Cancel.
+PASS — Three exact pre-packaging DATs and accepted-baseline bindings; GUI/CLI
+       equality. No reference access during isolated processing.
+PASS — Six historical A-D cases, 5405 case rows, preserved numerical expectations.
+PASS — Installer per-user registration, payload hashes, Start-menu shortcuts,
+       repeat update, locked-file abort/rollback, uninstall and user-data retention.
+PASS — JPEG offscreen visual inspection; Arial Regular, white background,
+       2400x1800 at 300 dpi; no fitted/connecting curves or extra annotations.
+       Existing three PDF/PNG scientific exports: embedded Arial, no clipping.
+PASS — 196 protected input/reference/evidence files and prior archives unchanged.
+PASS — Payload manifest/source hashes and required resources/licenses; no project
+       measurements, private sessions, environments or Arial redistributed.
+PASS — Source/update ZIP contents/hashes and extracted-source replay, Help,
+       grouped JPEGs and separate molar DAT. No required source-file removals.
+BLOCKED — Clean-machine VM/sandbox: none available; no VM was provisioned.
+NOT PERFORMED — Visible installer UI and whole-window manual usability review,
+                per the background-only instruction. No desktop screenshots.
+
+DATA AND NUMERICAL RESULTS
+Numerical implementation fingerprint unchanged:
+ce5bcc72bf3fe23873d78b1b4c0e487e14da54cbbc909976c065556bb4e96d7a
+pipeline.py, baseline.py, storage.py and plots.py unchanged from the snapshot.
+io_profiles.py source hash differs only for APP_VERSION 1.3 -> 1.4.
+Configuration 1.2, baseline schema 2 and six-significant-digit/degree-six/
+subtract/center-once/.8g processing order unchanged.
+
+Ho2sq3 raw: 269380 bytes, SHA-256
+04edb7daae1c04a4330cb49a2cd46de5111ee00c643cef8e6e510b1be258e04c
+1754 rows, 34 scans. Full range: 1296 signal + 458 background rows.
+0-200 degrees: 1023 signal + 368 background + 363 outside-range rows.
+Background rows are never included in the treated signal DAT.
+All three established DATs match pre-packaging bytes exactly; maximum difference
+in serialized D is 0 N m. Existing accepted manual offsets replay unchanged.
+Historical reference D exact counts:
+  Ho2thd4Pc Rot1 midrange: 818/818
+  Ho2thd4Pc Rot2 midrange: 938/938
+  Previous Rot2 midrange: 820/820
+  Previous Rot1 mean: 615/943; midrange: 328/943
+  Previous Rot1 reference-selected diagnostic choices: 943/943
+These 5405 case rows cover 3519 distinct reference and 4869 distinct raw rows.
+Diagnostic selection remains reference-selected, not a production selector.
+
+Molar tests use SYNTHETIC sample quantities: 2 mg and 400 g/mol, equivalent
+to 5e-6 mol and a factor of 200000 mol^-1. No real Ho2sq3 mass was supplied.
+Each molar row has the original A-C coordinates and exact Decimal product of
+serialized D with the recorded factor; plots use these same converted values.
+No independent treated reference exists for Ho2sq3. Optional user normalization
+does not establish the physical basis of older archived reference multipliers.
+
+EVIDENCE LOCATIONS
+validation/windows_app_v1.4_build1/unit_tests_release.txt
+validation/v14_gui2/report.json — existing seven usability/widget groups
+validation/v14_bundle_final/report.json — actual final portable executables
+validation/w14j/report.json — silent installer lifecycle, final artifact
+validation/w14j/installed_checks/report.json — installed binary numerical checks
+validation/w14j/installed_checks/hidden_gui/report.json — actual hidden Tk/plots
+validation/v14_isolation/report.json — reference-denied CLI
+validation/v14_figures/figure_checks.json — PDF fonts/style/clipping
+validation/windows_app_v1.4_build1/distribution.json — payload audit
+validation/v14_source_candidate/report.json — extracted candidate verification
+validation/v14_source_final/report.json — final source/update artifact verification
+validation/windows_app_v1.4_build1/representative/ — ordinary treated DAT,
+  replay settings and nine actual-data N m JPEGs. No invented molar sample amount.
+FIXTURE_LOCATIONS_v1.4.json — precise external immutable paths/hashes.
+
+Installer exit codes: unrelated folder 7; overlong path 1; install 0;
+repeat update 0; locked-file update 5; uninstall 0.
+The test uninstaller removed only the test payload/registration/shortcuts;
+user-file sentinels, output DAT/settings, logs and original fixtures survived.
+
+REPAIRS DURING VALIDATION
+An early deep-folder portable run failed loading Pillow at the Windows DLL path
+limit. Setup now rejects install directories longer than 180 UTF-16 code units;
+short spaced/accented paths passed. Windows settings were not changed.
+An early bundle lacked the PDF backend; it is now explicitly included and tested.
+A test-harness JSON decoding error on accented paths was fixed to use UTF-8.
+An installed molar export encountered Windows error 5 when renaming its completed
+staging folder. The new export retries only access/sharing errors up to six times
+with short waits (1.55 seconds total), preserves collision checks, and fails
+explicitly if access remains denied. Final installed/portable exports passed.
+One early source usability run did not finish its second DAT save; the original
+exception was not captured. The instrumented repeat and installed/frozen replays
+passed. No scientific code or validation threshold was changed to force success.
+The interrupted earlier installer attempt is not represented as a release.
+
+LIMITS / OPERATION
+Unsigned application/installer: no publisher certificate supplied, no signing
+or SmartScreen approval claimed. Windows 10/ARM64/other PCs remain untested.
+An actual clean-machine test is distinct from the successful restricted-PATH test.
+Ordinary launch leaves no console (windowed executable); hidden widget testing
+does not establish a visible full-window usability review.
+Default user install location is supported; excessively long custom paths are
+rejected. Persistent file access errors are reported, not bypassed.
+Moving raw data requires updating its saved path. Baseline safeguards still
+require re-review if numerical inputs/source/environment genuinely change.
+No automatic updates, telemetry, file associations or system Python changes.
+
+TESTED COMMANDS (PowerShell in the active checkout; use new outputs on repeat)
+.\.build-venv\Scripts\python.exe tools\build_windows.py --output releases\Torque_Data_Postprocessing_1.4_build3
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe tests\windows_bundle.py --bundle "validation\d é\Torque Data Postprocessing" --before validation\windows_app_v1.4_build1\before.json --output validation\v14_bundle_final
+.\.venv\Scripts\python.exe tests\windows_installer.py --setup releases\Torque_Data_Postprocessing_1.4_build3\Torque_Data_Postprocessing_1.4_Setup_x64.exe --manifest releases\Torque_Data_Postprocessing_1.4_build3\bundle_manifest.json --before validation\windows_app_v1.4_build1\before.json --output validation\w14j
+.\.venv\Scripts\python.exe tests\workflow_isolation.py --session examples\Ho2sq3_manual_demo.json --output validation\v14_isolation
+.\.venv\Scripts\python.exe tests\figures.py --session examples\Ho2sq3_0_to_200.json --output validation\v14_figures
+.\.venv\Scripts\python.exe tests\windows_distribution.py --release releases\Torque_Data_Postprocessing_1.4_build3 --output validation\windows_app_v1.4_build1\distribution.json
+.\.venv\Scripts\python.exe tools\package_windows_source.py --output releases\Torque_Data_Postprocessing_1.4_build3\Torque_Data_Postprocessing_v1.4_source_update.zip
+.\.venv\Scripts\python.exe tests\windows_source.py --archive releases\Torque_Data_Postprocessing_1.4_build3\Torque_Data_Postprocessing_v1.4_source_update.zip --output validation\v14_source_final
+
+The actual binary harness executed TorqueDataCLI.exe process --session <absolute
+examples/Ho2sq3_0_to_200.json> --dat <absolute output path>, and the other named
+example sessions, from an unrelated working directory. Hidden launch used
+"Torque Data Postprocessing.exe" --check-installation <output> --session <session>.
+End users run Setup, then open Torque Data Postprocessing from the Start menu.

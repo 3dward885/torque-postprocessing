@@ -23,11 +23,11 @@ def run_entry(path, settings=None, profile="fractional", allow_stale_review=Fals
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", action="version", version=f"Torque Postprocessing {APP_VERSION}")
+    parser.add_argument("--version", action="version", version=f"Torque Data Postprocessing {APP_VERSION}")
     arguments = sys.argv[1:] if argv is None else argv
     obsolete = ("--molar-", "--factor", "--amount-mol", "--mass", "--preset")
     if any(a.startswith(obsolete) for a in arguments):
-        parser.error("Molar conversion and reference presets were removed. This processor saves torque in N m.")
+        parser.error("Legacy molar options are unsupported. Process saves N m; use Export treated plots for optional molar output.")
     sub = parser.add_subparsers(dest="command", required=True)
     inspect = sub.add_parser("inspect", help="Load raw measurements and list scans")
     inspect.add_argument("raw")

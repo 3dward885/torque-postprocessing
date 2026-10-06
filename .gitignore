@@ -1,5 +1,10 @@
 # Python environments and caches
 .venv/
+.build-venv/
+build_tools/
+build/
+dist/
+releases/
 venv/
 __pycache__/
 *.py[cod]
@@ -23,7 +28,7 @@ FILE_MANIFEST.json
 SHA256SUMS.txt
 source_verification.json
 
-# Supplied proprietary font stays in the local scientific application package.
+# Do not redistribute Microsoft Arial or other locally supplied font files.
 fonts/*.TTF
 fonts/*.ttf
 

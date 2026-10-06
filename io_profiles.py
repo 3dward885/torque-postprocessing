@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN, localcontext
 from pathlib import Path
 
-APP_VERSION = "1.3"
+APP_VERSION = "1.4"
 GRID = tuple(range(200, -1, -5))
 TSV_HEADER = ["Temperature (K)", "Magnetic Field (Oe)", "Sample Position (deg)", "Torque (Nm)"]
 INSTRUMENT_HEADER = (
@@ -129,7 +129,7 @@ class Pass:
     @property
     def measured_temperature(self):
         values = [Decimal(r.tokens[3]) for r in self.acquired_rows or self.rows]
-        return f"{min(values):.7g}–{max(values):.7g}"
+        return f"{min(values):.7g}â€“{max(values):.7g}"
 
 
 @dataclass
